@@ -1,0 +1,301 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Interface with SQL databases through sqlx. It supports the `sqlite`, `mysql` and `postgres` drivers, enabled by a Cargo feature."><title>tauri_plugin_sql - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="/-/rustdoc.static/${f}">`).join(""))</script><link rel="stylesheet" href="/-/rustdoc.static/normalize-9960930a.css"><link rel="stylesheet" href="/-/static/vendored.css?0-0-0-f1b150f0cd76f7cabcd39e1f4790ba771b28b5c4-2026-07-19" media="all" /><link rel="stylesheet" href="/-/rustdoc.static/rustdoc-1ed95124.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="/-/rustdoc.static/" data-current-crate="tauri_plugin_sql" data-themes="" data-resource-suffix="-20260706-1.99.0-nightly-c4af71034" data-rustdoc-version="1.99.0-nightly (c4af71034 2026-07-06)" data-channel="nightly" data-search-js="search-9944d736.js" data-stringdex-js="stringdex-2da4960a.js" data-settings-js="settings-170eb4bf.js" ><script src="/-/rustdoc.static/storage-41dd4d93.js"></script><script defer src="../crates-20260706-1.99.0-nightly-c4af71034.js"></script><script defer src="/-/rustdoc.static/main-417ebf0a.js"></script><noscript><link rel="stylesheet" href="/-/rustdoc.static/noscript-f7c3ffd8.css"></noscript><link rel="icon" href="https://github.com/tauri-apps/tauri/raw/dev/app-icon.png"><link rel="stylesheet" href="/-/static/rustdoc-2025-08-20.css?0-0-0-f1b150f0cd76f7cabcd39e1f4790ba771b28b5c4-2026-07-19" media="all" /><link rel="stylesheet" href="/-/static/font-awesome.css?0-0-0-f1b150f0cd76f7cabcd39e1f4790ba771b28b5c4-2026-07-19" media="all" />
+
+<link rel="search" href="/-/static/opensearch.xml" type="application/opensearchdescription+xml" title="Docs.rs" />
+
+<script type="text/javascript">(function() {
+    function applyTheme(theme) {
+        if (theme) {
+            document.documentElement.dataset.docsRsTheme = theme;
+        }
+    }
+
+    window.addEventListener("storage", ev => {
+        if (ev.key === "rustdoc-theme") {
+            applyTheme(ev.newValue);
+        }
+    });
+
+    // see ./storage-change-detection.html for details
+    window.addEventListener("message", ev => {
+        if (ev.data && ev.data.storage && ev.data.storage.key === "rustdoc-theme") {
+            applyTheme(ev.data.storage.value);
+        }
+    });
+
+    applyTheme(window.localStorage.getItem("rustdoc-theme"));
+})();</script></head><body class="rustdoc-page">
+<div class="nav-container">
+    <div class="container">
+        <div class="pure-menu pure-menu-horizontal" role="navigation" aria-label="Main navigation">
+            <form action="/releases/search"
+                  method="GET"
+                  id="nav-search-form"
+                  class="landing-search-form-nav  ">
+
+                
+                <a href="/" class="pure-menu-heading pure-menu-link docsrs-logo" aria-label="Docs.rs">
+                    <span title="Docs.rs"><span class="fa fa-solid fa-cubes " aria-hidden="true"></span></span>
+                    <span class="title">Docs.rs</span>
+                </a><ul class="pure-menu-list">
+    <script id="crate-metadata" type="application/json">
+        
+        {
+            "name": "tauri-plugin-sql",
+            "version": "2.4.0"
+        }
+    </script><li class="pure-menu-item pure-menu-has-children crate-dropdown">
+            <a href="#" class="pure-menu-link crate-name" title="Interface with SQL databases.">
+                <span class="fa fa-solid fa-cube " aria-hidden="true"></span>
+                <span class="title">tauri-plugin-sql-2.4.0</span>
+            </a><div class="pure-menu-children package-details-menu">
+                
+                <ul class="pure-menu-list menu-item-divided">
+                    <li class="pure-menu-heading" id="crate-title">
+                        tauri-plugin-sql 2.4.0
+                        <span id="clipboard" class="svg-clipboard" title="Copy crate name and version information"></span>
+                    </li><li class="pure-menu-item">
+                        <a href="/tauri-plugin-sql/2.4.0/tauri_plugin_sql/" class="pure-menu-link description" id="permalink" title="Get a link to this specific version"><span class="fa fa-solid fa-link " aria-hidden="true"></span> Permalink
+                        </a>
+                    </li><li class="pure-menu-item">
+                        <a href="/crate/tauri-plugin-sql/latest" class="pure-menu-link description" title="See tauri-plugin-sql in docs.rs">
+                            <span class="fa fa-solid fa-cube " aria-hidden="true"></span> Docs.rs crate page
+                        </a>
+                    </li><li class="pure-menu-item">
+                            <span class="pure-menu-link description license"><span class="fa fa-solid fa-scale-unbalanced-flip " aria-hidden="true"></span>
+                            <a href="https://spdx.org/licenses/Apache-2.0" class="pure-menu-sublink">Apache-2.0</a> OR <a href="https://spdx.org/licenses/MIT" class="pure-menu-sublink">MIT</a></span>
+                        </li><li class="pure-menu-item">
+                            <span class="pure-menu-link description" title="Built with rustc 1.99.0-nightly (c4af71034 2026-07-06)">
+                                <span class="fa fa-solid fa-gears " aria-hidden="true"></span> 07 July 2026
+                            </span>
+                        </li></ul>
+
+                <div class="pure-g menu-item-divided">
+                    <div class="pure-u-1-2 right-border">
+                        <ul class="pure-menu-list">
+                            <li class="pure-menu-heading">Links</li>
+
+                            <li class="pure-menu-item">
+                                    <a href="https://github.com/tauri-apps/plugins-workspace" class="pure-menu-link">
+                                        <span class="fa fa-solid fa-code-branch " aria-hidden="true"></span> Repository
+                                    </a>
+                                </li><li class="pure-menu-item">
+                                <a href="https://crates.io/crates/tauri-plugin-sql" class="pure-menu-link" title="See tauri-plugin-sql in crates.io">
+                                    <span class="fa fa-solid fa-cube " aria-hidden="true"></span> crates.io
+                                </a>
+                            </li>
+
+                            
+                            <li class="pure-menu-item">
+                                <a href="/crate/tauri-plugin-sql/latest/source/" title="Browse source of tauri-plugin-sql-2.4.0" class="pure-menu-link">
+                                    <span class="fa fa-solid fa-folder-open " aria-hidden="true"></span> Source
+                                </a>
+                            </li>
+                        </ul>
+                    </div><div class="pure-u-1-2">
+                        <ul class="pure-menu-list" id="topbar-owners">
+                            <li class="pure-menu-heading">Owners</li><li class="pure-menu-item">
+                                    <a href="https://crates.io/users/tauri-bot" class="pure-menu-link">
+                                        <span class="fa fa-solid fa-user " aria-hidden="true"></span> tauri-bot
+                                    </a>
+                                </li></ul>
+                    </div>
+                </div>
+
+                <div class="pure-g menu-item-divided">
+                    <div class="pure-u-1-2 right-border">
+                        <ul class="pure-menu-list">
+                            <li class="pure-menu-heading">Dependencies</li>
+
+                            
+                            <li class="pure-menu-item">
+                                <div class="pure-menu pure-menu-scrollable sub-menu" tabindex="-1">
+                                    <ul class="pure-menu-list">
+                                        <li class="pure-menu-item"><a href="/futures-core/^0.3/" class="pure-menu-link">
+                futures-core ^0.3
+                
+                    <i class="dependencies normal">normal</i>
+                    
+                
+            </a>
+        </li><li class="pure-menu-item"><a href="/indexmap/^2/" class="pure-menu-link">
+                indexmap ^2
+                
+                    <i class="dependencies normal">normal</i>
+                    
+                
+            </a>
+        </li><li class="pure-menu-item"><a href="/log/^0.4/" class="pure-menu-link">
+                log ^0.4
+                
+                    <i class="dependencies normal">normal</i>
+                    
+                
+            </a>
+        </li><li class="pure-menu-item"><a href="/rust_decimal/^1/" class="pure-menu-link">
+                rust_decimal ^1
+                
+                    <i class="dependencies normal">normal</i>
+                    
+                
+            </a>
+        </li><li class="pure-menu-item"><a href="/serde/^1/" class="pure-menu-link">
+                serde ^1
+                
+                    <i class="dependencies normal">normal</i>
+                    
+                
+            </a>
+        </li><li class="pure-menu-item"><a href="/serde_json/^1/" class="pure-menu-link">
+                serde_json ^1
+                
+                    <i class="dependencies normal">normal</i>
+                    
+                
+            </a>
+        </li><li class="pure-menu-item"><a href="/sqlx/^0.8/" class="pure-menu-link">
+                sqlx ^0.8
+                
+                    <i class="dependencies normal">normal</i>
+                    
+                
+            </a>
+        </li><li class="pure-menu-item"><a href="/tauri/^2.10/" class="pure-menu-link">
+                tauri ^2.10
+                
+                    <i class="dependencies normal">normal</i>
+                    
+                
+            </a>
+        </li><li class="pure-menu-item"><a href="/thiserror/^2/" class="pure-menu-link">
+                thiserror ^2
+                
+                    <i class="dependencies normal">normal</i>
+                    
+                
+            </a>
+        </li><li class="pure-menu-item"><a href="/time/^0.3/" class="pure-menu-link">
+                time ^0.3
+                
+                    <i class="dependencies normal">normal</i>
+                    
+                
+            </a>
+        </li><li class="pure-menu-item"><a href="/tokio/^1/" class="pure-menu-link">
+                tokio ^1
+                
+                    <i class="dependencies normal">normal</i>
+                    
+                
+            </a>
+        </li><li class="pure-menu-item"><a href="/uuid/^1/" class="pure-menu-link">
+                uuid ^1
+                
+                    <i class="dependencies normal">normal</i>
+                    
+                
+            </a>
+        </li><li class="pure-menu-item"><a href="/tauri-plugin/^2.5/" class="pure-menu-link">
+                tauri-plugin ^2.5
+                
+                    <i class="dependencies build">build</i>
+                    
+                
+            </a>
+        </li>
+                                    </ul>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="pure-u-1-2">
+                        <ul class="pure-menu-list">
+                            <li class="pure-menu-heading">Versions</li>
+
+                            <li class="pure-menu-item">
+                                <div class="pure-menu pure-menu-scrollable sub-menu" id="releases-list" tabindex="-1" data-url="/crate/tauri-plugin-sql/latest/menus/releases/tauri_plugin_sql/">
+                                    <span class="rotate"><span class="fa fa-solid fa-spinner " aria-hidden="true"></span></span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                    
+                    
+                    <div class="pure-g">
+                        <div class="pure-u-1">
+                            <ul class="pure-menu-list">
+                                <li>
+                                    <a href="/crate/tauri-plugin-sql/latest" class="pure-menu-link">
+                                        <b>17.39%</b>
+                                        of the crate is documented
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div></div>
+        </li><li class="pure-menu-item pure-menu-has-children">
+                <a href="#" class="pure-menu-link" aria-label="Platform">
+                    <span class="fa fa-solid fa-gears " aria-hidden="true"></span>
+                    <span class="title">Platform</span>
+                </a>
+
+                
+                <ul class="pure-menu-children" id="platforms" data-url="/crate/tauri-plugin-sql/latest/menus/platforms/tauri_plugin_sql/"><li class="pure-menu-item">
+            <a href="/crate/tauri-plugin-sql/latest/target-redirect/tauri_plugin_sql/" class="pure-menu-link" data-fragment="retain" rel="nofollow">x86_64-unknown-linux-gnu</a>
+        </li></ul>
+            </li><li class="pure-menu-item">
+                <a href="/crate/tauri-plugin-sql/latest/features" title="Browse available feature flags of tauri-plugin-sql-2.4.0" class="pure-menu-link">
+                    <span class="fa fa-solid fa-flag " aria-hidden="true"></span>
+                    <span class="title">Feature flags</span>
+                </a>
+            </li>
+        
+    
+</ul><div class="spacer"></div>
+                
+                <div id="abnormalities" class="hidden"></div>
+
+                <ul class="pure-menu-list">
+                    <li class="pure-menu-item pure-menu-has-children">
+                        <a href="#" class="pure-menu-link" aria-label="docs.rs">docs.rs</a>
+                        <ul class="pure-menu-children aligned-icons"><li class="pure-menu-item"><a class="pure-menu-link" href="/about"><span class="fa fa-solid fa-circle-info " aria-hidden="true"></span> About docs.rs</a></li><li class="pure-menu-item"><a class="pure-menu-link" href="/about/badges"><span class="fa fa-brands fa-fonticons " aria-hidden="true"></span> Badges</a></li><li class="pure-menu-item"><a class="pure-menu-link" href="/about/builds"><span class="fa fa-solid fa-gears " aria-hidden="true"></span> Builds</a></li><li class="pure-menu-item"><a class="pure-menu-link" href="/about/metadata"><span class="fa fa-solid fa-table " aria-hidden="true"></span> Metadata</a></li><li class="pure-menu-item"><a class="pure-menu-link" href="/about/redirections"><span class="fa fa-solid fa-road " aria-hidden="true"></span> Shorthand URLs</a></li><li class="pure-menu-item"><a class="pure-menu-link" href="/about/download"><span class="fa fa-solid fa-download " aria-hidden="true"></span> Download</a></li><li class="pure-menu-item"><a class="pure-menu-link" href="/about/rustdoc-json"><span class="fa fa-solid fa-file-code " aria-hidden="true"></span> Rustdoc JSON</a></li><li class="pure-menu-item"><a class="pure-menu-link" href="/releases/queue"><span class="fa fa-solid fa-gears " aria-hidden="true"></span> Build queue</a></li><li class="pure-menu-item"><a class="pure-menu-link" href="https://foundation.rust-lang.org/policies/privacy-policy/#docs.rs" target="_blank"><span class="fa fa-solid fa-shield-halved " aria-hidden="true"></span> Privacy policy</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <ul class="pure-menu-list"><li class="pure-menu-item pure-menu-has-children">
+                        <a href="#" class="pure-menu-link" aria-label="Rust">Rust</a>
+                        <ul class="pure-menu-children">
+                            <li class="pure-menu-item"><a class="pure-menu-link" href="https://www.rust-lang.org/" target="_blank">Rust website</a></li>
+                            <li class="pure-menu-item"><a class="pure-menu-link" href="https://doc.rust-lang.org/book/" target="_blank">The Book</a></li>
+
+                            <li class="pure-menu-item"><a class="pure-menu-link" href="https://doc.rust-lang.org/std/" target="_blank">Standard Library API Reference</a></li>
+
+                            <li class="pure-menu-item"><a class="pure-menu-link" href="https://doc.rust-lang.org/rust-by-example/" target="_blank">Rust by Example</a></li>
+
+                            <li class="pure-menu-item"><a class="pure-menu-link" href="https://doc.rust-lang.org/cargo/guide/" target="_blank">The Cargo Guide</a></li>
+
+                            <li class="pure-menu-item"><a class="pure-menu-link" href="https://doc.rust-lang.org/nightly/clippy" target="_blank">Clippy Documentation</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                
+                <div id="search-input-nav">
+                    <label for="nav-search">
+                        <span class="fa fa-solid fa-magnifying-glass " aria-hidden="true"></span>
+                    </label>
+
+                    
+                    
+                    <input id="nav-search" name="query" type="text" aria-label="Find crate by search query" tabindex="-1"
+                        placeholder="Find crate"
+                        >
+                </div>
+            </form>
+        </div>
+    </div>
+</div><div class="rustdoc mod crate container-rustdoc" id="rustdoc_body_wrapper" tabindex="-1"><script async src="/-/static/menu.js?0-0-0-f1b150f0cd76f7cabcd39e1f4790ba771b28b5c4-2026-07-19"></script>
+<script async src="/-/static/index.js?0-0-0-f1b150f0cd76f7cabcd39e1f4790ba771b28b5c4-2026-07-19"></script>
+
+<iframe src="/-/storage-change-detection.html" width="0" height="0" style="display: none"></iframe><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate tauri_plugin_sql</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><a class="logo-container" href="../tauri_plugin_sql/index.html"><img src="https://github.com/tauri-apps/tauri/raw/dev/app-icon.png" alt="logo"></a><h2><a href="../tauri_plugin_sql/index.html">tauri_<wbr>plugin_<wbr>sql</a><span class="version">2.4.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#structs">Crate Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1>Crate <span>tauri_<wbr>plugin_<wbr>sql</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/tauri_plugin_sql/lib.rs.html#5-187">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Interface with SQL databases through <a href="https://github.com/launchbadge/sqlx">sqlx</a>. It supports the <code>sqlite</code>, <code>mysql</code> and <code>postgres</code> drivers, enabled by a Cargo feature.</p>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Builder.html" title="struct tauri_plugin_sql::Builder">Builder</a></dt><dd>Tauri SQL plugin builder.</dd><dt><a class="struct" href="struct.DbInstances.html" title="struct tauri_plugin_sql::DbInstances">DbInstances</a></dt><dt><a class="struct" href="struct.Migration.html" title="struct tauri_plugin_sql::Migration">Migration</a></dt><dd>A migration definition.</dd><dt><a class="struct" href="struct.PluginConfig.html" title="struct tauri_plugin_sql::PluginConfig">Plugin<wbr>Config</a></dt></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.DbPool.html" title="enum tauri_plugin_sql::DbPool">DbPool</a></dt><dt><a class="enum" href="enum.Error.html" title="enum tauri_plugin_sql::Error">Error</a></dt><dt><a class="enum" href="enum.MigrationKind.html" title="enum tauri_plugin_sql::MigrationKind">Migration<wbr>Kind</a></dt></dl></section></div></main></div></body></html>
