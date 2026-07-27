@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import "./index.css";
+import { getDb, closeDb } from "./lib/db";
 
 type TabName = "home" | "ai";
 
@@ -8,12 +9,21 @@ function App() {
   const [password, setPassword] = useState("");
   const [activeTab, setActiveTab] = useState<TabName>("home");
 
-  const unlockApp = (event: FormEvent<HTMLFormElement>) => {
+  const unlockApp = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // TODO: implement password hashing and verification logic.
+    // TODO: implement password hashing/verification and key derivation.
+    // For now, this just opens the (unencrypted) connection so migrations
+    // run and CRUD milestones have something to build against.
+    await getDb();
     setIsLocked(false);
     setPassword("");
   };
+
+  const lockApp = async () => {
+    await closeDb();
+    setIsLocked(true);
+  };
+
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -71,7 +81,7 @@ function App() {
                 <span className="rounded-full border border-slate-800 bg-slate-950/80 px-3 py-1">Locked mode</span>
                 <button
                   type="button"
-                  onClick={() => setIsLocked(true)}
+                  onClick={lockApp}
                   className="rounded-2xl bg-slate-800 px-3 py-2 text-slate-300 transition hover:bg-slate-700"
                 >
                   Lock app
