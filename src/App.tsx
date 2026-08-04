@@ -1,4 +1,4 @@
-import React, { useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import "./index.css";
 import "./app.css";
 import UnlockScreen from "./components/UnlockScreen";

@@ -1,4 +1,4 @@
-import React from "react";
+
 import TabBar from "./TabBar";
 import HomeTab from "./HomeTab";
 import AITab from "./AITab";
