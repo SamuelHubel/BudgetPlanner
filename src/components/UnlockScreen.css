@@ -1,0 +1,9 @@
+/* UnlockScreen styles */
+.unlock-card { @apply mx-auto w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900/90 p-8 shadow-xl shadow-slate-950/30; }
+.unlock-title { @apply text-2xl font-semibold text-white; }
+.unlock-sub { @apply mt-2 text-sm text-slate-400; }
+.unlock-form { @apply mt-8 space-y-5; }
+.label { @apply block text-sm font-medium text-slate-300; }
+.input { @apply w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-slate-100 outline-none ring-1 ring-slate-800 transition focus:border-slate-400 focus:ring-slate-500; }
+.primary-btn { @apply inline-flex w-full justify-center rounded-2xl bg-sky-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-400; }
+.note-box { @apply mt-6 rounded-2xl border border-dashed border-slate-700 bg-slate-950/80 p-4 text-xs text-slate-500; }

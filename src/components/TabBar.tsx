@@ -1,7 +1,8 @@
 
 
-type TabName = "home" | "ai";
+import "./TabBar.css";
 
+type TabName = "home" | "ai";
 type Props = {
   activeTab: TabName;
   setActiveTab: (t: TabName) => void;

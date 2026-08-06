@@ -115,50 +115,13 @@ button {
   }
 }
 
-/* Tailwind-based component classes (use @apply to compose utilities) */
+/* Tailwind-based app-level classes (use @apply to compose utilities) */
 .app-shell { @apply min-h-screen bg-slate-950 text-slate-100; }
 .container { @apply mx-auto flex min-h-screen max-w-4xl flex-col px-4 py-10 sm:px-6 lg:px-8; }
 .header { @apply mb-8 flex items-center justify-between; }
 .brand-kicker { @apply text-sm uppercase tracking-[0.32em] text-slate-400; }
 .brand-title { @apply mt-2 text-3xl font-semibold text-white; }
 .tech-badge { @apply rounded-2xl border border-slate-800 bg-slate-900/80 px-4 py-3 text-sm text-slate-400; }
-
-/* Unlock screen */
-.unlock-card { @apply mx-auto w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900/90 p-8 shadow-xl shadow-slate-950/30; }
-.unlock-title { @apply text-2xl font-semibold text-white; }
-.unlock-sub { @apply mt-2 text-sm text-slate-400; }
-.unlock-form { @apply mt-8 space-y-5; }
-.label { @apply block text-sm font-medium text-slate-300; }
-.input { @apply w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-slate-100 outline-none ring-1 ring-slate-800 transition focus:border-slate-400 focus:ring-slate-500; }
-.primary-btn { @apply inline-flex w-full justify-center rounded-2xl bg-sky-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-400; }
-.note-box { @apply mt-6 rounded-2xl border border-dashed border-slate-700 bg-slate-950/80 p-4 text-xs text-slate-500; }
-
-/* Dashboard */
-.dashboard-root { @apply flex flex-1 flex-col rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-xl shadow-slate-950/40; }
-.dashboard-header { @apply flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between; }
-.kicker { @apply text-sm uppercase tracking-[0.32em] text-slate-400; }
-.dashboard-title { @apply mt-2 text-2xl font-semibold text-white; }
-.dashboard-actions { @apply flex flex-wrap items-center gap-3 text-sm text-slate-400; }
-.pill { @apply rounded-full border border-slate-800 bg-slate-950/80 px-3 py-1; }
-.muted-btn { @apply rounded-2xl bg-slate-800 px-3 py-2 text-slate-300 transition hover:bg-slate-700; }
-
-/* Panel and tabs */
-.panel { @apply mt-8 overflow-hidden rounded-3xl border border-slate-800 bg-slate-950/90; }
-.tabbar { @apply flex border-b border-slate-800 bg-slate-900/90 p-2; }
-.tab-item { @apply flex-1 rounded-2xl px-4 py-3 text-sm font-semibold transition; }
-.tab-item-active { @apply bg-slate-100 text-slate-950 shadow-sm; }
-.tab-item-inactive { @apply text-slate-400 hover:bg-slate-800 hover:text-slate-100; }
-.panel-body { @apply p-6 text-slate-200; }
-
-/* Tab content */
-.tab-content { @apply space-y-4; }
-.stack { @apply space-y-2; }
-.tab-title { @apply text-xl font-semibold text-white; }
-.tab-sub { @apply text-sm text-slate-400; }
-.grid-two { @apply grid gap-4 sm:grid-cols-2; }
-.card { @apply rounded-3xl border border-slate-800 bg-slate-950/80 p-4; }
-.card-kicker { @apply text-sm uppercase tracking-[0.24em] text-slate-500; }
-.card-body { @apply mt-3 text-sm text-slate-300; }
 
 /* small utilities */
 .text-muted { @apply text-slate-400; }

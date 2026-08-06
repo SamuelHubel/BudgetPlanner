@@ -1,6 +1,6 @@
-import { useState, type FormEvent } from "react";
+﻿import { useState, type FormEvent } from "react";
 import "./index.css";
-import "./app.css";
+import "./App.css";
 import UnlockScreen from "./components/UnlockScreen";
 import Dashboard from "./components/Dashboard";
 import { getDb, closeDb } from "./lib/db";

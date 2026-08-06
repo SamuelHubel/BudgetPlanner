@@ -1,5 +1,7 @@
 
 
+import "./HomeTab.css";
+
 export default function AITab() {
   return (
     <div className="tab-content">

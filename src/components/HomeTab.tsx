@@ -1,5 +1,7 @@
 
 
+import "./HomeTab.css";
+
 export default function HomeTab() {
   return (
     <div className="tab-content">

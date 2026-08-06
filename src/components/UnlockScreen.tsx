@@ -1,4 +1,5 @@
 import { type FormEvent } from "react";
+import "./UnlockScreen.css";
 
 type Props = {
   password: string;

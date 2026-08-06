@@ -1,0 +1,11 @@
+/* Dashboard styles */
+.dashboard-root { @apply flex flex-1 flex-col rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-xl shadow-slate-950/40; }
+.dashboard-header { @apply flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between; }
+.kicker { @apply text-sm uppercase tracking-[0.32em] text-slate-400; }
+.dashboard-title { @apply mt-2 text-2xl font-semibold text-white; }
+.dashboard-actions { @apply flex flex-wrap items-center gap-3 text-sm text-slate-400; }
+.pill { @apply rounded-full border border-slate-800 bg-slate-950/80 px-3 py-1; }
+.muted-btn { @apply rounded-2xl bg-slate-800 px-3 py-2 text-slate-300 transition hover:bg-slate-700; }
+
+.panel { @apply mt-8 overflow-hidden rounded-3xl border border-slate-800 bg-slate-950/90; }
+.panel-body { @apply p-6 text-slate-200; }
