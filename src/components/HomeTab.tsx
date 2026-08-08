@@ -1,4 +1,10 @@
-
+// This component will be used to display the users financial data in a dashboard format
+// Two pie charts, income and expenses across the top and category breakdowns across the bottom.
+// Users can import bank statements where their spending will be categorized and displayed
+// Some data will be processed for limited insights, such as
+// "You spent 20% more on groceries this month than last month" 
+// and/or
+// "You spent 10% less on groceries this month than last month"
 
 import "./HomeTab.css";
 

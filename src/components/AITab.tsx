@@ -1,4 +1,5 @@
-
+// This component will be used to display all of the AI features in the app
+// will send requests taken from chat box to the backend to be processsed by the AI or rules-based engine
 
 import "./HomeTab.css";
 

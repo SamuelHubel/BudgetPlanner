@@ -1,3 +1,6 @@
+// This component will be used to display users financial data in a dashboard format
+// This is the "background" component that will be used to display the HomeTab and AITab components on top of itself
+
 import "./Dashboard.css";
 import TabBar from "./TabBar";
 import HomeTab from "./HomeTab";

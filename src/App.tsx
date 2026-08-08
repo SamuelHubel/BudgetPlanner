@@ -1,4 +1,9 @@
-﻿import { useState, type FormEvent } from "react";
+﻿// This is the main entry point for the app. 
+// It will display the unlock screen if the app is locked,
+//  and the dashboard if the app is unlocked.
+
+
+import { useState, type FormEvent } from "react";
 import "./index.css";
 import "./App.css";
 import UnlockScreen from "./components/UnlockScreen";

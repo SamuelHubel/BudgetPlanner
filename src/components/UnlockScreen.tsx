@@ -1,3 +1,7 @@
+// This component will be used to display the unlock screen for the app
+// Users must enter a password to unlock the app
+// For now not encrypted, and any characters are valid
+
 import { type FormEvent } from "react";
 import "./UnlockScreen.css";
 

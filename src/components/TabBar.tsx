@@ -1,4 +1,5 @@
-
+// This component will be used to display the tab bar at the top of the dashboard
+// The tab bar will allow users to switch between the HomeTab and AITab components
 
 import "./TabBar.css";
 
