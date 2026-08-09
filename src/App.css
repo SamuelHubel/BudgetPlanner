@@ -114,3 +114,14 @@ button {
     background-color: #0f0f0f69;
   }
 }
+
+/* Tailwind-based app-level classes (use @apply to compose utilities) */
+.app-shell { @apply min-h-screen bg-slate-950 text-slate-100; }
+.container { @apply mx-auto flex min-h-screen max-w-4xl flex-col px-4 py-10 sm:px-6 lg:px-8; }
+.header { @apply mb-8 flex items-center justify-between; }
+.brand-kicker { @apply text-sm uppercase tracking-[0.32em] text-slate-400; }
+.brand-title { @apply mt-2 text-3xl font-semibold text-white; }
+.tech-badge { @apply rounded-2xl border border-slate-800 bg-slate-900/80 px-4 py-3 text-sm text-slate-400; }
+
+/* small utilities */
+.text-muted { @apply text-slate-400; }
