@@ -22,6 +22,12 @@ pub fn run() {
             sql: include_str!("../migrations/default_categories.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 3,
+            description: "default_keyword_categories",
+            sql: include_str!("../migrations/default_keyword_categories.sql"),
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

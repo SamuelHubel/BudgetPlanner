@@ -29,11 +29,18 @@ export async function categorizeTransactions(
 
   return transactions.map((transaction) => {
     const description = transaction.description.toLowerCase();
-    const match = mappings.find(({ keyword }) => description.includes(keyword.toLowerCase()));
+    const match = mappings
+      .filter(({ keyword }) => keyword.trim() !== "" && includesKeyword(description, keyword))
+      .sort((first, second) => second.keyword.length - first.keyword.length)[0];
     return match
       ? { ...transaction, categoryId: match.categoryId, categoryName: match.categoryName }
       : transaction;
   });
+}
+
+function includesKeyword(description: string, keyword: string): boolean {
+  const escapedKeyword = keyword.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^a-z0-9])${escapedKeyword}(?=$|[^a-z0-9])`).test(description);
 }
 
 export async function saveImportedTransactions(

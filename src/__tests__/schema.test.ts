@@ -36,4 +36,15 @@ describe("Database schema", () => {
       expect(contents).toContain(`'${category}'`);
     }
   });
+
+  it("seeds conservative merchant keywords for automatic transaction categorization", async () => {
+    const migrationPath = join(process.cwd(), "src-tauri", "migrations", "default_keyword_categories.sql");
+    const contents = await readFile(migrationPath, "utf-8");
+
+    expect(contents).toContain("'starbucks', 'Dining Out'");
+    expect(contents).toContain("'uber eats', 'Dining Out'");
+    expect(contents).toContain("'uber', 'Transportation'");
+    expect(contents).toContain("WHERE NOT EXISTS");
+    expect(contents).not.toContain("'payment', 'Other'");
+  });
 });
