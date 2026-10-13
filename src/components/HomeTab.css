@@ -7,3 +7,26 @@
 .card { @apply rounded-3xl border border-slate-800 bg-slate-950/80 p-4; }
 .card-kicker { @apply text-sm uppercase tracking-[0.24em] text-slate-500; }
 .card-body { @apply mt-3 text-sm text-slate-300; }
+.summary-chart { @apply min-w-0; }
+.summary-chart-heading { @apply flex items-start justify-between gap-3; }
+.summary-title { @apply mt-1 text-lg font-semibold text-white; }
+.summary-total { @apply text-lg text-white; }
+.chart-content { @apply mt-4 flex flex-col items-center gap-4 sm:flex-row; }
+.donut-chart { @apply relative h-36 w-36 shrink-0; }
+.donut-chart svg { @apply h-full w-full; }
+.chart-track { @apply fill-none stroke-slate-800; stroke-width: 20; }
+.chart-center { @apply absolute inset-0 flex items-center justify-center text-sm font-semibold text-white; }
+.chart-legend { @apply w-full space-y-2; }
+.chart-legend li { @apply flex items-center gap-2 text-sm text-slate-300; }
+.legend-swatch { @apply h-3 w-3 shrink-0 rounded-full; }
+.legend-name { @apply min-w-0 flex-1 truncate; }
+.legend-amount { @apply text-right tabular-nums; }
+.summary-empty { @apply py-3 text-sm text-slate-500; }
+.summary-error { @apply rounded-xl bg-rose-950/60 px-3 py-2 text-sm text-rose-200; }
+.source-card { @apply min-w-0; }
+.source-list { @apply mt-3 divide-y divide-slate-800; }
+.source-list li { @apply flex items-center justify-between gap-3 py-3 text-sm text-slate-200; }
+.source-list li > strong { @apply shrink-0 tabular-nums; }
+.source-description { @apply flex min-w-0 flex-col; }
+.source-description > span { @apply truncate; }
+.source-description small { @apply mt-1 text-xs text-slate-500; }

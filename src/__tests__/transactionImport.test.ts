@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type Database from "@tauri-apps/plugin-sql";
-import { categorizeTransactions } from "../lib/transactionImport";
+import { categorizeTransactions, saveImportedTransactions } from "../lib/transactionImport";
 import type { ParsedTransaction } from "../lib/csvParser";
 
 describe("categorizeTransactions", () => {
@@ -29,5 +29,28 @@ describe("categorizeTransactions", () => {
       [null, null],
       [null, null],
     ]);
+  });
+});
+
+describe("saveImportedTransactions", () => {
+  it("persists the category assigned during CSV review", async () => {
+    const execute = vi.fn()
+      .mockResolvedValueOnce({ lastInsertId: 12 })
+      .mockResolvedValueOnce({ rowsAffected: 1 });
+    const db = { execute } as unknown as Database;
+    const transaction: ParsedTransaction = {
+      date: "2026-01-05",
+      description: "Grocery store",
+      amount: -42,
+      categoryId: 7,
+      categoryName: "Groceries",
+    };
+
+    await saveImportedTransactions(db, "statement.csv", [transaction]);
+
+    expect(execute).toHaveBeenLastCalledWith(
+      expect.stringContaining("INSERT INTO transactions"),
+      [7, -42, "Grocery store", "2026-01-05", 12, expect.any(String)],
+    );
   });
 });

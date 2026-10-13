@@ -3,7 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 vi.mock("../lib/db", () => ({
-  getDb: vi.fn(async () => ({ close: vi.fn() })),
+  getDb: vi.fn(async () => ({ close: vi.fn(), select: vi.fn(async () => []) })),
   closeDb: vi.fn(async () => {}),
 }));
 
@@ -31,7 +31,7 @@ describe("App", () => {
 
     await waitFor(async () => {
       const mockedDb = await vi.importMock<typeof import("../lib/db")>("../lib/db");
-      expect(mockedDb.getDb).toHaveBeenCalledTimes(1);
+      expect(mockedDb.getDb).toHaveBeenCalledTimes(2);
       expect(screen.getByText(/your budget dashboard/i)).toBeInTheDocument();
     });
   });

@@ -9,7 +9,11 @@ import {
 } from "../lib/transactionImport";
 import "./TransactionImport.css";
 
-export default function TransactionImport() {
+type Props = {
+  onImported?: () => void;
+};
+
+export default function TransactionImport({ onImported }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [transactions, setTransactions] = useState<ParsedTransaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -70,6 +74,7 @@ export default function TransactionImport() {
       setStatus(`${transactions.length} transaction${transactions.length === 1 ? "" : "s"} imported.`);
       setTransactions([]);
       setFileName("");
+      onImported?.();
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Unable to save transactions.");
     } finally {
