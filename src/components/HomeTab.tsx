@@ -7,6 +7,7 @@
 // "You spent 10% less on groceries this month than last month"
 
 import "./HomeTab.css";
+import TransactionImport from "./TransactionImport";
 
 export default function HomeTab() {
   return (
@@ -26,6 +27,8 @@ export default function HomeTab() {
           <p className="card-body">Use the AI tab for future planning and recommendations.</p>
         </div>
       </div>
+
+      <TransactionImport />
     </div>
   );
 }

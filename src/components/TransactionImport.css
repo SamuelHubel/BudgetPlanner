@@ -1,0 +1,14 @@
+.import-card { @apply mt-4; }
+.import-heading { @apply flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between; }
+.import-title { @apply mt-1 text-lg font-semibold text-white; }
+.hidden-file-input { @apply hidden; }
+.primary-btn { @apply rounded-2xl bg-cyan-500 px-4 py-2 font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-50; }
+.import-message { @apply mt-3 rounded-xl px-3 py-2 text-sm; }
+.import-error { @apply bg-rose-950/60 text-rose-200; }
+.import-success { @apply bg-emerald-950/60 text-emerald-200; }
+.transaction-table-wrap { @apply mt-4 max-h-96 overflow-auto rounded-2xl border border-slate-800; }
+.transaction-table { @apply w-full text-left text-sm; }
+.transaction-table th { @apply sticky top-0 bg-slate-900 px-3 py-2 font-medium text-slate-400; }
+.transaction-table td { @apply border-t border-slate-800 px-3 py-2 text-slate-300; }
+.transaction-table select { @apply rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-slate-200; }
+.import-confirm { @apply mt-4; }

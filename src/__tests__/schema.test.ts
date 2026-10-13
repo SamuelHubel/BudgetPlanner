@@ -15,4 +15,36 @@ describe("Database schema", () => {
     expect(contents).toContain("CREATE TABLE ai_insights_log");
     expect(contents).toContain("CREATE TABLE keyword_category_map");
   });
+
+  it("seeds common categories for statement imports", async () => {
+    const migrationPath = join(process.cwd(), "src-tauri", "migrations", "default_categories.sql");
+    const contents = await readFile(migrationPath, "utf-8");
+
+    for (const category of [
+      "Housing",
+      "Groceries",
+      "Pay",
+      "Dining Out",
+      "Transportation",
+      "Utilities",
+      "Healthcare",
+      "Shopping",
+      "Entertainment",
+      "Personal Care",
+      "Other",
+    ]) {
+      expect(contents).toContain(`'${category}'`);
+    }
+  });
+
+  it("seeds conservative merchant keywords for automatic transaction categorization", async () => {
+    const migrationPath = join(process.cwd(), "src-tauri", "migrations", "default_keyword_categories.sql");
+    const contents = await readFile(migrationPath, "utf-8");
+
+    expect(contents).toContain("'starbucks', 'Dining Out'");
+    expect(contents).toContain("'uber eats', 'Dining Out'");
+    expect(contents).toContain("'uber', 'Transportation'");
+    expect(contents).toContain("WHERE NOT EXISTS");
+    expect(contents).not.toContain("'payment', 'Other'");
+  });
 });
