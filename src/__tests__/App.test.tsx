@@ -20,6 +20,8 @@ describe("App", () => {
     expect(screen.getByText(/unlock your budget vault/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /unlock/i })).toBeInTheDocument();
+    expect(screen.queryByText(/secure desktop budget app/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/tauri \+ react \+ tailwind/i)).not.toBeInTheDocument();
   });
 
   it("opens the database and shows the dashboard after unlocking", async () => {

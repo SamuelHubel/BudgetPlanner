@@ -9,9 +9,9 @@ const { categories, transactions } = vi.hoisted(() => ({
     { id: 3, name: "Housing", type: "expense", color: null },
   ],
   transactions: [
-    { categoryId: 1, amount: 2500, description: "Paycheck" },
-    { categoryId: 2, amount: -75, description: "Market" },
-    { categoryId: 3, amount: -900, description: "Rent" },
+    { categoryId: 1, amount: 2500, description: "Paycheck", date: "2026-01-15" },
+    { categoryId: 2, amount: -75, description: "Market", date: "2026-01-18" },
+    { categoryId: 3, amount: -900, description: "Rent", date: "2026-02-01" },
   ],
 }));
 
@@ -35,8 +35,11 @@ describe("HomeTab category charts", () => {
     render(<HomeTab />);
 
     await screen.findByRole("heading", { name: "Expenses" });
+    expect(screen.queryByText("By category")).not.toBeInTheDocument();
+    expect(screen.queryByText("Largest sources")).not.toBeInTheDocument();
     const expenses = within(screen.getByRole("region", { name: "Expenses" }));
-    const groceries = within(expenses.getByRole("list")).getByRole("button", { name: "Groceries: $75.00" });
+    const groceries = within(expenses.getByRole("list")).getByRole("button", { name: "Groceries" });
+    expect(groceries).not.toHaveTextContent("$75.00");
     await user.hover(groceries);
 
     expect(screen.getByRole("status")).toHaveTextContent("Groceries");
@@ -52,12 +55,12 @@ describe("HomeTab category charts", () => {
 
     await screen.findByRole("heading", { name: "Expenses" });
     const expenses = within(screen.getByRole("region", { name: "Expenses" }));
-    const groceries = within(expenses.getByRole("list")).getByRole("button", { name: "Groceries: $75.00" });
+    const groceries = within(expenses.getByRole("list")).getByRole("button", { name: "Groceries" });
     await user.click(groceries);
 
     expect(groceries).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("status")).toHaveTextContent("Groceries");
-    expect(within(expenses.getByRole("list")).getByRole("button", { name: "Housing: $900.00" })).toHaveAttribute("aria-pressed", "false");
+    expect(within(expenses.getByRole("list")).getByRole("button", { name: "Housing" })).toHaveAttribute("aria-pressed", "false");
   });
 
   it("selects a category directly from its chart segment", async () => {
@@ -72,5 +75,20 @@ describe("HomeTab category charts", () => {
     expect(groceries).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("status")).toHaveTextContent("Groceries");
     expect(screen.getByRole("status")).toHaveTextContent("$75.00");
+  });
+
+  it("shows monthly income and expenses from categorized transaction dates", async () => {
+    render(<HomeTab />);
+
+    const monthlyChart = await screen.findByRole("region", { name: "Income and expenses by month" });
+    const incomeChart = within(screen.getByRole("region", { name: "Income" }));
+
+    expect(within(incomeChart.getByRole("group", { name: /Income chart/ })).getByText("$2,500.00")).toBeInTheDocument();
+    expect(within(monthlyChart).getByRole("listitem", {
+      name: "Jan 2026: income $2,500.00, expenses $75.00",
+    })).toBeInTheDocument();
+    expect(within(monthlyChart).getByRole("listitem", {
+      name: "Feb 2026: income $0.00, expenses $900.00",
+    })).toBeInTheDocument();
   });
 });

@@ -1,11 +1,3 @@
-// This component will be used to display the users financial data in a dashboard format
-// Two pie charts, income and expenses across the top and category breakdowns across the bottom.
-// Users can import bank statements where their spending will be categorized and displayed
-// Some data will be processed for limited insights, such as
-// "You spent 20% more on groceries this month than last month" 
-// and/or
-// "You spent 10% less on groceries this month than last month"
-
 import { useEffect, useState } from "react";
 import { getDb } from "../lib/db";
 import {
@@ -13,6 +5,7 @@ import {
   type CategoryTotal,
   type FinancialSource,
   type FinancialSummary,
+  type MonthlyTotal,
 } from "../lib/financialSummary";
 import "./HomeTab.css";
 import TransactionImport from "./TransactionImport";
@@ -42,7 +35,6 @@ function SummaryChart({ title, categories }: { title: string; categories: Catego
     <section className="card summary-chart" aria-labelledby={`${title.toLowerCase()}-chart-title`}>
       <div className="summary-chart-heading">
         <div>
-          <p className="card-kicker">By category</p>
           <h4 className="summary-title" id={`${title.toLowerCase()}-chart-title`}>{title}</h4>
         </div>
         <strong className="summary-total">{currency.format(total)}</strong>
@@ -97,12 +89,12 @@ function SummaryChart({ title, categories }: { title: string; categories: Catego
           )}
         </div>
         <ul className="chart-legend">
-          {categories.map(({ category, amount }, index) => (
+          {categories.map(({ category }, index) => (
             <li key={category.id}>
               <button
                 type="button"
                 className={`legend-button${category.id === activeCategoryId ? " is-active" : ""}`}
-                aria-label={`${category.name}: ${currency.format(amount)}`}
+                aria-label={category.name}
                 aria-pressed={selectedCategoryId === category.id}
                 onMouseEnter={() => setHoveredCategoryId(category.id)}
                 onMouseLeave={() => setHoveredCategoryId(null)}
@@ -116,7 +108,6 @@ function SummaryChart({ title, categories }: { title: string; categories: Catego
                   aria-hidden="true"
                 />
                 <span className="legend-name">{category.name}</span>
-                <span className="legend-amount">{currency.format(amount)}</span>
               </button>
             </li>
           ))}
@@ -132,7 +123,6 @@ function SourceList({ title, sources }: { title: string; sources: FinancialSourc
 
   return (
     <section className="card source-card" aria-labelledby={headingId}>
-      <p className="card-kicker">Largest sources</p>
       <h4 className="summary-title" id={headingId}>{title}</h4>
       {sources.length > 0 ? (
         <ol className="source-list">
@@ -148,6 +138,53 @@ function SourceList({ title, sources }: { title: string; sources: FinancialSourc
         </ol>
       ) : (
         <p className="summary-empty">No categorized activity yet.</p>
+      )}
+    </section>
+  );
+}
+
+function MonthlyBarChart({ totals }: { totals: MonthlyTotal[] }) {
+  const maxAmount = Math.max(0, ...totals.flatMap(({ income, expenses }) => [income, expenses]));
+
+  return (
+    <section className="card monthly-chart" aria-labelledby="monthly-chart-title">
+      <h4 className="summary-title" id="monthly-chart-title">Income and expenses by month</h4>
+      <div className="monthly-chart-legend" aria-label="Chart legend">
+        <span><i className="monthly-bar-income" aria-hidden="true" />Income</span>
+        <span><i className="monthly-bar-expenses" aria-hidden="true" />Expenses</span>
+      </div>
+      {totals.length > 0 ? (
+        <ol className="monthly-bars" aria-label="Monthly income and expenses">
+          {totals.map(({ month, income, expenses }) => {
+            const [year, monthNumber] = month.split("-").map(Number);
+            const label = new Date(year, monthNumber - 1).toLocaleDateString(undefined, {
+              month: "short",
+              year: "numeric",
+            });
+
+            return (
+              <li
+                className="monthly-bar-group"
+                key={month}
+                aria-label={`${label}: income ${currency.format(income)}, expenses ${currency.format(expenses)}`}
+              >
+                <div className="monthly-bar-pair" aria-hidden="true">
+                  <span
+                    className="monthly-bar monthly-bar-income"
+                    style={{ height: `${maxAmount > 0 ? (income / maxAmount) * 100 : 0}%` }}
+                  />
+                  <span
+                    className="monthly-bar monthly-bar-expenses"
+                    style={{ height: `${maxAmount > 0 ? (expenses / maxAmount) * 100 : 0}%` }}
+                  />
+                </div>
+                <span className="monthly-bar-label">{label}</span>
+              </li>
+            );
+          })}
+        </ol>
+      ) : (
+        <p className="summary-empty">Monthly totals will appear as categorized statements are imported.</p>
       )}
     </section>
   );
@@ -187,7 +224,7 @@ export default function HomeTab() {
     <div className="tab-content">
       <div className="stack">
         <h3 className="tab-title">Home</h3>
-        <p className="tab-sub">Your income and expenses, organized by category.</p>
+        <p className="tab-sub">Your income and expenses, organized by category and month.</p>
       </div>
 
       {error && <p className="summary-error" role="alert">Unable to load financial data: {error}</p>}
@@ -202,6 +239,7 @@ export default function HomeTab() {
             <SourceList title="Largest income sources" sources={summary.largestIncomeSources} />
             <SourceList title="Largest expenses" sources={summary.largestExpenses} />
           </div>
+          <MonthlyBarChart totals={summary.monthlyTotals} />
         </>
       )}
 

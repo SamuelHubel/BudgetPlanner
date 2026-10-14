@@ -11,6 +11,7 @@ type FinancialTransaction = {
   categoryId: number | null;
   amount: number;
   description: string | null;
+  date?: string;
 };
 
 export type FinancialSource = {
@@ -24,11 +25,18 @@ export type CategoryTotal = {
   amount: number;
 };
 
+export type MonthlyTotal = {
+  month: string;
+  income: number;
+  expenses: number;
+};
+
 export type FinancialSummary = {
   income: CategoryTotal[];
   expenses: CategoryTotal[];
   largestIncomeSources: FinancialSource[];
   largestExpenses: FinancialSource[];
+  monthlyTotals: MonthlyTotal[];
 };
 
 export async function loadFinancialSummary(db: Database): Promise<FinancialSummary> {
@@ -37,7 +45,7 @@ export async function loadFinancialSummary(db: Database): Promise<FinancialSumma
       "SELECT id, name, type, color FROM categories ORDER BY name",
     ),
     db.select<FinancialTransaction[]>(
-      `SELECT category_id AS categoryId, amount, description
+      `SELECT category_id AS categoryId, amount, description, date
        FROM transactions
        WHERE category_id IS NOT NULL`,
     ),
@@ -55,6 +63,7 @@ export function createFinancialSummary(
   const expenseTotals = new Map<number, number>();
   const incomeSources = new Map<string, FinancialSource>();
   const expenseSources = new Map<string, FinancialSource>();
+  const monthlyTotals = new Map<string, MonthlyTotal>();
 
   for (const transaction of transactions) {
     if (transaction.categoryId === null || !Number.isFinite(transaction.amount)) continue;
@@ -65,6 +74,17 @@ export function createFinancialSummary(
     const isIncome = category.type === "income";
     const totals = isIncome ? incomeTotals : expenseTotals;
     totals.set(category.id, (totals.get(category.id) ?? 0) + amount);
+
+    const month = transaction.date ? getMonthKey(transaction.date) : null;
+    if (month) {
+      const monthlyTotal = monthlyTotals.get(month) ?? { month, income: 0, expenses: 0 };
+      if (isIncome) {
+        monthlyTotal.income += amount;
+      } else {
+        monthlyTotal.expenses += amount;
+      }
+      monthlyTotals.set(month, monthlyTotal);
+    }
 
     const description = transaction.description?.trim();
     if (!description) continue;
@@ -100,5 +120,18 @@ export function createFinancialSummary(
     expenses: toCategoryTotals(expenseTotals, "expense"),
     largestIncomeSources: largestSources(incomeSources),
     largestExpenses: largestSources(expenseSources),
+    monthlyTotals: [...monthlyTotals.values()].sort((first, second) => first.month.localeCompare(second.month)),
   };
+}
+
+function getMonthKey(date: string): string | null {
+  const isoDate = /^(\d{4})-(\d{2})/.exec(date);
+  if (isoDate) {
+    const month = Number(isoDate[2]);
+    return month >= 1 && month <= 12 ? `${isoDate[1]}-${isoDate[2]}` : null;
+  }
+
+  const parsedDate = new Date(date);
+  if (Number.isNaN(parsedDate.getTime())) return null;
+  return `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, "0")}`;
 }

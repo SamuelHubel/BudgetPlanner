@@ -3,16 +3,16 @@
 .stack { @apply space-y-2; }
 .tab-title { @apply text-xl font-semibold text-white; }
 .tab-sub { @apply text-sm text-slate-400; }
-.grid-two { @apply grid gap-4 sm:grid-cols-2; }
+.grid-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 1rem; align-items: stretch; }
 .card { @apply rounded-3xl border border-slate-800 bg-slate-950/80 p-4; }
 .card-kicker { @apply text-sm uppercase tracking-[0.24em] text-slate-500; }
 .card-body { @apply mt-3 text-sm text-slate-300; }
-.summary-chart { @apply min-w-0; }
+.summary-chart { @apply min-w-0; display: flex; flex-direction: column; container-type: inline-size; }
 .summary-chart-heading { @apply flex items-start justify-between gap-3; }
 .summary-title { @apply mt-1 text-lg font-semibold text-white; }
 .summary-total { @apply text-lg text-white; }
-.chart-content { @apply mt-4 flex flex-col items-center gap-4 sm:flex-row; }
-.donut-chart { @apply relative h-36 w-36 shrink-0; }
+.chart-content { @apply mt-4 grid items-center justify-items-center gap-4; grid-template-columns: minmax(0, 1fr); flex: 1; align-content: center; }
+.donut-chart { @apply relative aspect-square w-36 shrink-0; }
 .donut-chart svg { @apply h-full w-full; }
 .chart-track { @apply fill-none stroke-slate-800; stroke-width: 20; }
 .chart-segment { @apply cursor-pointer transition-all duration-150; }
@@ -22,19 +22,34 @@
 .chart-popup { @apply pointer-events-none absolute inset-[22%] z-10 flex flex-col items-center justify-center rounded-full border border-slate-700 bg-slate-950/95 px-2 text-center shadow-lg; }
 .chart-popup > span { @apply max-w-full truncate text-xs text-slate-300; }
 .chart-popup > strong { @apply mt-1 text-sm font-semibold tabular-nums text-white; }
-.chart-legend { @apply w-full space-y-2; }
+.chart-legend { @apply w-full min-w-0 space-y-2; }
 .chart-legend li { @apply text-sm text-slate-300; }
 .legend-button { @apply flex w-full items-center gap-2 rounded-lg text-left transition hover:bg-slate-800/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400; }
 .legend-button.is-active { @apply bg-slate-800/70 text-white; }
 .legend-swatch { @apply h-3 w-3 shrink-0 rounded-full; }
 .legend-name { @apply min-w-0 flex-1 truncate; }
-.legend-amount { @apply text-right tabular-nums; }
 .summary-empty { @apply py-3 text-sm text-slate-500; }
 .summary-error { @apply rounded-xl bg-rose-950/60 px-3 py-2 text-sm text-rose-200; }
 .source-card { @apply min-w-0; }
 .source-list { @apply mt-3 divide-y divide-slate-800; }
 .source-list li { @apply flex items-center justify-between gap-3 py-3 text-sm text-slate-200; }
 .source-list li > strong { @apply shrink-0 tabular-nums; }
-.source-description { @apply flex min-w-0 flex-col; }
+.source-description { @apply flex min-w-0 flex-col items-start text-left; }
 .source-description > span { @apply truncate; }
 .source-description small { @apply mt-1 text-xs text-slate-500; }
+.monthly-chart { @apply min-w-0; }
+.monthly-chart > .summary-title { @apply mt-0; }
+.monthly-chart-legend { @apply mt-3 flex flex-wrap gap-4 text-sm text-slate-300; }
+.monthly-chart-legend > span { @apply flex items-center gap-2; }
+.monthly-chart-legend i { @apply inline-block h-3 w-3 rounded-sm; }
+.monthly-bars { @apply mt-4 grid auto-cols-[minmax(3.5rem,1fr)] grid-flow-col gap-2 overflow-x-auto pb-2; }
+.monthly-bar-group { @apply min-w-0 text-center; }
+.monthly-bar-pair { @apply flex h-48 items-end justify-center gap-1 border-b border-slate-700; }
+.monthly-bar { @apply block w-4 rounded-t-sm; min-height: 0; }
+.monthly-bar-income { @apply bg-cyan-400; }
+.monthly-bar-expenses { @apply bg-violet-400; }
+.monthly-bar-label { @apply mt-2 block truncate text-xs text-slate-400; }
+
+@container (min-width: 26rem) {
+  .chart-content { grid-template-columns: 9rem minmax(0, 1fr); justify-items: stretch; }
+}

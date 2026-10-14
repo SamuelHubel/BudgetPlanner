@@ -44,7 +44,23 @@ describe("createFinancialSummary", () => {
       expenses: [],
       largestIncomeSources: [],
       largestExpenses: [],
+      monthlyTotals: [],
     });
+  });
+
+  it("groups categorized transactions into ordered monthly income and expense totals", () => {
+    const summary = createFinancialSummary(categories, [
+      { categoryId: 1, amount: 2500, description: "Paycheck", date: "2026-02-01" },
+      { categoryId: 2, amount: -75, description: "Market", date: "2026-02-12" },
+      { categoryId: 3, amount: -900, description: "Rent", date: "2026-01-03" },
+      { categoryId: null, amount: 1000, description: "Uncategorized", date: "2026-02-18" },
+      { categoryId: 2, amount: -20, description: "Invalid date", date: "not a date" },
+    ]);
+
+    expect(summary.monthlyTotals).toEqual([
+      { month: "2026-01", income: 0, expenses: 900 },
+      { month: "2026-02", income: 2500, expenses: 75 },
+    ]);
   });
 });
 
@@ -53,13 +69,16 @@ describe("loadFinancialSummary", () => {
     const select = vi.fn()
       .mockResolvedValueOnce(categories)
       .mockResolvedValueOnce([
-        { categoryId: 1, amount: 1250, description: "Employer" },
-        { categoryId: 2, amount: -35, description: "Market" },
+        { categoryId: 1, amount: 1250, description: "Employer", date: "2026-03-01" },
+        { categoryId: 2, amount: -35, description: "Market", date: "2026-03-02" },
       ]);
     const summary = await loadFinancialSummary({ select } as unknown as Database);
 
     expect(select).toHaveBeenCalledTimes(2);
     expect(summary.income[0]).toMatchObject({ category: { name: "Pay" }, amount: 1250 });
     expect(summary.expenses[0]).toMatchObject({ category: { name: "Groceries" }, amount: 35 });
+    expect(summary.monthlyTotals).toEqual([
+      { month: "2026-03", income: 1250, expenses: 35 },
+    ]);
   });
 });
