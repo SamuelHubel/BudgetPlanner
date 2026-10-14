@@ -31,12 +31,20 @@ export type MonthlyTotal = {
   expenses: number;
 };
 
-export type FinancialSummary = {
+export type FinancialBreakdown = {
   income: CategoryTotal[];
   expenses: CategoryTotal[];
   largestIncomeSources: FinancialSource[];
   largestExpenses: FinancialSource[];
+};
+
+export type MonthlyBreakdown = FinancialBreakdown & {
+  month: string;
+};
+
+export type FinancialSummary = FinancialBreakdown & {
   monthlyTotals: MonthlyTotal[];
+  monthlyBreakdowns: MonthlyBreakdown[];
 };
 
 export async function loadFinancialSummary(db: Database): Promise<FinancialSummary> {
@@ -46,8 +54,7 @@ export async function loadFinancialSummary(db: Database): Promise<FinancialSumma
     ),
     db.select<FinancialTransaction[]>(
       `SELECT category_id AS categoryId, amount, description, date
-       FROM transactions
-       WHERE category_id IS NOT NULL`,
+       FROM transactions`,
     ),
   ]);
 
@@ -58,12 +65,52 @@ export function createFinancialSummary(
   categories: FinancialCategory[],
   transactions: FinancialTransaction[],
 ): FinancialSummary {
+  const transactionsByMonth = new Map<string, FinancialTransaction[]>();
+  const monthlyTotals = new Map<string, MonthlyTotal>();
+
+  for (const transaction of transactions) {
+    const month = transaction.date ? getMonthKey(transaction.date) : null;
+    if (!month) continue;
+
+    const monthTransactions = transactionsByMonth.get(month) ?? [];
+    monthTransactions.push(transaction);
+    transactionsByMonth.set(month, monthTransactions);
+
+    const monthlyTotal = monthlyTotals.get(month) ?? { month, income: 0, expenses: 0 };
+    if (Number.isFinite(transaction.amount) && transaction.amount !== 0 && transaction.categoryId !== null) {
+      const category = categories.find(({ id }) => id === transaction.categoryId);
+      if (category) {
+        if (category.type === "income") {
+          monthlyTotal.income += Math.abs(transaction.amount);
+        } else {
+          monthlyTotal.expenses += Math.abs(transaction.amount);
+        }
+      }
+    }
+    monthlyTotals.set(month, monthlyTotal);
+  }
+
+  return {
+    ...createFinancialBreakdown(categories, transactions),
+    monthlyTotals: [...monthlyTotals.values()].sort((first, second) => first.month.localeCompare(second.month)),
+    monthlyBreakdowns: [...transactionsByMonth.entries()]
+      .sort(([first], [second]) => first.localeCompare(second))
+      .map(([month, monthTransactions]) => ({
+        month,
+        ...createFinancialBreakdown(categories, monthTransactions),
+      })),
+  };
+}
+
+function createFinancialBreakdown(
+  categories: FinancialCategory[],
+  transactions: FinancialTransaction[],
+): FinancialBreakdown {
   const categoriesById = new Map(categories.map((category) => [category.id, category]));
   const incomeTotals = new Map<number, number>();
   const expenseTotals = new Map<number, number>();
   const incomeSources = new Map<string, FinancialSource>();
   const expenseSources = new Map<string, FinancialSource>();
-  const monthlyTotals = new Map<string, MonthlyTotal>();
 
   for (const transaction of transactions) {
     if (transaction.categoryId === null || !Number.isFinite(transaction.amount)) continue;
@@ -74,17 +121,6 @@ export function createFinancialSummary(
     const isIncome = category.type === "income";
     const totals = isIncome ? incomeTotals : expenseTotals;
     totals.set(category.id, (totals.get(category.id) ?? 0) + amount);
-
-    const month = transaction.date ? getMonthKey(transaction.date) : null;
-    if (month) {
-      const monthlyTotal = monthlyTotals.get(month) ?? { month, income: 0, expenses: 0 };
-      if (isIncome) {
-        monthlyTotal.income += amount;
-      } else {
-        monthlyTotal.expenses += amount;
-      }
-      monthlyTotals.set(month, monthlyTotal);
-    }
 
     const description = transaction.description?.trim();
     if (!description) continue;
@@ -120,7 +156,6 @@ export function createFinancialSummary(
     expenses: toCategoryTotals(expenseTotals, "expense"),
     largestIncomeSources: largestSources(incomeSources),
     largestExpenses: largestSources(expenseSources),
-    monthlyTotals: [...monthlyTotals.values()].sort((first, second) => first.month.localeCompare(second.month)),
   };
 }
 

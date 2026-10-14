@@ -35,6 +35,7 @@ describe("HomeTab category charts", () => {
     render(<HomeTab />);
 
     await screen.findByRole("heading", { name: "Expenses" });
+    await user.click(screen.getByRole("button", { name: "January 2026" }));
     expect(screen.queryByText("By category")).not.toBeInTheDocument();
     expect(screen.queryByText("Largest sources")).not.toBeInTheDocument();
     const expenses = within(screen.getByRole("region", { name: "Expenses" }));
@@ -54,13 +55,13 @@ describe("HomeTab category charts", () => {
     render(<HomeTab />);
 
     await screen.findByRole("heading", { name: "Expenses" });
+    await user.click(screen.getByRole("button", { name: "January 2026" }));
     const expenses = within(screen.getByRole("region", { name: "Expenses" }));
     const groceries = within(expenses.getByRole("list")).getByRole("button", { name: "Groceries" });
     await user.click(groceries);
 
     expect(groceries).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("status")).toHaveTextContent("Groceries");
-    expect(within(expenses.getByRole("list")).getByRole("button", { name: "Housing" })).toHaveAttribute("aria-pressed", "false");
   });
 
   it("selects a category directly from its chart segment", async () => {
@@ -68,6 +69,7 @@ describe("HomeTab category charts", () => {
     render(<HomeTab />);
 
     await screen.findByRole("heading", { name: "Expenses" });
+    await user.click(screen.getByRole("button", { name: "January 2026" }));
     const expensesChart = within(screen.getByRole("group", { name: /Expenses chart/ }));
     const groceries = expensesChart.getByRole("button", { name: "Groceries: $75.00" });
     await user.click(groceries);
@@ -77,18 +79,32 @@ describe("HomeTab category charts", () => {
     expect(screen.getByRole("status")).toHaveTextContent("$75.00");
   });
 
-  it("shows monthly income and expenses from categorized transaction dates", async () => {
+  it("defaults to the latest tracked month and replots income and expenses when a month is selected", async () => {
+    const user = userEvent.setup();
     render(<HomeTab />);
 
     const monthlyChart = await screen.findByRole("region", { name: "Income and expenses by month" });
-    const incomeChart = within(screen.getByRole("region", { name: "Income" }));
-
-    expect(within(incomeChart.getByRole("group", { name: /Income chart/ })).getByText("$2,500.00")).toBeInTheDocument();
+    const monthList = within(screen.getByRole("region", { name: "Tracked months" }));
+    const february = monthList.getByRole("button", { name: "February 2026" });
+    const january = monthList.getByRole("button", { name: "January 2026" });
+    expect(february).toHaveAttribute("aria-pressed", "true");
+    expect(january).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByText("Showing income and expenses for February 2026")).toBeInTheDocument();
+    expect(within(screen.getByRole("group", { name: /Income chart/ })).getByText("$0.00")).toBeInTheDocument();
+    expect(within(screen.getByRole("group", { name: /Expenses chart/ })).getByText("$900.00")).toBeInTheDocument();
     expect(within(monthlyChart).getByRole("listitem", {
       name: "Jan 2026: income $2,500.00, expenses $75.00",
     })).toBeInTheDocument();
     expect(within(monthlyChart).getByRole("listitem", {
       name: "Feb 2026: income $0.00, expenses $900.00",
     })).toBeInTheDocument();
+
+    await user.click(january);
+
+    expect(january).toHaveAttribute("aria-pressed", "true");
+    expect(february).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByText("Showing income and expenses for January 2026")).toBeInTheDocument();
+    expect(within(screen.getByRole("group", { name: /Income chart/ })).getByText("$2,500.00")).toBeInTheDocument();
+    expect(within(screen.getByRole("group", { name: /Expenses chart/ })).getByText("$75.00")).toBeInTheDocument();
   });
 });

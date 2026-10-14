@@ -45,6 +45,7 @@ describe("createFinancialSummary", () => {
       largestIncomeSources: [],
       largestExpenses: [],
       monthlyTotals: [],
+      monthlyBreakdowns: [],
     });
   });
 
@@ -61,6 +62,27 @@ describe("createFinancialSummary", () => {
       { month: "2026-01", income: 0, expenses: 900 },
       { month: "2026-02", income: 2500, expenses: 75 },
     ]);
+    expect(summary.monthlyBreakdowns.map(({ month, income, expenses }) => [
+      month,
+      income.map(({ category, amount }) => [category.name, amount]),
+      expenses.map(({ category, amount }) => [category.name, amount]),
+    ])).toEqual([
+      ["2026-01", [], [["Housing", 900]]],
+      ["2026-02", [["Pay", 2500]], [["Groceries", 75]]],
+    ]);
+  });
+
+  it("tracks months that contain only uncategorized transactions", () => {
+    const summary = createFinancialSummary(categories, [
+      { categoryId: null, amount: -20, description: "Uncategorized", date: "2026-03-12" },
+    ]);
+
+    expect(summary.monthlyTotals).toEqual([
+      { month: "2026-03", income: 0, expenses: 0 },
+    ]);
+    expect(summary.monthlyBreakdowns).toMatchObject([
+      { month: "2026-03", income: [], expenses: [] },
+    ]);
   });
 });
 
@@ -71,6 +93,7 @@ describe("loadFinancialSummary", () => {
       .mockResolvedValueOnce([
         { categoryId: 1, amount: 1250, description: "Employer", date: "2026-03-01" },
         { categoryId: 2, amount: -35, description: "Market", date: "2026-03-02" },
+        { categoryId: null, amount: -10, description: "Uncategorized", date: "2026-04-02" },
       ]);
     const summary = await loadFinancialSummary({ select } as unknown as Database);
 
@@ -79,6 +102,8 @@ describe("loadFinancialSummary", () => {
     expect(summary.expenses[0]).toMatchObject({ category: { name: "Groceries" }, amount: 35 });
     expect(summary.monthlyTotals).toEqual([
       { month: "2026-03", income: 1250, expenses: 35 },
+      { month: "2026-04", income: 0, expenses: 0 },
     ]);
+    expect(summary.monthlyBreakdowns.map(({ month }) => month)).toEqual(["2026-03", "2026-04"]);
   });
 });

@@ -5,6 +5,7 @@ import {
   type CategoryTotal,
   type FinancialSource,
   type FinancialSummary,
+  type MonthlyBreakdown,
   type MonthlyTotal,
 } from "../lib/financialSummary";
 import "./HomeTab.css";
@@ -143,6 +144,51 @@ function SourceList({ title, sources }: { title: string; sources: FinancialSourc
   );
 }
 
+function formatMonth(month: string, monthStyle: "long" | "short" = "long"): string {
+  const [year, monthNumber] = month.split("-").map(Number);
+  return new Date(year, monthNumber - 1, 1).toLocaleDateString(undefined, {
+    month: monthStyle,
+    year: "numeric",
+  });
+}
+
+function MonthList({
+  months,
+  selectedMonth,
+  onSelect,
+}: {
+  months: MonthlyBreakdown[];
+  selectedMonth: string | null;
+  onSelect: (month: string) => void;
+}) {
+  return (
+    <section className="card month-list-card" aria-labelledby="tracked-months-title">
+      <div>
+        <h4 className="summary-title" id="tracked-months-title">Tracked months</h4>
+        <p className="month-list-description">Select a month to view its income and expenses.</p>
+      </div>
+      {months.length > 0 ? (
+        <ul className="month-list">
+          {[...months].reverse().map(({ month }) => (
+            <li key={month}>
+              <button
+                type="button"
+                className={`month-list-button${month === selectedMonth ? " is-selected" : ""}`}
+                aria-pressed={month === selectedMonth}
+                onClick={() => onSelect(month)}
+              >
+                {formatMonth(month)}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="summary-empty">Months will appear as transactions are imported.</p>
+      )}
+    </section>
+  );
+}
+
 function MonthlyBarChart({ totals }: { totals: MonthlyTotal[] }) {
   const maxAmount = Math.max(0, ...totals.flatMap(({ income, expenses }) => [income, expenses]));
 
@@ -156,11 +202,7 @@ function MonthlyBarChart({ totals }: { totals: MonthlyTotal[] }) {
       {totals.length > 0 ? (
         <ol className="monthly-bars" aria-label="Monthly income and expenses">
           {totals.map(({ month, income, expenses }) => {
-            const [year, monthNumber] = month.split("-").map(Number);
-            const label = new Date(year, monthNumber - 1).toLocaleDateString(undefined, {
-              month: "short",
-              year: "numeric",
-            });
+            const label = formatMonth(month, "short");
 
             return (
               <li
@@ -195,6 +237,7 @@ export default function HomeTab() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
 
   useEffect(() => {
     let isCurrent = true;
@@ -220,6 +263,11 @@ export default function HomeTab() {
     };
   }, [refreshKey]);
 
+  const currentMonth = summary?.monthlyBreakdowns.find(({ month }) => month === selectedMonth)
+    ?? summary?.monthlyBreakdowns[summary.monthlyBreakdowns.length - 1]
+    ?? null;
+  const currentBreakdown = currentMonth ?? summary;
+
   return (
     <div className="tab-content">
       <div className="stack">
@@ -229,15 +277,25 @@ export default function HomeTab() {
 
       {error && <p className="summary-error" role="alert">Unable to load financial data: {error}</p>}
       {isLoading && <p className="summary-empty" role="status">Loading financial data…</p>}
-      {!isLoading && !error && summary && (
+      {!isLoading && !error && summary && currentBreakdown && (
         <>
+          <MonthList
+            months={summary.monthlyBreakdowns}
+            selectedMonth={currentMonth?.month ?? null}
+            onSelect={setSelectedMonth}
+          />
+          {currentMonth && (
+            <p className="selected-month-label" aria-live="polite">
+              Showing income and expenses for {formatMonth(currentMonth.month)}
+            </p>
+          )}
           <div className="grid-two">
-            <SummaryChart title="Income" categories={summary.income} />
-            <SummaryChart title="Expenses" categories={summary.expenses} />
+            <SummaryChart title="Income" categories={currentBreakdown.income} />
+            <SummaryChart title="Expenses" categories={currentBreakdown.expenses} />
           </div>
           <div className="grid-two">
-            <SourceList title="Largest income sources" sources={summary.largestIncomeSources} />
-            <SourceList title="Largest expenses" sources={summary.largestExpenses} />
+            <SourceList title="Largest income sources" sources={currentBreakdown.largestIncomeSources} />
+            <SourceList title="Largest expenses" sources={currentBreakdown.largestExpenses} />
           </div>
           <MonthlyBarChart totals={summary.monthlyTotals} />
         </>
