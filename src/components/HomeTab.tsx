@@ -28,6 +28,15 @@ function SummaryChart({ title, categories }: { title: string; categories: Catego
   const total = categories.reduce((sum, item) => sum + item.amount, 0);
   const circumference = 2 * Math.PI * 56;
   let offset = 0;
+  const [hoveredCategoryId, setHoveredCategoryId] = useState<number | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const activeCategory = categories.find(({ category }) => category.id === hoveredCategoryId)
+    ?? categories.find(({ category }) => category.id === selectedCategoryId);
+  const activeCategoryId = activeCategory?.category.id ?? null;
+
+  const toggleCategory = (categoryId: number) => {
+    setSelectedCategoryId((current) => current === categoryId ? null : categoryId);
+  };
 
   return (
     <section className="card summary-chart" aria-labelledby={`${title.toLowerCase()}-chart-title`}>
@@ -41,44 +50,74 @@ function SummaryChart({ title, categories }: { title: string; categories: Catego
       <div className="chart-content">
         <div
           className="donut-chart"
-          role="img"
+          role="group"
           aria-label={`${title} chart totaling ${currency.format(total)} across ${categories.length} categories`}
         >
-          <svg viewBox="0 0 144 144" aria-hidden="true">
+          <svg viewBox="0 0 144 144">
             <circle className="chart-track" cx="72" cy="72" r="56" />
             {categories.map(({ category, amount }, index) => {
               const segmentLength = total > 0 ? (amount / total) * circumference : 0;
               const color = category.color ?? fallbackColors[index % fallbackColors.length];
+              const isActive = category.id === activeCategoryId;
               const segment = (
                 <circle
                   key={category.id}
+                  className={`chart-segment${isActive ? " is-active" : ""}${activeCategoryId !== null && !isActive ? " is-dimmed" : ""}`}
                   cx="72"
                   cy="72"
                   r="56"
                   fill="none"
                   stroke={color}
-                  strokeWidth="20"
+                  strokeWidth={isActive ? 26 : 20}
                   strokeDasharray={`${segmentLength} ${circumference - segmentLength}`}
                   strokeDashoffset={-offset}
                   transform="rotate(-90 72 72)"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${category.name}: ${currency.format(amount)}`}
+                  aria-pressed={selectedCategoryId === category.id}
+                  onMouseEnter={() => setHoveredCategoryId(category.id)}
+                  onMouseLeave={() => setHoveredCategoryId(null)}
+                  onFocus={() => setHoveredCategoryId(category.id)}
+                  onBlur={() => setHoveredCategoryId(null)}
+                  onClick={() => toggleCategory(category.id)}
                 />
               );
               offset += segmentLength;
               return segment;
             })}
           </svg>
-          <span className="chart-center">{currency.format(total)}</span>
+          {activeCategory ? (
+            <div className="chart-popup" role="status" aria-live="polite">
+              <span>{activeCategory.category.name}</span>
+              <strong>{currency.format(activeCategory.amount)}</strong>
+            </div>
+          ) : (
+            <span className="chart-center">{currency.format(total)}</span>
+          )}
         </div>
         <ul className="chart-legend">
           {categories.map(({ category, amount }, index) => (
             <li key={category.id}>
-              <span
-                className="legend-swatch"
-                style={{ backgroundColor: category.color ?? fallbackColors[index % fallbackColors.length] }}
-                aria-hidden="true"
-              />
-              <span className="legend-name">{category.name}</span>
-              <span className="legend-amount">{currency.format(amount)}</span>
+              <button
+                type="button"
+                className={`legend-button${category.id === activeCategoryId ? " is-active" : ""}`}
+                aria-label={`${category.name}: ${currency.format(amount)}`}
+                aria-pressed={selectedCategoryId === category.id}
+                onMouseEnter={() => setHoveredCategoryId(category.id)}
+                onMouseLeave={() => setHoveredCategoryId(null)}
+                onFocus={() => setHoveredCategoryId(category.id)}
+                onBlur={() => setHoveredCategoryId(null)}
+                onClick={() => toggleCategory(category.id)}
+              >
+                <span
+                  className="legend-swatch"
+                  style={{ backgroundColor: category.color ?? fallbackColors[index % fallbackColors.length] }}
+                  aria-hidden="true"
+                />
+                <span className="legend-name">{category.name}</span>
+                <span className="legend-amount">{currency.format(amount)}</span>
+              </button>
             </li>
           ))}
           {categories.length === 0 && <li className="summary-empty">No categorized activity yet.</li>}

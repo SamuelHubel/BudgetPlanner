@@ -15,9 +15,17 @@
 .donut-chart { @apply relative h-36 w-36 shrink-0; }
 .donut-chart svg { @apply h-full w-full; }
 .chart-track { @apply fill-none stroke-slate-800; stroke-width: 20; }
+.chart-segment { @apply cursor-pointer transition-all duration-150; }
+.chart-segment.is-dimmed { opacity: 0.3; }
+.chart-segment:focus-visible { outline: none; filter: drop-shadow(0 0 4px white); }
 .chart-center { @apply absolute inset-0 flex items-center justify-center text-sm font-semibold text-white; }
+.chart-popup { @apply pointer-events-none absolute inset-[22%] z-10 flex flex-col items-center justify-center rounded-full border border-slate-700 bg-slate-950/95 px-2 text-center shadow-lg; }
+.chart-popup > span { @apply max-w-full truncate text-xs text-slate-300; }
+.chart-popup > strong { @apply mt-1 text-sm font-semibold tabular-nums text-white; }
 .chart-legend { @apply w-full space-y-2; }
-.chart-legend li { @apply flex items-center gap-2 text-sm text-slate-300; }
+.chart-legend li { @apply text-sm text-slate-300; }
+.legend-button { @apply flex w-full items-center gap-2 rounded-lg text-left transition hover:bg-slate-800/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400; }
+.legend-button.is-active { @apply bg-slate-800/70 text-white; }
 .legend-swatch { @apply h-3 w-3 shrink-0 rounded-full; }
 .legend-name { @apply min-w-0 flex-1 truncate; }
 .legend-amount { @apply text-right tabular-nums; }
