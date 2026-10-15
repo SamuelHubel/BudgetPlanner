@@ -20,22 +20,45 @@ export async function categorizeTransactions(
   db: Database,
   transactions: ParsedTransaction[],
 ): Promise<ParsedTransaction[]> {
-  const mappings = await db.select<KeywordCategory[]>(
-    `SELECT keyword, category_id AS categoryId, categories.name AS categoryName
-     FROM keyword_category_map
-     JOIN categories ON categories.id = keyword_category_map.category_id
-     ORDER BY keyword_category_map.id`,
+  const [categories, keywordCategories] = await Promise.all([
+    loadCategories(db),
+    db.select<KeywordCategory[]>(
+      `SELECT keyword, category_id AS categoryId, categories.name AS categoryName
+       FROM keyword_category_map
+       JOIN categories ON categories.id = keyword_category_map.category_id
+       ORDER BY keyword_category_map.id`,
+    ),
+  ]);
+  const categoriesByName = new Map(
+    categories.map((category) => [normalizeCategoryName(category.name), category]),
   );
+  const categoriesById = new Map(categories.map((category) => [category.id, category]));
 
   return transactions.map((transaction) => {
+    const statementCategory = transaction.categoryName
+      ? categoriesByName.get(normalizeCategoryName(transaction.categoryName))
+      : undefined;
+    if (statementCategory) {
+      return {
+        ...transaction,
+        categoryId: statementCategory.id,
+        categoryName: statementCategory.name,
+      };
+    }
+
     const description = transaction.description.toLowerCase();
-    const match = mappings
+    const keywordMatch = keywordCategories
       .filter(({ keyword }) => keyword.trim() !== "" && includesKeyword(description, keyword))
       .sort((first, second) => second.keyword.length - first.keyword.length)[0];
-    return match
-      ? { ...transaction, categoryId: match.categoryId, categoryName: match.categoryName }
-      : transaction;
+    const fallbackCategory = keywordMatch ? categoriesById.get(keywordMatch.categoryId) : undefined;
+    return fallbackCategory
+      ? { ...transaction, categoryId: fallbackCategory.id, categoryName: fallbackCategory.name }
+      : { ...transaction, categoryId: null };
   });
+}
+
+function normalizeCategoryName(name: string): string {
+  return name.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
 function includesKeyword(description: string, keyword: string): boolean {

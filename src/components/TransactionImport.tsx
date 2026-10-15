@@ -121,6 +121,11 @@ export default function TransactionImport({ onImported }: Props) {
                         <option value="">Uncategorized</option>
                         {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
                       </select>
+                      {transaction.categoryName && !transaction.categoryId && (
+                        <small className="ml-2 text-amber-300">
+                          Statement category not available: {transaction.categoryName}
+                        </small>
+                      )}
                     </td>
                   </tr>
                 ))}

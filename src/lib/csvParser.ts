@@ -2,8 +2,8 @@ export type ParsedTransaction = {
   date: string;
   description: string;
   amount: number;
-  categoryId: number | null;
   categoryName: string | null;
+  categoryId: number | null;
 };
 
 const headerAliases = {
@@ -12,6 +12,7 @@ const headerAliases = {
   amount: ["amount", "transactionamount", "value"],
   debit: ["debit", "withdrawal", "charge"],
   credit: ["credit", "deposit"],
+  category: ["category", "categoryname", "transactioncategory", "spendingcategory"],
 } as const;
 
 function normalizeHeader(value: string): string {
@@ -92,6 +93,7 @@ export function parseBankCsv(contents: string): ParsedTransaction[] {
   const amountColumn = findColumn(headers, headerAliases.amount);
   const debitColumn = findColumn(headers, headerAliases.debit);
   const creditColumn = findColumn(headers, headerAliases.credit);
+  const categoryColumn = findColumn(headers, headerAliases.category);
 
   if (dateColumn < 0 || descriptionColumn < 0 || (amountColumn < 0 && debitColumn < 0 && creditColumn < 0)) {
     throw new Error("The CSV must include date, description, and amount columns.");
@@ -122,8 +124,8 @@ export function parseBankCsv(contents: string): ParsedTransaction[] {
       date,
       description,
       amount: amountValue,
+      categoryName: categoryColumn >= 0 ? row[categoryColumn]?.trim() || null : null,
       categoryId: null,
-      categoryName: null,
     };
   });
 }

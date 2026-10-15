@@ -12,17 +12,29 @@ describe("parseBankCsv", () => {
         date: "2026-01-02",
         description: "Coffee, shop",
         amount: 4.5,
-        categoryId: null,
         categoryName: null,
+        categoryId: null,
       },
       {
         date: "2026-01-03",
         description: "Refund",
         amount: -12,
-        categoryId: null,
         categoryName: null,
+        categoryId: null,
       },
     ]);
+  });
+
+  it("parses a category column when the statement provides one", () => {
+    const transactions = parseBankCsv(
+      "Date,Description,Amount,Transaction Category\n2026-01-02,Coffee shop,-4.50,Dining Out",
+    );
+
+    expect(transactions[0]).toMatchObject({
+      description: "Coffee shop",
+      categoryName: "Dining Out",
+      categoryId: null,
+    });
   });
 
   it("rejects files without required columns", () => {
