@@ -1,7 +1,11 @@
 ### Budget Planner
 A local, AI powered (not proper financial advice!!!), Personal Finance App.
-Track monthly income, expenses, and more through manual logging or load a statement and let the app categorize recognized merchants. Unclear transactions stay uncategorized, and you can review or change every category before importing.
+Track monthly income, expenses, and more through manual logging or load a statement and use its category column when available. When a statement category is missing or unrecognized, merchant keyword rules provide a fallback. Transactions without a match stay uncategorized, and you can review or change every category before importing.
+On the Home dashboard, select any tracked month to view its categorized income and expenses; the newest month is selected by default.
 Set goals and trak your progress, or also ask AI to help budget (not proper financial advice!!!)
+
+## Starting over
+Use **Start over** in the dashboard and confirm to permanently delete transactions, goals, import history, and AI insight logs. The database schema and lock data are retained.
 
 
 

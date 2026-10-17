@@ -27,3 +27,16 @@ export async function closeDb(): Promise<void> {
     dbInstance = null;
   }
 }
+
+/**
+ * Removes user financial records while preserving categories, keyword rules,
+ * lock data, and the database schema.
+ */
+export async function resetFinancialData(): Promise<void> {
+  const db = await getDb();
+
+  await db.execute("DELETE FROM transactions");
+  await db.execute("DELETE FROM goals");
+  await db.execute("DELETE FROM ai_insights_log");
+  await db.execute("DELETE FROM import_batches");
+}

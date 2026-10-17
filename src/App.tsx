@@ -36,11 +36,7 @@ function App() {
     <div className="app-shell">
       <div className="container">
         <header className="header">
-          <div>
-            <p className="brand-kicker">Budget Planner</p>
-            <h1 className="brand-title">Secure desktop budget app</h1>
-          </div>
-          <div className="tech-badge">Tauri + React + Tailwind</div>
+          <p className="brand-kicker">Budget Planner</p>
         </header>
 
         {isLocked ? (

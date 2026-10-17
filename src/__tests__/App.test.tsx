@@ -3,8 +3,9 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 vi.mock("../lib/db", () => ({
-  getDb: vi.fn(async () => ({ close: vi.fn() })),
+  getDb: vi.fn(async () => ({ close: vi.fn(), select: vi.fn(async () => []) })),
   closeDb: vi.fn(async () => {}),
+  resetFinancialData: vi.fn(async () => {}),
 }));
 
 import App from "../App";
@@ -20,6 +21,8 @@ describe("App", () => {
     expect(screen.getByText(/unlock your budget vault/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /unlock/i })).toBeInTheDocument();
+    expect(screen.queryByText(/secure desktop budget app/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/tauri \+ react \+ tailwind/i)).not.toBeInTheDocument();
   });
 
   it("opens the database and shows the dashboard after unlocking", async () => {
@@ -31,7 +34,7 @@ describe("App", () => {
 
     await waitFor(async () => {
       const mockedDb = await vi.importMock<typeof import("../lib/db")>("../lib/db");
-      expect(mockedDb.getDb).toHaveBeenCalledTimes(1);
+      expect(mockedDb.getDb).toHaveBeenCalledTimes(2);
       expect(screen.getByText(/your budget dashboard/i)).toBeInTheDocument();
     });
   });
