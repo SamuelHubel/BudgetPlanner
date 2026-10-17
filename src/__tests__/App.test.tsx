@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 vi.mock("../lib/db", () => ({
   getDb: vi.fn(async () => ({ close: vi.fn(), select: vi.fn(async () => []) })),
   closeDb: vi.fn(async () => {}),
+  resetFinancialData: vi.fn(async () => {}),
 }));
 
 import App from "../App";
