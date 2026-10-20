@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getDb } from "../lib/db";
+import { toErrorMessage } from "../lib/errors";
 import {
   loadFinancialSummary,
   type CategoryTotal,
@@ -251,7 +252,7 @@ export default function HomeTab() {
       })
       .catch((caughtError: unknown) => {
         if (isCurrent) {
-          setError(caughtError instanceof Error ? caughtError.message : "Unable to load financial data.");
+          setError(toErrorMessage(caughtError, "Unable to load financial data."));
         }
       })
       .finally(() => {

@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "tauri-app",
+  "productName": "Budget Planner",
   "version": "0.1.0",
   "identifier": "com.samuelhubel.budgetplanner",
   "build": {
@@ -12,9 +12,10 @@
   "app": {
     "windows": [
       {
-        "title": "tauri-app",
-        "width": 800,
-        "height": 600
+        "title": "Budget Planner",
+        "width": 1100,
+        "height": 760,
+        "minWidth": 900
       }
     ],
     "security": {

@@ -39,6 +39,19 @@ describe("App", () => {
     });
   });
 
+  it("shows database failures on the unlock screen", async () => {
+    const user = userEvent.setup();
+    const mockedDb = await vi.importMock<typeof import("../lib/db")>("../lib/db");
+    vi.mocked(mockedDb.getDb).mockRejectedValueOnce("database unavailable");
+    render(<App />);
+
+    await user.type(screen.getByLabelText(/password/i), "password123");
+    await user.click(screen.getByRole("button", { name: /unlock/i }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("database unavailable");
+    expect(screen.getByText(/unlock your budget vault/i)).toBeInTheDocument();
+  });
+
   it("shows the AI tab content after clicking the AI tab", async () => {
     const user = userEvent.setup();
     render(<App />);

@@ -5,10 +5,10 @@
 
 import { useState, type FormEvent } from "react";
 import "./index.css";
-import "./App.css";
 import UnlockScreen from "./components/UnlockScreen";
 import Dashboard from "./components/Dashboard";
 import { getDb, closeDb } from "./lib/db";
+import { toErrorMessage } from "./lib/errors";
 
 type TabName = "home" | "ai";
 
@@ -16,15 +16,21 @@ function App() {
   const [isLocked, setIsLocked] = useState(true);
   const [password, setPassword] = useState("");
   const [activeTab, setActiveTab] = useState<TabName>("home");
+  const [unlockError, setUnlockError] = useState("");
 
   const unlockApp = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setUnlockError("");
     // TODO: implement password hashing/verification and key derivation.
     // For now, this just opens the (unencrypted) connection so migrations
     // run and CRUD milestones have something to build against.
-    await getDb();
-    setIsLocked(false);
-    setPassword("");
+    try {
+      await getDb();
+      setIsLocked(false);
+      setPassword("");
+    } catch (error) {
+      setUnlockError(toErrorMessage(error, "Unable to unlock the app."));
+    }
   };
 
   const lockApp = async () => {
@@ -40,7 +46,12 @@ function App() {
         </header>
 
         {isLocked ? (
-          <UnlockScreen password={password} setPassword={setPassword} unlockApp={unlockApp} />
+          <UnlockScreen
+            password={password}
+            setPassword={setPassword}
+            unlockApp={unlockApp}
+            error={unlockError}
+          />
         ) : (
           <Dashboard lockApp={lockApp} activeTab={activeTab} setActiveTab={setActiveTab} />
         )}

@@ -7,6 +7,7 @@ import {
   saveImportedTransactions,
   type Category,
 } from "../lib/transactionImport";
+import { toErrorMessage } from "../lib/errors";
 import "./TransactionImport.css";
 
 type Props = {
@@ -33,15 +34,13 @@ export default function TransactionImport({ onImported }: Props) {
     try {
       const db = await getDb();
       const parsed = parseBankCsv(await file.text());
-      const [availableCategories, categorized] = await Promise.all([
-        loadCategories(db),
-        categorizeTransactions(db, parsed),
-      ]);
+      const availableCategories = await loadCategories(db);
+      const categorized = await categorizeTransactions(db, parsed, availableCategories);
       setFileName(file.name);
       setCategories(availableCategories);
       setTransactions(categorized);
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : "Unable to read this CSV.");
+      setError(toErrorMessage(caughtError, "Unable to read this CSV."));
       setTransactions([]);
     } finally {
       setIsLoading(false);
@@ -76,7 +75,7 @@ export default function TransactionImport({ onImported }: Props) {
       setFileName("");
       onImported?.();
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : "Unable to save transactions.");
+      setError(toErrorMessage(caughtError, "Unable to save transactions."));
     } finally {
       setIsLoading(false);
     }

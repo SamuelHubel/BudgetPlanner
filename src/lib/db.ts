@@ -1,6 +1,6 @@
 import Database from "@tauri-apps/plugin-sql";
 
-let dbInstance: Database | null = null;
+let dbPromise: Promise<Database> | null = null;
 
 /**
  * Opens (or returns the already-open) connection to the local budget
@@ -10,11 +10,17 @@ let dbInstance: Database | null = null;
  * Call this only after the user has unlocked the app — once encryption
  * is wired in, opening the DB will require the password-derived key.
  */
-export async function getDb(): Promise<Database> {
-  if (!dbInstance) {
-    dbInstance = await Database.load("sqlite:budget.db");
+export function getDb(): Promise<Database> {
+  if (!dbPromise) {
+    const pending = Database.load("sqlite:budget.db").catch((error: unknown) => {
+      if (dbPromise === pending) {
+        dbPromise = null;
+      }
+      throw error;
+    });
+    dbPromise = pending;
   }
-  return dbInstance;
+  return dbPromise;
 }
 
 /**
@@ -22,10 +28,9 @@ export async function getDb(): Promise<Database> {
  * unlock cycles once per-session encryption keys are introduced.
  */
 export async function closeDb(): Promise<void> {
-  if (dbInstance) {
-    await dbInstance.close();
-    dbInstance = null;
-  }
+  const pending = dbPromise;
+  dbPromise = null;
+  if (pending) await (await pending).close();
 }
 
 /**

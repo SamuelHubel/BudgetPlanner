@@ -19,20 +19,28 @@ export async function loadCategories(db: Database): Promise<Category[]> {
 export async function categorizeTransactions(
   db: Database,
   transactions: ParsedTransaction[],
+  categories: Category[],
 ): Promise<ParsedTransaction[]> {
-  const [categories, keywordCategories] = await Promise.all([
-    loadCategories(db),
-    db.select<KeywordCategory[]>(
-      `SELECT keyword, category_id AS categoryId, categories.name AS categoryName
-       FROM keyword_category_map
-       JOIN categories ON categories.id = keyword_category_map.category_id
-       ORDER BY keyword_category_map.id`,
-    ),
-  ]);
+  const keywordCategories = await db.select<KeywordCategory[]>(
+    `SELECT keyword, category_id AS categoryId, categories.name AS categoryName
+     FROM keyword_category_map
+     JOIN categories ON categories.id = keyword_category_map.category_id
+     ORDER BY keyword_category_map.id`,
+  );
   const categoriesByName = new Map(
     categories.map((category) => [normalizeCategoryName(category.name), category]),
   );
   const categoriesById = new Map(categories.map((category) => [category.id, category]));
+  const keywordMatchers = keywordCategories
+    .filter(({ keyword }) => keyword.trim() !== "")
+    .map(({ keyword, categoryId }) => {
+      const escapedKeyword = keyword.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return {
+        keyword,
+        categoryId,
+        matcher: new RegExp(`(^|[^a-z0-9])${escapedKeyword}(?=$|[^a-z0-9])`),
+      };
+    });
 
   return transactions.map((transaction) => {
     const statementCategory = transaction.categoryName
@@ -47,8 +55,8 @@ export async function categorizeTransactions(
     }
 
     const description = transaction.description.toLowerCase();
-    const keywordMatch = keywordCategories
-      .filter(({ keyword }) => keyword.trim() !== "" && includesKeyword(description, keyword))
+    const keywordMatch = keywordMatchers
+      .filter(({ matcher }) => matcher.test(description))
       .sort((first, second) => second.keyword.length - first.keyword.length)[0];
     const fallbackCategory = keywordMatch ? categoriesById.get(keywordMatch.categoryId) : undefined;
     return fallbackCategory
@@ -59,11 +67,6 @@ export async function categorizeTransactions(
 
 function normalizeCategoryName(name: string): string {
   return name.trim().replace(/\s+/g, " ").toLowerCase();
-}
-
-function includesKeyword(description: string, keyword: string): boolean {
-  const escapedKeyword = keyword.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`(^|[^a-z0-9])${escapedKeyword}(?=$|[^a-z0-9])`).test(description);
 }
 
 export async function saveImportedTransactions(

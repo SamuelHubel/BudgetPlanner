@@ -9,13 +9,15 @@ type Props = {
   password: string;
   setPassword: (v: string) => void;
   unlockApp: (e: FormEvent<HTMLFormElement>) => Promise<void>;
+  error: string;
 };
 
-export default function UnlockScreen({ password, setPassword, unlockApp }: Props) {
+export default function UnlockScreen({ password, setPassword, unlockApp, error }: Props) {
   return (
     <div className="unlock-card">
       <h2 className="unlock-title">Unlock your budget vault</h2>
       <p className="unlock-sub">Enter your password to continue. Database encryption and password storage are not implemented yet.</p>
+      {error && <p className="unlock-error" role="alert">{error}</p>}
 
       <form className="unlock-form" onSubmit={unlockApp}>
         <label className="label" htmlFor="password">

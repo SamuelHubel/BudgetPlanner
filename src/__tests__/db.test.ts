@@ -28,6 +28,37 @@ describe("db module", () => {
     expect(second).toBe(first);
   });
 
+  it("shares the pending load between concurrent callers", async () => {
+    const { getDb } = await import("../lib/db");
+    let resolveLoad!: (database: {
+      close: typeof closeMock;
+      execute: typeof executeMock;
+    }) => void;
+    loadMock.mockImplementationOnce(
+      () => new Promise((resolve) => {
+        resolveLoad = resolve;
+      }),
+    );
+
+    const firstPending = getDb();
+    const secondPending = getDb();
+    expect(loadMock).toHaveBeenCalledTimes(1);
+
+    resolveLoad({ close: closeMock, execute: executeMock });
+    const [first, second] = await Promise.all([firstPending, secondPending]);
+
+    expect(second).toBe(first);
+  });
+
+  it("allows retry after a failed database load", async () => {
+    loadMock.mockRejectedValueOnce("database unavailable");
+    const { getDb } = await import("../lib/db");
+
+    await expect(getDb()).rejects.toBe("database unavailable");
+    await expect(getDb()).resolves.toBeDefined();
+    expect(loadMock).toHaveBeenCalledTimes(2);
+  });
+
   it("closes the connection and allows reopening after closeDb", async () => {
     const { getDb, closeDb } = await import("../lib/db");
 

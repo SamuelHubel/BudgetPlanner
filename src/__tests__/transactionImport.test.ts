@@ -26,7 +26,7 @@ describe("categorizeTransactions", () => {
       { date: "2026-01-04", description: "Unknown payment", amount: -8, categoryName: "Unrecognized", categoryId: null },
     ];
 
-    const categorized = await categorizeTransactions(db, transactions);
+    const categorized = await categorizeTransactions(db, transactions, categories);
 
     expect(categorized.map(({ categoryId, categoryName }) => [categoryId, categoryName])).toEqual([
       [2, "Dining Out"],
@@ -34,6 +34,7 @@ describe("categorizeTransactions", () => {
       [2, "Dining Out"],
       [null, "Unrecognized"],
     ]);
+    expect(db.select).toHaveBeenCalledTimes(1);
   });
 });
 

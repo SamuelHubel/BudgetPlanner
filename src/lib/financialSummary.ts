@@ -65,6 +65,7 @@ export function createFinancialSummary(
   categories: FinancialCategory[],
   transactions: FinancialTransaction[],
 ): FinancialSummary {
+  const categoriesById = new Map(categories.map((category) => [category.id, category]));
   const transactionsByMonth = new Map<string, FinancialTransaction[]>();
   const monthlyTotals = new Map<string, MonthlyTotal>();
 
@@ -78,7 +79,7 @@ export function createFinancialSummary(
 
     const monthlyTotal = monthlyTotals.get(month) ?? { month, income: 0, expenses: 0 };
     if (Number.isFinite(transaction.amount) && transaction.amount !== 0 && transaction.categoryId !== null) {
-      const category = categories.find(({ id }) => id === transaction.categoryId);
+      const category = categoriesById.get(transaction.categoryId);
       if (category) {
         if (category.type === "income") {
           monthlyTotal.income += Math.abs(transaction.amount);

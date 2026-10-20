@@ -7,6 +7,7 @@ import TabBar from "./TabBar";
 import HomeTab from "./HomeTab";
 import AITab from "./AITab";
 import { resetFinancialData } from "../lib/db";
+import { toErrorMessage } from "../lib/errors";
 
 type TabName = "home" | "ai";
 
@@ -46,7 +47,7 @@ export default function Dashboard({ lockApp, activeTab, setActiveTab }: Props) {
       setResetComplete(true);
       setIsResetDialogOpen(false);
     } catch (error) {
-      setResetError(error instanceof Error ? error.message : String(error));
+      setResetError(toErrorMessage(error, "Unable to reset financial data."));
     } finally {
       setIsResetting(false);
     }
