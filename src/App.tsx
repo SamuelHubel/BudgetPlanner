@@ -1,9 +1,4 @@
-﻿// This is the main entry point for the app. 
-// It will display the unlock screen if the app is locked,
-//  and the dashboard if the app is unlocked.
-
-
-import { useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
 import "./index.css";
 import UnlockScreen from "./components/UnlockScreen";
 import Dashboard from "./components/Dashboard";
@@ -12,30 +7,86 @@ import { toErrorMessage } from "./lib/errors";
 
 type TabName = "home" | "ai";
 
+const INACTIVITY_LOCK_MS = 5 * 60 * 1000;
+
 function App() {
   const [isLocked, setIsLocked] = useState(true);
-  const [password, setPassword] = useState("");
+  const [isInitialized, setIsInitialized] = useState<boolean | null>(null);
   const [activeTab, setActiveTab] = useState<TabName>("home");
   const [unlockError, setUnlockError] = useState("");
+  const [lockError, setLockError] = useState("");
 
-  const unlockApp = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setUnlockError("");
-    // TODO: implement password hashing/verification and key derivation.
-    // For now, this just opens the (unencrypted) connection so migrations
-    // run and CRUD milestones have something to build against.
+  useEffect(() => {
+    let isMounted = true;
+    void budgetApi.isInitialized().then(
+      (initialized) => {
+        if (isMounted) setIsInitialized(initialized);
+      },
+      (error: unknown) => {
+        if (isMounted) {
+          setUnlockError(toErrorMessage(error, "Unable to check password setup."));
+          setIsInitialized(null);
+        }
+      },
+    );
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const lockApp = useCallback(async () => {
     try {
-      await budgetApi.unlock(password);
+      await budgetApi.lock();
+      setIsLocked(true);
+      setLockError("");
+      return true;
+    } catch (error) {
+      setLockError(toErrorMessage(error, "Unable to lock the app."));
+      return false;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isLocked) return;
+
+    let timeoutId: number;
+    const resetInactivityTimer = () => {
+      window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(() => {
+        void lockApp().then((locked) => {
+          if (!locked) resetInactivityTimer();
+        });
+      }, INACTIVITY_LOCK_MS);
+    };
+
+    resetInactivityTimer();
+    window.addEventListener("mousemove", resetInactivityTimer);
+    window.addEventListener("mousedown", resetInactivityTimer);
+    window.addEventListener("wheel", resetInactivityTimer);
+    window.addEventListener("keydown", resetInactivityTimer);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.removeEventListener("mousemove", resetInactivityTimer);
+      window.removeEventListener("mousedown", resetInactivityTimer);
+      window.removeEventListener("wheel", resetInactivityTimer);
+      window.removeEventListener("keydown", resetInactivityTimer);
+    };
+  }, [isLocked, lockApp]);
+
+  const submitPassword = async (password: string) => {
+    setUnlockError("");
+    try {
+      if (isInitialized) {
+        await budgetApi.unlock(password);
+      } else {
+        await budgetApi.createPassword(password);
+        setIsInitialized(true);
+      }
       setIsLocked(false);
-      setPassword("");
     } catch (error) {
       setUnlockError(toErrorMessage(error, "Unable to unlock the app."));
     }
-  };
-
-  const lockApp = async () => {
-    await budgetApi.lock();
-    setIsLocked(true);
   };
 
   return (
@@ -47,15 +98,15 @@ function App() {
 
         {isLocked ? (
           <UnlockScreen
-            password={password}
-            setPassword={setPassword}
-            unlockApp={unlockApp}
+            isInitialized={isInitialized}
+            onSubmit={submitPassword}
             error={unlockError}
           />
         ) : (
           <Dashboard
             api={budgetApi}
             lockApp={lockApp}
+            lockError={lockError}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
           />

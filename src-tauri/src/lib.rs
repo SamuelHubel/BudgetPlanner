@@ -9,6 +9,8 @@ pub fn run() {
     tauri::Builder::default()
         .manage(state::AppState::default())
         .invoke_handler(tauri::generate_handler![
+            commands::auth::is_initialized,
+            commands::auth::create_password,
             commands::auth::unlock,
             commands::auth::lock,
             commands::categories::list_categories,

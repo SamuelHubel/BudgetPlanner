@@ -11,6 +11,8 @@ beforeEach(() => {
 
 describe("budgetApi IPC contract", () => {
   it("uses registered command names and camel-case payloads", async () => {
+    await budgetApi.isInitialized();
+    await budgetApi.createPassword("correct horse battery");
     await budgetApi.unlock("password");
     await budgetApi.lock();
     await budgetApi.listCategories();
@@ -25,6 +27,8 @@ describe("budgetApi IPC contract", () => {
     await budgetApi.resetFinancialData();
 
     expect(invoke.mock.calls).toEqual([
+      ["is_initialized"],
+      ["create_password", { password: "correct horse battery" }],
       ["unlock", { password: "password" }],
       ["lock"],
       ["list_categories"],

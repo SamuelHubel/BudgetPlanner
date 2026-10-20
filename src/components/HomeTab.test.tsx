@@ -45,6 +45,8 @@ const summary = {
   ],
 };
 const api: BudgetApiClient = {
+  isInitialized: async () => true,
+  createPassword: async () => {},
   unlock: async () => {},
   lock: async () => {},
   listCategories: async () => [],

@@ -16,6 +16,8 @@ const preview: ImportPreviewRow[] = [{
 
 function createApi(previewImport: BudgetApiClient["previewImport"]): BudgetApiClient {
   return {
+    isInitialized: async () => true,
+    createPassword: async () => {},
     unlock: async () => {},
     lock: async () => {},
     listCategories: async () => [

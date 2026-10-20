@@ -11,6 +11,8 @@ pub enum AppError {
     Import(#[from] ImportError),
     #[error("the app is locked")]
     Locked,
+    #[error("incorrect password")]
+    BadPassword,
     #[error("{0}")]
     InvalidInput(String),
     #[error("application state is unavailable")]
@@ -19,6 +21,8 @@ pub enum AppError {
     Io(#[from] std::io::Error),
     #[error("application path error: {0}")]
     ApplicationPath(String),
+    #[error("secure random number generation failed: {0}")]
+    Randomness(String),
 }
 
 impl Serialize for AppError {

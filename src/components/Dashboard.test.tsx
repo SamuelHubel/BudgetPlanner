@@ -10,6 +10,8 @@ import Dashboard from "./Dashboard";
 
 const resetFinancialData = vi.fn(async () => {});
 const api: BudgetApiClient = {
+  isInitialized: async () => true,
+  createPassword: async () => {},
   unlock: async () => {},
   lock: async () => {},
   listCategories: async () => [],
@@ -38,7 +40,8 @@ function renderDashboard() {
   return render(
     <Dashboard
       api={api}
-      lockApp={vi.fn(async () => {})}
+      lockApp={vi.fn(async () => true)}
+      lockError=""
       activeTab="home"
       setActiveTab={vi.fn()}
     />,

@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use rusqlite::{Connection, TransactionBehavior};
 
 use crate::error::AppError;
@@ -12,16 +10,6 @@ const MIGRATIONS: &[(i64, &str)] = &[
         include_str!("../../migrations/0003_seed_keyword_rules.sql"),
     ),
 ];
-
-pub fn open_database(path: &Path) -> Result<Connection, AppError> {
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-    let mut connection = Connection::open(path)?;
-    connection.pragma_update(None, "foreign_keys", "ON")?;
-    run_migrations(&mut connection)?;
-    Ok(connection)
-}
 
 pub fn run_migrations(connection: &mut Connection) -> Result<(), AppError> {
     let mut current_version: i64 =

@@ -13,12 +13,13 @@ type TabName = "home" | "ai";
 
 type Props = {
   api: BudgetApiClient;
-  lockApp: () => Promise<void>;
+  lockApp: () => Promise<boolean>;
+  lockError: string;
   activeTab: TabName;
   setActiveTab: (t: TabName) => void;
 };
 
-export default function Dashboard({ api, lockApp, activeTab, setActiveTab }: Props) {
+export default function Dashboard({ api, lockApp, lockError, activeTab, setActiveTab }: Props) {
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
@@ -62,11 +63,12 @@ export default function Dashboard({ api, lockApp, activeTab, setActiveTab }: Pro
           <h2 className="dashboard-title">Your budget dashboard</h2>
         </div>
         <div className="dashboard-actions">
-          <span className="pill">Locked mode</span>
           <button type="button" onClick={openResetDialog} className="reset-btn">Start over</button>
           <button type="button" onClick={lockApp} className="muted-btn">Lock app</button>
         </div>
       </div>
+
+      {lockError && <p className="reset-feedback reset-error" role="alert">{lockError}</p>}
 
       {resetComplete && (
         <p className="reset-feedback reset-success" role="status">
