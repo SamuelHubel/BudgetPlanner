@@ -110,7 +110,7 @@ export default function TransactionImport({ onImported }: Props) {
                   <tr key={`${transaction.date}-${index}`}>
                     <td>{transaction.date}</td>
                     <td>{transaction.description}</td>
-                    <td>{transaction.amount.toFixed(2)}</td>
+                    <td>{(transaction.amountCents / 100).toFixed(2)}</td>
                     <td>
                       <select
                         aria-label={`Category for ${transaction.description}`}

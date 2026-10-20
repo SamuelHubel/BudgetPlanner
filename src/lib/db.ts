@@ -35,7 +35,7 @@ export async function closeDb(): Promise<void> {
 
 /**
  * Removes user financial records while preserving categories, keyword rules,
- * lock data, and the database schema.
+ * and the database schema.
  */
 export async function resetFinancialData(): Promise<void> {
   const db = await getDb();

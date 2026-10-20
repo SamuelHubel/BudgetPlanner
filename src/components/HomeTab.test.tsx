@@ -9,9 +9,9 @@ const { categories, transactions } = vi.hoisted(() => ({
     { id: 3, name: "Housing", type: "expense", color: null },
   ],
   transactions: [
-    { categoryId: 1, amount: 2500, description: "Paycheck", date: "2026-01-15" },
-    { categoryId: 2, amount: -75, description: "Market", date: "2026-01-18" },
-    { categoryId: 3, amount: -900, description: "Rent", date: "2026-02-01" },
+    { categoryId: 1, amountCents: 250000, description: "Paycheck", date: "2026-01-15" },
+    { categoryId: 2, amountCents: -7500, description: "Market", date: "2026-01-18" },
+    { categoryId: 3, amountCents: -90000, description: "Rent", date: "2026-02-01" },
   ],
 }));
 

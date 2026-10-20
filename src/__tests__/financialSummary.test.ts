@@ -11,32 +11,32 @@ const categories = [
 describe("createFinancialSummary", () => {
   it("totals listed categories and ranks repeated sources separately for income and expenses", () => {
     const summary = createFinancialSummary(categories, [
-      { categoryId: 1, amount: 2500, description: "Acme Payroll" },
-      { categoryId: 1, amount: 2500, description: "ACME PAYROLL" },
-      { categoryId: 2, amount: -75, description: "Market" },
-      { categoryId: 2, amount: -40, description: "Market" },
-      { categoryId: 3, amount: -900, description: "Rent" },
+      { categoryId: 1, amountCents: 250000, description: "Acme Payroll" },
+      { categoryId: 1, amountCents: 250000, description: "ACME PAYROLL" },
+      { categoryId: 2, amountCents: -7500, description: "Market" },
+      { categoryId: 2, amountCents: -4000, description: "Market" },
+      { categoryId: 3, amountCents: -90000, description: "Rent" },
     ]);
 
-    expect(summary.income.map(({ category, amount }) => [category.name, amount])).toEqual([["Pay", 5000]]);
-    expect(summary.expenses.map(({ category, amount }) => [category.name, amount])).toEqual([
-      ["Groceries", 115],
-      ["Housing", 900],
+    expect(summary.income.map(({ category, amountCents }) => [category.name, amountCents])).toEqual([["Pay", 500000]]);
+    expect(summary.expenses.map(({ category, amountCents }) => [category.name, amountCents])).toEqual([
+      ["Groceries", 11500],
+      ["Housing", 90000],
     ]);
     expect(summary.largestIncomeSources).toEqual([
-      { description: "Acme Payroll", categoryName: "Pay", amount: 5000 },
+      { description: "Acme Payroll", categoryName: "Pay", amountCents: 500000 },
     ]);
     expect(summary.largestExpenses).toEqual([
-      { description: "Rent", categoryName: "Housing", amount: 900 },
-      { description: "Market", categoryName: "Groceries", amount: 115 },
+      { description: "Rent", categoryName: "Housing", amountCents: 90000 },
+      { description: "Market", categoryName: "Groceries", amountCents: 11500 },
     ]);
   });
 
   it("excludes uncategorized, missing-category, and zero-amount transactions", () => {
     const summary = createFinancialSummary(categories, [
-      { categoryId: null, amount: 400, description: "Uncategorized income" },
-      { categoryId: 99, amount: -80, description: "Deleted category" },
-      { categoryId: 2, amount: 0, description: "Zero" },
+      { categoryId: null, amountCents: 40000, description: "Uncategorized income" },
+      { categoryId: 99, amountCents: -8000, description: "Deleted category" },
+      { categoryId: 2, amountCents: 0, description: "Zero" },
     ]);
 
     expect(summary).toEqual({
@@ -51,34 +51,34 @@ describe("createFinancialSummary", () => {
 
   it("groups categorized transactions into ordered monthly income and expense totals", () => {
     const summary = createFinancialSummary(categories, [
-      { categoryId: 1, amount: 2500, description: "Paycheck", date: "2026-02-01" },
-      { categoryId: 2, amount: -75, description: "Market", date: "2026-02-12" },
-      { categoryId: 3, amount: -900, description: "Rent", date: "2026-01-03" },
-      { categoryId: null, amount: 1000, description: "Uncategorized", date: "2026-02-18" },
-      { categoryId: 2, amount: -20, description: "Invalid date", date: "not a date" },
+      { categoryId: 1, amountCents: 250000, description: "Paycheck", date: "2026-02-01" },
+      { categoryId: 2, amountCents: -7500, description: "Market", date: "2026-02-12" },
+      { categoryId: 3, amountCents: -90000, description: "Rent", date: "2026-01-03" },
+      { categoryId: null, amountCents: 100000, description: "Uncategorized", date: "2026-02-18" },
+      { categoryId: 2, amountCents: -2000, description: "Invalid date", date: "not a date" },
     ]);
 
     expect(summary.monthlyTotals).toEqual([
-      { month: "2026-01", income: 0, expenses: 900 },
-      { month: "2026-02", income: 2500, expenses: 75 },
+      { month: "2026-01", incomeCents: 0, expensesCents: 90000 },
+      { month: "2026-02", incomeCents: 250000, expensesCents: 7500 },
     ]);
     expect(summary.monthlyBreakdowns.map(({ month, income, expenses }) => [
       month,
-      income.map(({ category, amount }) => [category.name, amount]),
-      expenses.map(({ category, amount }) => [category.name, amount]),
+      income.map(({ category, amountCents }) => [category.name, amountCents]),
+      expenses.map(({ category, amountCents }) => [category.name, amountCents]),
     ])).toEqual([
-      ["2026-01", [], [["Housing", 900]]],
-      ["2026-02", [["Pay", 2500]], [["Groceries", 75]]],
+      ["2026-01", [], [["Housing", 90000]]],
+      ["2026-02", [["Pay", 250000]], [["Groceries", 7500]]],
     ]);
   });
 
   it("tracks months that contain only uncategorized transactions", () => {
     const summary = createFinancialSummary(categories, [
-      { categoryId: null, amount: -20, description: "Uncategorized", date: "2026-03-12" },
+      { categoryId: null, amountCents: -2000, description: "Uncategorized", date: "2026-03-12" },
     ]);
 
     expect(summary.monthlyTotals).toEqual([
-      { month: "2026-03", income: 0, expenses: 0 },
+      { month: "2026-03", incomeCents: 0, expensesCents: 0 },
     ]);
     expect(summary.monthlyBreakdowns).toMatchObject([
       { month: "2026-03", income: [], expenses: [] },
@@ -91,18 +91,19 @@ describe("loadFinancialSummary", () => {
     const select = vi.fn()
       .mockResolvedValueOnce(categories)
       .mockResolvedValueOnce([
-        { categoryId: 1, amount: 1250, description: "Employer", date: "2026-03-01" },
-        { categoryId: 2, amount: -35, description: "Market", date: "2026-03-02" },
-        { categoryId: null, amount: -10, description: "Uncategorized", date: "2026-04-02" },
+        { categoryId: 1, amountCents: 125000, description: "Employer", date: "2026-03-01" },
+        { categoryId: 2, amountCents: -3500, description: "Market", date: "2026-03-02" },
+        { categoryId: null, amountCents: -1000, description: "Uncategorized", date: "2026-04-02" },
       ]);
     const summary = await loadFinancialSummary({ select } as unknown as Database);
 
     expect(select).toHaveBeenCalledTimes(2);
-    expect(summary.income[0]).toMatchObject({ category: { name: "Pay" }, amount: 1250 });
-    expect(summary.expenses[0]).toMatchObject({ category: { name: "Groceries" }, amount: 35 });
+    expect(select).toHaveBeenNthCalledWith(2, expect.stringContaining("amount_cents AS amountCents"));
+    expect(summary.income[0]).toMatchObject({ category: { name: "Pay" }, amountCents: 125000 });
+    expect(summary.expenses[0]).toMatchObject({ category: { name: "Groceries" }, amountCents: 3500 });
     expect(summary.monthlyTotals).toEqual([
-      { month: "2026-03", income: 1250, expenses: 35 },
-      { month: "2026-04", income: 0, expenses: 0 },
+      { month: "2026-03", incomeCents: 125000, expensesCents: 3500 },
+      { month: "2026-04", incomeCents: 0, expensesCents: 0 },
     ]);
     expect(summary.monthlyBreakdowns.map(({ month }) => month)).toEqual(["2026-03", "2026-04"]);
   });

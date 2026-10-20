@@ -11,14 +11,14 @@ describe("parseBankCsv", () => {
       {
         date: "2026-01-02",
         description: "Coffee, shop",
-        amount: 4.5,
+        amountCents: 450,
         categoryName: null,
         categoryId: null,
       },
       {
         date: "2026-01-03",
         description: "Refund",
-        amount: -12,
+        amountCents: -1200,
         categoryName: null,
         categoryId: null,
       },
@@ -48,6 +48,14 @@ describe("parseBankCsv", () => {
       "Date,Description,Debit,Credit\n2026-01-01,Store,25.00,\n2026-01-02,Paycheck,,1000.00",
     );
 
-    expect(transactions.map(({ amount }) => amount)).toEqual([-25, 1000]);
+    expect(transactions.map(({ amountCents }) => amountCents)).toEqual([-2500, 100000]);
+  });
+
+  it("rounds imported amounts to the nearest cent", () => {
+    const transactions = parseBankCsv(
+      "Date,Description,Amount\n2026-01-01,Positive,1.005\n2026-01-02,Negative,(1.005)\n2026-01-03,Sub-cent,0.004",
+    );
+
+    expect(transactions.map(({ amountCents }) => amountCents)).toEqual([101, -101, 0]);
   });
 });

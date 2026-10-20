@@ -20,10 +20,10 @@ describe("categorizeTransactions", () => {
         query.includes("keyword_category_map") ? keywordCategories : categories),
     } as unknown as Database;
     const transactions: ParsedTransaction[] = [
-      { date: "2026-01-01", description: "UBER EATS*ORDER", amount: -20, categoryName: " dining   out ", categoryId: null },
-      { date: "2026-01-02", description: "Netflix monthly subscription", amount: -15, categoryName: null, categoryId: null },
-      { date: "2026-01-03", description: "UBER EATS*ORDER", amount: -8, categoryName: "Unrecognized", categoryId: null },
-      { date: "2026-01-04", description: "Unknown payment", amount: -8, categoryName: "Unrecognized", categoryId: null },
+      { date: "2026-01-01", description: "UBER EATS*ORDER", amountCents: -2000, categoryName: " dining   out ", categoryId: null },
+      { date: "2026-01-02", description: "Netflix monthly subscription", amountCents: -1500, categoryName: null, categoryId: null },
+      { date: "2026-01-03", description: "UBER EATS*ORDER", amountCents: -800, categoryName: "Unrecognized", categoryId: null },
+      { date: "2026-01-04", description: "Unknown payment", amountCents: -800, categoryName: "Unrecognized", categoryId: null },
     ];
 
     const categorized = await categorizeTransactions(db, transactions, categories);
@@ -47,7 +47,7 @@ describe("saveImportedTransactions", () => {
     const transaction: ParsedTransaction = {
       date: "2026-01-05",
       description: "Grocery store",
-      amount: -42,
+      amountCents: -4200,
       categoryName: "Groceries",
       categoryId: 7,
     };
@@ -55,8 +55,8 @@ describe("saveImportedTransactions", () => {
     await saveImportedTransactions(db, "statement.csv", [transaction]);
 
     expect(execute).toHaveBeenLastCalledWith(
-      expect.stringContaining("INSERT INTO transactions"),
-      [7, -42, "Grocery store", "2026-01-05", 12, expect.any(String)],
+      expect.stringContaining("amount_cents"),
+      [7, -4200, "Grocery store", "2026-01-05", 12, expect.any(String)],
     );
   });
 });

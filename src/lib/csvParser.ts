@@ -1,7 +1,7 @@
 export type ParsedTransaction = {
   date: string;
   description: string;
-  amount: number;
+  amountCents: number;
   categoryName: string | null;
   categoryId: number | null;
 };
@@ -74,7 +74,12 @@ function parseAmount(value: string, rowNumber: number): number {
   if (!normalized || !Number.isFinite(amount)) {
     throw new Error(`Row ${rowNumber} has an invalid amount: "${value}".`);
   }
-  return isParenthesized ? -Math.abs(amount) : amount;
+  const sign = isParenthesized ? -1 : Math.sign(amount);
+  const absoluteCents = Math.round(Math.abs(amount) * 100 + Number.EPSILON * Math.abs(amount) * 100);
+  if (!Number.isSafeInteger(absoluteCents)) {
+    throw new Error(`Row ${rowNumber} has an amount that is too large: "${value}".`);
+  }
+  return sign * absoluteCents;
 }
 
 function findColumn(headers: string[], aliases: readonly string[]): number {
@@ -108,7 +113,7 @@ export function parseBankCsv(contents: string): ParsedTransaction[] {
       throw new Error(`Row ${rowNumber} must include a date and description.`);
     }
 
-    const amountValue = amountColumn >= 0
+    const amountCents = amountColumn >= 0
       ? parseAmount(row[amountColumn] ?? "", rowNumber)
       : debitColumn >= 0 && row[debitColumn]?.trim()
         ? -Math.abs(parseAmount(row[debitColumn], rowNumber))
@@ -116,14 +121,14 @@ export function parseBankCsv(contents: string): ParsedTransaction[] {
           ? Math.abs(parseAmount(row[creditColumn] ?? "", rowNumber))
           : NaN;
 
-    if (!Number.isFinite(amountValue)) {
+    if (!Number.isSafeInteger(amountCents)) {
       throw new Error(`Row ${rowNumber} must include an amount.`);
     }
 
     return {
       date,
       description,
-      amount: amountValue,
+      amountCents,
       categoryName: categoryColumn >= 0 ? row[categoryColumn]?.trim() || null : null,
       categoryId: null,
     };

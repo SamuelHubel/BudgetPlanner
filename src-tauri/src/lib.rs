@@ -7,19 +7,19 @@ pub fn run() {
         Migration {
             version: 1,
             description: "initial_schema",
-            sql: include_str!("../migrations/init.sql"),
+            sql: include_str!("../migrations/0001_initial_schema.sql"),
             kind: MigrationKind::Up,
         },
         Migration {
             version: 2,
-            description: "default_categories",
-            sql: include_str!("../migrations/default_categories.sql"),
+            description: "seed_categories",
+            sql: include_str!("../migrations/0002_seed_categories.sql"),
             kind: MigrationKind::Up,
         },
         Migration {
             version: 3,
-            description: "default_keyword_categories",
-            sql: include_str!("../migrations/default_keyword_categories.sql"),
+            description: "seed_keyword_rules",
+            sql: include_str!("../migrations/0003_seed_keyword_rules.sql"),
             kind: MigrationKind::Up,
         },
     ];

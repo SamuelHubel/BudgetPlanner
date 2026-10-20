@@ -88,11 +88,11 @@ export async function saveImportedTransactions(
   for (const transaction of transactions) {
     await db.execute(
       `INSERT INTO transactions
-       (category_id, amount, description, date, source, import_batch_id, created_at)
+       (category_id, amount_cents, description, date, source, import_batch_id, created_at)
        VALUES (?, ?, ?, ?, 'imported', ?, ?)`,
       [
         transaction.categoryId,
-        transaction.amount,
+        transaction.amountCents,
         transaction.description,
         transaction.date,
         batchId,

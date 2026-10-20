@@ -9,7 +9,7 @@ export type FinancialCategory = {
 
 type FinancialTransaction = {
   categoryId: number | null;
-  amount: number;
+  amountCents: number;
   description: string | null;
   date?: string;
 };
@@ -17,18 +17,18 @@ type FinancialTransaction = {
 export type FinancialSource = {
   description: string;
   categoryName: string;
-  amount: number;
+  amountCents: number;
 };
 
 export type CategoryTotal = {
   category: FinancialCategory;
-  amount: number;
+  amountCents: number;
 };
 
 export type MonthlyTotal = {
   month: string;
-  income: number;
-  expenses: number;
+  incomeCents: number;
+  expensesCents: number;
 };
 
 export type FinancialBreakdown = {
@@ -53,7 +53,7 @@ export async function loadFinancialSummary(db: Database): Promise<FinancialSumma
       "SELECT id, name, type, color FROM categories ORDER BY name",
     ),
     db.select<FinancialTransaction[]>(
-      `SELECT category_id AS categoryId, amount, description, date
+      `SELECT category_id AS categoryId, amount_cents AS amountCents, description, date
        FROM transactions`,
     ),
   ]);
@@ -77,14 +77,14 @@ export function createFinancialSummary(
     monthTransactions.push(transaction);
     transactionsByMonth.set(month, monthTransactions);
 
-    const monthlyTotal = monthlyTotals.get(month) ?? { month, income: 0, expenses: 0 };
-    if (Number.isFinite(transaction.amount) && transaction.amount !== 0 && transaction.categoryId !== null) {
+    const monthlyTotal = monthlyTotals.get(month) ?? { month, incomeCents: 0, expensesCents: 0 };
+    if (Number.isSafeInteger(transaction.amountCents) && transaction.amountCents !== 0 && transaction.categoryId !== null) {
       const category = categoriesById.get(transaction.categoryId);
       if (category) {
         if (category.type === "income") {
-          monthlyTotal.income += Math.abs(transaction.amount);
+          monthlyTotal.incomeCents += Math.abs(transaction.amountCents);
         } else {
-          monthlyTotal.expenses += Math.abs(transaction.amount);
+          monthlyTotal.expensesCents += Math.abs(transaction.amountCents);
         }
       }
     }
@@ -114,14 +114,14 @@ function createFinancialBreakdown(
   const expenseSources = new Map<string, FinancialSource>();
 
   for (const transaction of transactions) {
-    if (transaction.categoryId === null || !Number.isFinite(transaction.amount)) continue;
+    if (transaction.categoryId === null || !Number.isSafeInteger(transaction.amountCents)) continue;
     const category = categoriesById.get(transaction.categoryId);
-    if (!category || transaction.amount === 0) continue;
+    if (!category || transaction.amountCents === 0) continue;
 
-    const amount = Math.abs(transaction.amount);
+    const amountCents = Math.abs(transaction.amountCents);
     const isIncome = category.type === "income";
     const totals = isIncome ? incomeTotals : expenseTotals;
-    totals.set(category.id, (totals.get(category.id) ?? 0) + amount);
+    totals.set(category.id, (totals.get(category.id) ?? 0) + amountCents);
 
     const description = transaction.description?.trim();
     if (!description) continue;
@@ -130,9 +130,9 @@ function createFinancialBreakdown(
     const sourceKey = `${category.id}:${description.toLowerCase()}`;
     const source = sources.get(sourceKey);
     if (source) {
-      source.amount += amount;
+      source.amountCents += amountCents;
     } else {
-      sources.set(sourceKey, { description, categoryName: category.name, amount });
+      sources.set(sourceKey, { description, categoryName: category.name, amountCents });
     }
   }
 
@@ -143,13 +143,13 @@ function createFinancialBreakdown(
     categories
       .filter((category) => category.type === type)
       .flatMap((category) => {
-        const amount = totals.get(category.id);
-        return amount === undefined ? [] : [{ category, amount }];
+        const amountCents = totals.get(category.id);
+        return amountCents === undefined ? [] : [{ category, amountCents }];
       });
 
   const largestSources = (sources: Map<string, FinancialSource>): FinancialSource[] =>
     [...sources.values()]
-      .sort((first, second) => second.amount - first.amount || first.description.localeCompare(second.description))
+      .sort((first, second) => second.amountCents - first.amountCents || first.description.localeCompare(second.description))
       .slice(0, 5);
 
   return {

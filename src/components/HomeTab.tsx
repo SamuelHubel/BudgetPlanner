@@ -17,10 +17,14 @@ const currency = new Intl.NumberFormat(undefined, {
   currency: "USD",
 });
 
+function formatCurrency(amountCents: number): string {
+  return currency.format(amountCents / 100);
+}
+
 const fallbackColors = ["#22d3ee", "#818cf8", "#34d399", "#fbbf24", "#fb7185", "#c084fc"];
 
 function SummaryChart({ title, categories }: { title: string; categories: CategoryTotal[] }) {
-  const total = categories.reduce((sum, item) => sum + item.amount, 0);
+  const total = categories.reduce((sum, item) => sum + item.amountCents, 0);
   const circumference = 2 * Math.PI * 56;
   let offset = 0;
   const [hoveredCategoryId, setHoveredCategoryId] = useState<number | null>(null);
@@ -39,18 +43,18 @@ function SummaryChart({ title, categories }: { title: string; categories: Catego
         <div>
           <h4 className="summary-title" id={`${title.toLowerCase()}-chart-title`}>{title}</h4>
         </div>
-        <strong className="summary-total">{currency.format(total)}</strong>
+        <strong className="summary-total">{formatCurrency(total)}</strong>
       </div>
       <div className="chart-content">
         <div
           className="donut-chart"
           role="group"
-          aria-label={`${title} chart totaling ${currency.format(total)} across ${categories.length} categories`}
+          aria-label={`${title} chart totaling ${formatCurrency(total)} across ${categories.length} categories`}
         >
           <svg viewBox="0 0 144 144">
             <circle className="chart-track" cx="72" cy="72" r="56" />
-            {categories.map(({ category, amount }, index) => {
-              const segmentLength = total > 0 ? (amount / total) * circumference : 0;
+            {categories.map(({ category, amountCents }, index) => {
+              const segmentLength = total > 0 ? (amountCents / total) * circumference : 0;
               const color = category.color ?? fallbackColors[index % fallbackColors.length];
               const isActive = category.id === activeCategoryId;
               const segment = (
@@ -68,7 +72,7 @@ function SummaryChart({ title, categories }: { title: string; categories: Catego
                   transform="rotate(-90 72 72)"
                   role="button"
                   tabIndex={0}
-                  aria-label={`${category.name}: ${currency.format(amount)}`}
+                  aria-label={`${category.name}: ${formatCurrency(amountCents)}`}
                   aria-pressed={selectedCategoryId === category.id}
                   onMouseEnter={() => setHoveredCategoryId(category.id)}
                   onMouseLeave={() => setHoveredCategoryId(null)}
@@ -84,10 +88,10 @@ function SummaryChart({ title, categories }: { title: string; categories: Catego
           {activeCategory ? (
             <div className="chart-popup" role="status" aria-live="polite">
               <span>{activeCategory.category.name}</span>
-              <strong>{currency.format(activeCategory.amount)}</strong>
+              <strong>{formatCurrency(activeCategory.amountCents)}</strong>
             </div>
           ) : (
-            <span className="chart-center">{currency.format(total)}</span>
+            <span className="chart-center">{formatCurrency(total)}</span>
           )}
         </div>
         <ul className="chart-legend">
@@ -134,7 +138,7 @@ function SourceList({ title, sources }: { title: string; sources: FinancialSourc
                 <span>{source.description}</span>
                 <small>{source.categoryName}</small>
               </span>
-              <strong>{currency.format(source.amount)}</strong>
+              <strong>{formatCurrency(source.amountCents)}</strong>
             </li>
           ))}
         </ol>
@@ -191,7 +195,7 @@ function MonthList({
 }
 
 function MonthlyBarChart({ totals }: { totals: MonthlyTotal[] }) {
-  const maxAmount = Math.max(0, ...totals.flatMap(({ income, expenses }) => [income, expenses]));
+  const maxAmountCents = Math.max(0, ...totals.flatMap(({ incomeCents, expensesCents }) => [incomeCents, expensesCents]));
 
   return (
     <section className="card monthly-chart" aria-labelledby="monthly-chart-title">
@@ -202,23 +206,23 @@ function MonthlyBarChart({ totals }: { totals: MonthlyTotal[] }) {
       </div>
       {totals.length > 0 ? (
         <ol className="monthly-bars" aria-label="Monthly income and expenses">
-          {totals.map(({ month, income, expenses }) => {
+          {totals.map(({ month, incomeCents, expensesCents }) => {
             const label = formatMonth(month, "short");
 
             return (
               <li
                 className="monthly-bar-group"
                 key={month}
-                aria-label={`${label}: income ${currency.format(income)}, expenses ${currency.format(expenses)}`}
+                aria-label={`${label}: income ${formatCurrency(incomeCents)}, expenses ${formatCurrency(expensesCents)}`}
               >
                 <div className="monthly-bar-pair" aria-hidden="true">
                   <span
                     className="monthly-bar monthly-bar-income"
-                    style={{ height: `${maxAmount > 0 ? (income / maxAmount) * 100 : 0}%` }}
+                    style={{ height: `${maxAmountCents > 0 ? (incomeCents / maxAmountCents) * 100 : 0}%` }}
                   />
                   <span
                     className="monthly-bar monthly-bar-expenses"
-                    style={{ height: `${maxAmount > 0 ? (expenses / maxAmount) * 100 : 0}%` }}
+                    style={{ height: `${maxAmountCents > 0 ? (expensesCents / maxAmountCents) * 100 : 0}%` }}
                   />
                 </div>
                 <span className="monthly-bar-label">{label}</span>
