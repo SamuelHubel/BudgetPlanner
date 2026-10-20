@@ -1,16 +1,33 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { BudgetApiClient } from "../api/budgetApi";
 
-const { resetFinancialData } = vi.hoisted(() => ({
-  resetFinancialData: vi.fn(async () => {}),
-}));
-
-vi.mock("../lib/db", () => ({ resetFinancialData }));
 vi.mock("./HomeTab", () => ({ default: () => <div>Home content</div> }));
 vi.mock("./AITab", () => ({ default: () => <div>AI content</div> }));
 
 import Dashboard from "./Dashboard";
+
+const resetFinancialData = vi.fn(async () => {});
+const api: BudgetApiClient = {
+  unlock: async () => {},
+  lock: async () => {},
+  listCategories: async () => [],
+  previewImport: async () => [],
+  commitImport: async () => ({ inserted: 0, skippedDuplicates: 0 }),
+  getFinancialSummary: async () => ({
+    breakdown: {
+      income: [],
+      expenses: [],
+      largestIncomeSources: [],
+      largestExpenses: [],
+      uncategorizedCents: 0,
+    },
+    monthlyTotals: [],
+    monthlyBreakdowns: [],
+  }),
+  resetFinancialData,
+};
 
 afterEach(() => {
   vi.useRealTimers();
@@ -20,6 +37,7 @@ afterEach(() => {
 function renderDashboard() {
   return render(
     <Dashboard
+      api={api}
       lockApp={vi.fn(async () => {})}
       activeTab="home"
       setActiveTab={vi.fn()}

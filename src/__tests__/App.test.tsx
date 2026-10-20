@@ -2,11 +2,29 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-vi.mock("../lib/db", () => ({
-  getDb: vi.fn(async () => ({ close: vi.fn(), select: vi.fn(async () => []) })),
-  closeDb: vi.fn(async () => {}),
-  resetFinancialData: vi.fn(async () => {}),
+const { api } = vi.hoisted(() => ({
+  api: {
+    unlock: vi.fn(async (_password: string) => {}),
+    lock: vi.fn(async () => {}),
+    listCategories: vi.fn(async () => []),
+    previewImport: vi.fn(async () => []),
+    commitImport: vi.fn(async () => ({ inserted: 0, skippedDuplicates: 0 })),
+    getFinancialSummary: vi.fn(async () => ({
+      breakdown: {
+        income: [],
+        expenses: [],
+        largestIncomeSources: [],
+        largestExpenses: [],
+        uncategorizedCents: 0,
+      },
+      monthlyTotals: [],
+      monthlyBreakdowns: [],
+    })),
+    resetFinancialData: vi.fn(async () => {}),
+  },
 }));
+
+vi.mock("../api/budgetApi", () => ({ budgetApi: api }));
 
 import App from "../App";
 
@@ -33,16 +51,15 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: /unlock/i }));
 
     await waitFor(async () => {
-      const mockedDb = await vi.importMock<typeof import("../lib/db")>("../lib/db");
-      expect(mockedDb.getDb).toHaveBeenCalledTimes(2);
+      expect(api.unlock).toHaveBeenCalledTimes(1);
+      expect(api.unlock).toHaveBeenCalledWith("hunter2");
       expect(screen.getByText(/your budget dashboard/i)).toBeInTheDocument();
     });
   });
 
   it("shows database failures on the unlock screen", async () => {
     const user = userEvent.setup();
-    const mockedDb = await vi.importMock<typeof import("../lib/db")>("../lib/db");
-    vi.mocked(mockedDb.getDb).mockRejectedValueOnce("database unavailable");
+    api.unlock.mockRejectedValueOnce("database unavailable");
     render(<App />);
 
     await user.type(screen.getByLabelText(/password/i), "password123");
@@ -79,8 +96,7 @@ describe("App", () => {
     });
 
     await user.click(screen.getByRole("button", { name: /lock app/i }));
-    const mockedDb = await vi.importMock<typeof import("../lib/db")>("../lib/db");
-    expect(mockedDb.closeDb).toHaveBeenCalledTimes(1);
+    expect(api.lock).toHaveBeenCalledTimes(1);
     expect(screen.getByText(/unlock your budget vault/i)).toBeInTheDocument();
   });
 });

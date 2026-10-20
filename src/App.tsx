@@ -7,7 +7,7 @@ import { useState, type FormEvent } from "react";
 import "./index.css";
 import UnlockScreen from "./components/UnlockScreen";
 import Dashboard from "./components/Dashboard";
-import { getDb, closeDb } from "./lib/db";
+import { budgetApi } from "./api/budgetApi";
 import { toErrorMessage } from "./lib/errors";
 
 type TabName = "home" | "ai";
@@ -25,7 +25,7 @@ function App() {
     // For now, this just opens the (unencrypted) connection so migrations
     // run and CRUD milestones have something to build against.
     try {
-      await getDb();
+      await budgetApi.unlock(password);
       setIsLocked(false);
       setPassword("");
     } catch (error) {
@@ -34,7 +34,7 @@ function App() {
   };
 
   const lockApp = async () => {
-    await closeDb();
+    await budgetApi.lock();
     setIsLocked(true);
   };
 
@@ -53,7 +53,12 @@ function App() {
             error={unlockError}
           />
         ) : (
-          <Dashboard lockApp={lockApp} activeTab={activeTab} setActiveTab={setActiveTab} />
+          <Dashboard
+            api={budgetApi}
+            lockApp={lockApp}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+          />
         )}
       </div>
     </div>

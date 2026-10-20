@@ -6,18 +6,19 @@ import { useEffect, useState } from "react";
 import TabBar from "./TabBar";
 import HomeTab from "./HomeTab";
 import AITab from "./AITab";
-import { resetFinancialData } from "../lib/db";
+import type { BudgetApiClient } from "../api/budgetApi";
 import { toErrorMessage } from "../lib/errors";
 
 type TabName = "home" | "ai";
 
 type Props = {
+  api: BudgetApiClient;
   lockApp: () => Promise<void>;
   activeTab: TabName;
   setActiveTab: (t: TabName) => void;
 };
 
-export default function Dashboard({ lockApp, activeTab, setActiveTab }: Props) {
+export default function Dashboard({ api, lockApp, activeTab, setActiveTab }: Props) {
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
@@ -42,7 +43,7 @@ export default function Dashboard({ lockApp, activeTab, setActiveTab }: Props) {
     setResetError(null);
 
     try {
-      await resetFinancialData();
+      await api.resetFinancialData();
       setResetVersion((version) => version + 1);
       setResetComplete(true);
       setIsResetDialogOpen(false);
@@ -77,7 +78,7 @@ export default function Dashboard({ lockApp, activeTab, setActiveTab }: Props) {
         <TabBar activeTab={activeTab} setActiveTab={setActiveTab} />
 
         <div className="panel-body">
-          {activeTab === "home" ? <HomeTab key={resetVersion} /> : <AITab />}
+          {activeTab === "home" ? <HomeTab key={resetVersion} api={api} /> : <AITab />}
         </div>
       </div>
 

@@ -1,37 +1,22 @@
+mod commands;
+mod db;
 pub mod domain;
-
-use tauri_plugin_sql::{Migration, MigrationKind};
+mod error;
+mod state;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // SQLCipher support is enabled at compile time using libsqlite3-sys bundled SQLCipher.
-    let migrations = vec![
-        Migration {
-            version: 1,
-            description: "initial_schema",
-            sql: include_str!("../migrations/0001_initial_schema.sql"),
-            kind: MigrationKind::Up,
-        },
-        Migration {
-            version: 2,
-            description: "seed_categories",
-            sql: include_str!("../migrations/0002_seed_categories.sql"),
-            kind: MigrationKind::Up,
-        },
-        Migration {
-            version: 3,
-            description: "seed_keyword_rules",
-            sql: include_str!("../migrations/0003_seed_keyword_rules.sql"),
-            kind: MigrationKind::Up,
-        },
-    ];
-
     tauri::Builder::default()
-        .plugin(
-            tauri_plugin_sql::Builder::new()
-                .add_migrations("sqlite:budget.db", migrations)
-                .build(),
-        )
+        .manage(state::AppState::default())
+        .invoke_handler(tauri::generate_handler![
+            commands::auth::unlock,
+            commands::auth::lock,
+            commands::categories::list_categories,
+            commands::import::preview_import,
+            commands::import::commit_import,
+            commands::summary::get_financial_summary,
+            commands::maintenance::reset_financial_data,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

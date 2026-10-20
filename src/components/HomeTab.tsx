@@ -1,30 +1,23 @@
 import { useEffect, useState } from "react";
-import { getDb } from "../lib/db";
+import type { BudgetApiClient } from "../api/budgetApi";
 import { toErrorMessage } from "../lib/errors";
-import {
-  loadFinancialSummary,
-  type CategoryTotal,
-  type FinancialSource,
-  type FinancialSummary,
-  type MonthlyBreakdown,
-  type MonthlyTotal,
-} from "../lib/financialSummary";
+import type {
+  CategoryTotal,
+  FinancialBreakdown,
+  FinancialSource,
+  FinancialSummary,
+  MonthlyBreakdown,
+  MonthlyTotal,
+} from "../types";
+import { formatCurrency, formatMonth } from "../lib/formatting";
 import "./HomeTab.css";
 import TransactionImport from "./TransactionImport";
-
-const currency = new Intl.NumberFormat(undefined, {
-  style: "currency",
-  currency: "USD",
-});
-
-function formatCurrency(amountCents: number): string {
-  return currency.format(amountCents / 100);
-}
 
 const fallbackColors = ["#22d3ee", "#818cf8", "#34d399", "#fbbf24", "#fb7185", "#c084fc"];
 
 function SummaryChart({ title, categories }: { title: string; categories: CategoryTotal[] }) {
   const total = categories.reduce((sum, item) => sum + item.amountCents, 0);
+  const plottedTotal = categories.reduce((sum, item) => sum + Math.max(0, item.amountCents), 0);
   const circumference = 2 * Math.PI * 56;
   let offset = 0;
   const [hoveredCategoryId, setHoveredCategoryId] = useState<number | null>(null);
@@ -54,7 +47,9 @@ function SummaryChart({ title, categories }: { title: string; categories: Catego
           <svg viewBox="0 0 144 144">
             <circle className="chart-track" cx="72" cy="72" r="56" />
             {categories.map(({ category, amountCents }, index) => {
-              const segmentLength = total > 0 ? (amountCents / total) * circumference : 0;
+              const segmentLength = plottedTotal > 0
+                ? (Math.max(0, amountCents) / plottedTotal) * circumference
+                : 0;
               const color = category.color ?? fallbackColors[index % fallbackColors.length];
               const isActive = category.id === activeCategoryId;
               const segment = (
@@ -149,14 +144,6 @@ function SourceList({ title, sources }: { title: string; sources: FinancialSourc
   );
 }
 
-function formatMonth(month: string, monthStyle: "long" | "short" = "long"): string {
-  const [year, monthNumber] = month.split("-").map(Number);
-  return new Date(year, monthNumber - 1, 1).toLocaleDateString(undefined, {
-    month: monthStyle,
-    year: "numeric",
-  });
-}
-
 function MonthList({
   months,
   selectedMonth,
@@ -195,7 +182,10 @@ function MonthList({
 }
 
 function MonthlyBarChart({ totals }: { totals: MonthlyTotal[] }) {
-  const maxAmountCents = Math.max(0, ...totals.flatMap(({ incomeCents, expensesCents }) => [incomeCents, expensesCents]));
+  const maxAmountCents = Math.max(0, ...totals.flatMap(({ incomeCents, expensesCents }) => [
+    Math.max(0, incomeCents),
+    Math.max(0, expensesCents),
+  ]));
 
   return (
     <section className="card monthly-chart" aria-labelledby="monthly-chart-title">
@@ -218,11 +208,11 @@ function MonthlyBarChart({ totals }: { totals: MonthlyTotal[] }) {
                 <div className="monthly-bar-pair" aria-hidden="true">
                   <span
                     className="monthly-bar monthly-bar-income"
-                    style={{ height: `${maxAmountCents > 0 ? (incomeCents / maxAmountCents) * 100 : 0}%` }}
+                    style={{ height: `${maxAmountCents > 0 ? (Math.max(0, incomeCents) / maxAmountCents) * 100 : 0}%` }}
                   />
                   <span
                     className="monthly-bar monthly-bar-expenses"
-                    style={{ height: `${maxAmountCents > 0 ? (expensesCents / maxAmountCents) * 100 : 0}%` }}
+                    style={{ height: `${maxAmountCents > 0 ? (Math.max(0, expensesCents) / maxAmountCents) * 100 : 0}%` }}
                   />
                 </div>
                 <span className="monthly-bar-label">{label}</span>
@@ -237,7 +227,7 @@ function MonthlyBarChart({ totals }: { totals: MonthlyTotal[] }) {
   );
 }
 
-export default function HomeTab() {
+export default function HomeTab({ api }: { api: BudgetApiClient }) {
   const [summary, setSummary] = useState<FinancialSummary | null>(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -249,8 +239,8 @@ export default function HomeTab() {
     setIsLoading(true);
     setError("");
 
-    void getDb()
-      .then(loadFinancialSummary)
+    void api
+      .getFinancialSummary()
       .then((result) => {
         if (isCurrent) setSummary(result);
       })
@@ -266,12 +256,13 @@ export default function HomeTab() {
     return () => {
       isCurrent = false;
     };
-  }, [refreshKey]);
+  }, [api, refreshKey]);
 
   const currentMonth = summary?.monthlyBreakdowns.find(({ month }) => month === selectedMonth)
     ?? summary?.monthlyBreakdowns[summary.monthlyBreakdowns.length - 1]
     ?? null;
-  const currentBreakdown = currentMonth ?? summary;
+  const currentBreakdown: FinancialBreakdown | null =
+    currentMonth?.breakdown ?? summary?.breakdown ?? null;
 
   return (
     <div className="tab-content">
@@ -298,6 +289,10 @@ export default function HomeTab() {
             <SummaryChart title="Income" categories={currentBreakdown.income} />
             <SummaryChart title="Expenses" categories={currentBreakdown.expenses} />
           </div>
+          <section className="card" aria-label="Uncategorized transactions">
+            <h4 className="summary-title">Uncategorized</h4>
+            <p className="summary-total">{formatCurrency(currentBreakdown.uncategorizedCents)}</p>
+          </section>
           <div className="grid-two">
             <SourceList title="Largest income sources" sources={currentBreakdown.largestIncomeSources} />
             <SourceList title="Largest expenses" sources={currentBreakdown.largestExpenses} />
@@ -306,7 +301,10 @@ export default function HomeTab() {
         </>
       )}
 
-      <TransactionImport onImported={() => setRefreshKey((current) => current + 1)} />
+      <TransactionImport
+        api={api}
+        onImported={() => setRefreshKey((current) => current + 1)}
+      />
     </div>
   );
 }
