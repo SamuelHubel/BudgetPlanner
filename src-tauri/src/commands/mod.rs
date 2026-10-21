@@ -2,6 +2,7 @@ pub mod auth;
 pub mod categories;
 pub mod import;
 pub mod maintenance;
+pub mod settings;
 pub mod summary;
 
 use std::sync::MutexGuard;

@@ -1,18 +1,13 @@
-// This component will be used to display all of the AI features in the app
-// will send requests taken from chat box to the backend to be processsed by the AI or rules-based engine
-
-import "./HomeTab.css";
-
 export default function AITab() {
   return (
-    <div className="tab-content">
-      <div className="stack">
-        <h3 className="tab-title">AI</h3>
-        <p className="tab-sub">AI features are coming soon. This placeholder screen shows where model-driven insights will appear.</p>
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <h3 className="text-xl font-semibold text-white">AI</h3>
+        <p className="text-sm text-slate-400">AI features are coming soon. This placeholder screen shows where model-driven insights will appear.</p>
       </div>
 
-      <div className="card">
-        <p className="card-body">Placeholder for chat, recommendations, and generated budget suggestions.</p>
+      <div className="rounded-3xl border border-slate-800 bg-slate-950/80 p-4">
+        <p className="mt-3 text-sm text-slate-300">Placeholder for chat, recommendations, and generated budget suggestions.</p>
       </div>
     </div>
   );

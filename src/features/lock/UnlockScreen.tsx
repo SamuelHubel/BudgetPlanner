@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from "react";
-import "./UnlockScreen.css";
 
-type Props = {
+type UnlockScreenProps = {
   isInitialized: boolean | null;
   onSubmit: (password: string) => Promise<void>;
   error: string;
@@ -9,7 +8,7 @@ type Props = {
 
 const MINIMUM_PASSWORD_LENGTH = 12;
 
-export default function UnlockScreen({ isInitialized, onSubmit, error }: Props) {
+export default function UnlockScreen({ isInitialized, onSubmit, error }: UnlockScreenProps) {
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [formError, setFormError] = useState("");
@@ -24,7 +23,6 @@ export default function UnlockScreen({ isInitialized, onSubmit, error }: Props) 
       setConfirmation("");
       return;
     }
-
     try {
       await onSubmit(password);
     } finally {
@@ -34,29 +32,21 @@ export default function UnlockScreen({ isInitialized, onSubmit, error }: Props) 
   };
 
   return (
-    <div className="unlock-card">
-      <h2 className="unlock-title">
-        {isCreatingPassword ? "Create your password" : "Unlock your budget vault"}
-      </h2>
-      <p className="unlock-sub">
-        {isCreatingPassword
-          ? "Create a password to encrypt your budget data."
-          : "Enter your password to continue."}
+    <div className="mx-auto w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900/90 p-8 shadow-xl shadow-slate-950/30">
+      <h2 className="text-2xl font-semibold text-white">{isCreatingPassword ? "Create your password" : "Unlock your budget vault"}</h2>
+      <p className="mt-2 text-sm text-slate-400">
+        {isCreatingPassword ? "Create a password to encrypt your budget data." : "Enter your password to continue."}
       </p>
-      {error && <p className="unlock-error" role="alert">{error}</p>}
-      {formError && <p className="unlock-error" role="alert">{formError}</p>}
-
+      {error && <p className="mt-4 text-sm text-red-300" role="alert">{error}</p>}
+      {formError && <p className="mt-4 text-sm text-red-300" role="alert">{formError}</p>}
       {isInitialized === null ? (
-        <p role="status">
-          {error ? "Password setup is unavailable." : "Checking password setup..."}
-        </p>
+        <p role="status">{error ? "Password setup is unavailable." : "Checking password setup..."}</p>
       ) : (
-        <form className="unlock-form" onSubmit={submitPassword}>
-          <label className="label" htmlFor="password">
-            Password
-          </label>
+        <form className="mt-8 space-y-5" onSubmit={submitPassword}>
+          <label className="block text-sm font-medium text-slate-300" htmlFor="password">Password</label>
           <input
             id="password"
+            className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-slate-100 outline-none ring-1 ring-slate-800 transition focus:border-slate-400 focus:ring-slate-500"
             type="password"
             value={password}
             onChange={(event) => {
@@ -68,16 +58,13 @@ export default function UnlockScreen({ isInitialized, onSubmit, error }: Props) 
             autoFocus
             required
             minLength={isCreatingPassword ? MINIMUM_PASSWORD_LENGTH : undefined}
-            className="input"
           />
-
           {isCreatingPassword && (
             <>
-              <label className="label" htmlFor="password-confirmation">
-                Confirm password
-              </label>
+              <label className="block text-sm font-medium text-slate-300" htmlFor="password-confirmation">Confirm password</label>
               <input
                 id="password-confirmation"
+                className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-slate-100 outline-none ring-1 ring-slate-800 transition focus:border-slate-400 focus:ring-slate-500"
                 type="password"
                 value={confirmation}
                 onChange={(event) => {
@@ -88,26 +75,17 @@ export default function UnlockScreen({ isInitialized, onSubmit, error }: Props) 
                 autoComplete="new-password"
                 required
                 minLength={MINIMUM_PASSWORD_LENGTH}
-                className="input"
               />
             </>
           )}
-
-          <button type="submit" className="primary-btn">
+          <button type="submit" className="inline-flex w-full justify-center rounded-2xl bg-sky-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-400">
             {isCreatingPassword ? "Create password" : "Unlock"}
           </button>
         </form>
       )}
-
-      <div className="note-box">
-        {isCreatingPassword && (
-          <p>
-            Any existing unencrypted database from an earlier version will be deleted during setup.
-          </p>
-        )}
-        <p>
-          If you forget your password, your encrypted budget data cannot be recovered.
-        </p>
+      <div className="mt-6 rounded-2xl border border-dashed border-slate-700 bg-slate-950/80 p-4 text-xs text-slate-500">
+        {isCreatingPassword && <p>Any existing unencrypted database from an earlier version will be deleted during setup.</p>}
+        <p>If you forget your password, your encrypted budget data cannot be recovered.</p>
       </div>
     </div>
   );

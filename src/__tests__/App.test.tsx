@@ -18,10 +18,13 @@ const { api } = vi.hoisted(() => ({
         largestIncomeSources: [],
         largestExpenses: [],
         uncategorizedCents: 0,
+        uncategorizedIncomeCents: 0,
+        uncategorizedExpensesCents: 0,
       },
       monthlyTotals: [],
       monthlyBreakdowns: [],
     })),
+    getCurrency: vi.fn(async () => "USD"),
     resetFinancialData: vi.fn(async () => {}),
   },
 }));

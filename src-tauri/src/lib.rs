@@ -17,6 +17,7 @@ pub fn run() {
             commands::import::preview_import,
             commands::import::commit_import,
             commands::summary::get_financial_summary,
+            commands::settings::get_currency,
             commands::maintenance::reset_financial_data,
         ])
         .run(tauri::generate_context!())

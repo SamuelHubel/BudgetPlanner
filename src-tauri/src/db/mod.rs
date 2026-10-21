@@ -9,6 +9,10 @@ const MIGRATIONS: &[(i64, &str)] = &[
         3,
         include_str!("../../migrations/0003_seed_keyword_rules.sql"),
     ),
+    (
+        4,
+        include_str!("../../migrations/0004_currency_setting.sql"),
+    ),
 ];
 
 pub fn run_migrations(connection: &mut Connection) -> Result<(), AppError> {
@@ -93,7 +97,7 @@ mod tests {
             .unwrap()
             .collect::<Result<Vec<_>, _>>()
             .unwrap();
-        assert_eq!(version, 3);
+        assert_eq!(version, 4);
         assert_eq!(category_count, 11);
         assert!(rule_count > 0);
         assert!(!has_app_lock);
@@ -104,9 +108,18 @@ mod tests {
             "goals",
             "keyword_category_map",
             "ai_insights_log",
+            "settings",
         ] {
             assert!(tables.iter().any(|table| table == expected));
         }
+        let currency: String = connection
+            .query_row(
+                "SELECT setting_value FROM settings WHERE setting_key = 'currency'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(currency, "USD");
     }
 
     #[test]

@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { BudgetApiClient } from "../api/budgetApi";
+import type { BudgetApiClient } from "../../api/budgetApi";
 
 import HomeTab from "./HomeTab";
+import { FinancialSummaryProvider } from "./FinancialSummaryContext";
+import { useFinancialSummary } from "./useFinancialSummary";
 
 const salary = { id: 1, name: "Salary", type: "income" as const, color: "#14b8a6" };
 const groceries = { id: 2, name: "Groceries", type: "expense" as const, color: "#22c55e" };
@@ -18,6 +20,8 @@ const summary = {
     ],
     ...emptySources,
     uncategorizedCents: 0,
+    uncategorizedIncomeCents: 0,
+    uncategorizedExpensesCents: 0,
   },
   monthlyTotals: [
     { month: "2026-01", incomeCents: 250000, expensesCents: 7500, uncategorizedCents: 0 },
@@ -31,6 +35,8 @@ const summary = {
         expenses: [{ category: groceries, amountCents: 7500 }],
         ...emptySources,
         uncategorizedCents: 0,
+        uncategorizedIncomeCents: 0,
+        uncategorizedExpensesCents: 0,
       },
     },
     {
@@ -40,6 +46,8 @@ const summary = {
         expenses: [{ category: housing, amountCents: 90000 }],
         ...emptySources,
         uncategorizedCents: 0,
+        uncategorizedIncomeCents: 0,
+        uncategorizedExpensesCents: 0,
       },
     },
   ],
@@ -53,17 +61,53 @@ const api: BudgetApiClient = {
   previewImport: async () => [],
   commitImport: async () => ({ inserted: 0, skippedDuplicates: 0 }),
   getFinancialSummary: vi.fn(async () => summary),
+  getCurrency: vi.fn(async () => "USD"),
   resetFinancialData: async () => {},
 };
+
+function FinancialSummaryRefreshProbe() {
+  const { summary, refresh } = useFinancialSummary();
+  return (
+    <>
+      <p>{summary?.breakdown.income[0]?.amountCents ?? "Loading"}</p>
+      <button type="button" onClick={refresh}>Refresh summary</button>
+    </>
+  );
+}
 
 afterEach(() => {
   vi.clearAllMocks();
 });
 
+describe("financial summary state", () => {
+  it("refreshes summary data through the shared hook", async () => {
+    const firstSummary = {
+      ...summary,
+      breakdown: { ...summary.breakdown, income: [{ category: salary, amountCents: 100 }] },
+    };
+    const refreshedSummary = {
+      ...summary,
+      breakdown: { ...summary.breakdown, income: [{ category: salary, amountCents: 200 }] },
+    };
+    const refreshApi: BudgetApiClient = {
+      ...api,
+      getFinancialSummary: vi.fn()
+        .mockResolvedValueOnce(firstSummary)
+        .mockResolvedValueOnce(refreshedSummary),
+    };
+    const user = userEvent.setup();
+    render(<FinancialSummaryProvider api={refreshApi}><FinancialSummaryRefreshProbe /></FinancialSummaryProvider>);
+
+    expect(await screen.findByText("100")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Refresh summary" }));
+    expect(await screen.findByText("200")).toBeInTheDocument();
+  });
+});
+
 describe("HomeTab category charts", () => {
   it("shows a category popup while a chart legend item is hovered", async () => {
     const user = userEvent.setup();
-    render(<HomeTab api={api} />);
+    render(<FinancialSummaryProvider api={api}><HomeTab api={api} /></FinancialSummaryProvider>);
 
     await screen.findByRole("heading", { name: "Expenses" });
     await user.click(screen.getByRole("button", { name: "January 2026" }));
@@ -83,7 +127,7 @@ describe("HomeTab category charts", () => {
 
   it("keeps a category highlighted when its legend item is selected", async () => {
     const user = userEvent.setup();
-    render(<HomeTab api={api} />);
+    render(<FinancialSummaryProvider api={api}><HomeTab api={api} /></FinancialSummaryProvider>);
 
     await screen.findByRole("heading", { name: "Expenses" });
     await user.click(screen.getByRole("button", { name: "January 2026" }));
@@ -97,7 +141,7 @@ describe("HomeTab category charts", () => {
 
   it("selects a category directly from its chart segment", async () => {
     const user = userEvent.setup();
-    render(<HomeTab api={api} />);
+    render(<FinancialSummaryProvider api={api}><HomeTab api={api} /></FinancialSummaryProvider>);
 
     await screen.findByRole("heading", { name: "Expenses" });
     await user.click(screen.getByRole("button", { name: "January 2026" }));
@@ -112,7 +156,7 @@ describe("HomeTab category charts", () => {
 
   it("defaults to the latest tracked month and replots income and expenses when a month is selected", async () => {
     const user = userEvent.setup();
-    render(<HomeTab api={api} />);
+    render(<FinancialSummaryProvider api={api}><HomeTab api={api} /></FinancialSummaryProvider>);
 
     const monthlyChart = await screen.findByRole("region", { name: "Income and expenses by month" });
     const monthList = within(screen.getByRole("region", { name: "Tracked months" }));
@@ -145,18 +189,33 @@ describe("HomeTab category charts", () => {
       ...api,
       getFinancialSummary: async () => ({
         ...summary,
-        breakdown: { ...summary.breakdown, uncategorizedCents: -1234 },
+        breakdown: {
+          ...summary.breakdown,
+          uncategorizedCents: -1234,
+          uncategorizedIncomeCents: 0,
+          uncategorizedExpensesCents: 1234,
+        },
         monthlyBreakdowns: summary.monthlyBreakdowns.map((month) => ({
-          ...month,
-          breakdown: { ...month.breakdown, uncategorizedCents: -1234 },
+          ...month, breakdown: {
+            ...month.breakdown,
+            uncategorizedCents: -1234,
+            uncategorizedIncomeCents: 0,
+            uncategorizedExpensesCents: 1234,
+          },
         })),
       }),
+      getCurrency: vi.fn(async () => "USD"),
     };
-    render(<HomeTab api={apiWithUncategorized} />);
+    render(<FinancialSummaryProvider api={apiWithUncategorized}><HomeTab api={apiWithUncategorized} /></FinancialSummaryProvider>);
 
     await screen.findByRole("heading", { name: "Expenses" });
     await user.click(screen.getByRole("button", { name: "January 2026" }));
 
     expect(screen.getByRole("region", { name: "Uncategorized transactions" })).toHaveTextContent("-$12.34");
+    expect(
+      within(screen.getByRole("group", { name: /Expenses chart/ })).getByRole("button", {
+        name: "Uncategorized: $12.34",
+      }),
+    ).toBeInTheDocument();
   });
 });

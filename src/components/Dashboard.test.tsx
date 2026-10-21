@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { BudgetApiClient } from "../api/budgetApi";
 
-vi.mock("./HomeTab", () => ({ default: () => <div>Home content</div> }));
+vi.mock("../features/home/HomeTab", () => ({ default: () => <div>Home content</div> }));
 vi.mock("./AITab", () => ({ default: () => <div>AI content</div> }));
 
 import Dashboard from "./Dashboard";
@@ -24,10 +24,13 @@ const api: BudgetApiClient = {
       largestIncomeSources: [],
       largestExpenses: [],
       uncategorizedCents: 0,
+      uncategorizedIncomeCents: 0,
+      uncategorizedExpensesCents: 0,
     },
     monthlyTotals: [],
     monthlyBreakdowns: [],
   }),
+  getCurrency: async () => "USD",
   resetFinancialData,
 };
 

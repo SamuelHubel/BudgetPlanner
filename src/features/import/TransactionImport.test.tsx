@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { BudgetApiClient } from "../api/budgetApi";
-import type { ImportPreviewRow } from "../types";
+import type { BudgetApiClient } from "../../api/budgetApi";
+import type { ImportPreviewRow } from "../../types";
 import TransactionImport from "./TransactionImport";
+import { FinancialSummaryProvider } from "../home/FinancialSummaryContext";
 
 const preview: ImportPreviewRow[] = [{
   date: "2026-01-01",
@@ -32,10 +33,13 @@ function createApi(previewImport: BudgetApiClient["previewImport"]): BudgetApiCl
         largestIncomeSources: [],
         largestExpenses: [],
         uncategorizedCents: 0,
+        uncategorizedIncomeCents: 0,
+        uncategorizedExpensesCents: 0,
       },
       monthlyTotals: [],
       monthlyBreakdowns: [],
     }),
+    getCurrency: async () => "USD",
     resetFinancialData: async () => {},
   };
 }
@@ -54,7 +58,7 @@ describe("TransactionImport", () => {
     const previewImport = vi.fn(async () => preview);
     const api = createApi(previewImport);
     const onImported = vi.fn();
-    render(<TransactionImport api={api} onImported={onImported} />);
+    render(<FinancialSummaryProvider api={api}><TransactionImport api={api} onImported={onImported} /></FinancialSummaryProvider>);
 
     await user.upload(screen.getByLabelText(/choose a csv file/i), csvFile());
     expect(await screen.findByText("Already imported")).toBeInTheDocument();
@@ -77,7 +81,7 @@ describe("TransactionImport", () => {
       .mockRejectedValueOnce("date order is ambiguous")
       .mockResolvedValueOnce(preview);
     const api = createApi(previewImport);
-    render(<TransactionImport api={api} />);
+    render(<FinancialSummaryProvider api={api}><TransactionImport api={api} /></FinancialSummaryProvider>);
 
     await user.upload(screen.getByLabelText(/choose a csv file/i), csvFile());
     expect(await screen.findByRole("alert")).toHaveTextContent("date order is ambiguous");

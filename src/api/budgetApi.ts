@@ -21,6 +21,7 @@ export interface BudgetApiClient {
   ): Promise<ImportPreviewRow[]>;
   commitImport(fileName: string, rows: ImportRow[]): Promise<CommitImportResult>;
   getFinancialSummary(): Promise<FinancialSummary>;
+  getCurrency(): Promise<string>;
   resetFinancialData(): Promise<void>;
 }
 
@@ -35,5 +36,6 @@ export const budgetApi: BudgetApiClient = {
   commitImport: (fileName, rows) =>
     invoke<CommitImportResult>("commit_import", { fileName, rows }),
   getFinancialSummary: () => invoke<FinancialSummary>("get_financial_summary"),
+  getCurrency: () => invoke<string>("get_currency"),
   resetFinancialData: () => invoke<void>("reset_financial_data"),
 };

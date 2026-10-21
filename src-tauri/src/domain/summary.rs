@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use super::{Category, CategoryType, FinancialTransaction, ImportError};
 
+const TOP_SOURCES_LIMIT: usize = 5;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CategoryTotal {
     pub category: Category,
@@ -10,6 +12,7 @@ pub struct CategoryTotal {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FinancialSource {
+    pub category_id: i64,
     pub description: String,
     pub category_name: String,
     pub amount_cents: i64,
@@ -30,6 +33,8 @@ pub struct FinancialBreakdown {
     pub largest_income_sources: Vec<FinancialSource>,
     pub largest_expenses: Vec<FinancialSource>,
     pub uncategorized_cents: i64,
+    pub uncategorized_income_cents: i64,
+    pub uncategorized_expenses_cents: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -102,10 +107,24 @@ fn create_breakdown(
     let mut income_sources = HashMap::<(i64, String), FinancialSource>::new();
     let mut expense_sources = HashMap::<(i64, String), FinancialSource>::new();
     let mut uncategorized_cents = 0_i64;
+    let mut uncategorized_income_cents = 0_i64;
+    let mut uncategorized_expenses_cents = 0_i64;
 
     for transaction in transactions {
         let Some(category_id) = transaction.category_id else {
             uncategorized_cents = checked_sum(uncategorized_cents, transaction.amount_cents)?;
+            if transaction.amount_cents > 0 {
+                uncategorized_income_cents =
+                    checked_sum(uncategorized_income_cents, transaction.amount_cents)?;
+            } else {
+                uncategorized_expenses_cents = checked_sum(
+                    uncategorized_expenses_cents,
+                    transaction
+                        .amount_cents
+                        .checked_neg()
+                        .ok_or(ImportError::NumericOverflow)?,
+                )?;
+            }
             continue;
         };
         let Some(category) = category_by_id.get(&category_id) else {
@@ -143,6 +162,7 @@ fn create_breakdown(
             sources.insert(
                 key,
                 FinancialSource {
+                    category_id: category.id,
                     description: description.to_owned(),
                     category_name: category.name.clone(),
                     amount_cents: contribution,
@@ -172,6 +192,8 @@ fn create_breakdown(
         largest_income_sources: largest_sources(income_sources),
         largest_expenses: largest_sources(expense_sources),
         uncategorized_cents,
+        uncategorized_income_cents,
+        uncategorized_expenses_cents,
     })
 }
 
@@ -183,7 +205,7 @@ fn largest_sources(sources: HashMap<(i64, String), FinancialSource>) -> Vec<Fina
             .cmp(&first.amount_cents)
             .then_with(|| first.description.cmp(&second.description))
     });
-    sources.truncate(5);
+    sources.truncate(TOP_SOURCES_LIMIT);
     sources
 }
 
@@ -284,6 +306,8 @@ mod tests {
         )
         .unwrap();
         assert_eq!(summary.breakdown.uncategorized_cents, -2_000);
+        assert_eq!(summary.breakdown.uncategorized_income_cents, 0);
+        assert_eq!(summary.breakdown.uncategorized_expenses_cents, 2_000);
         assert_eq!(
             summary.monthly_totals,
             [
@@ -302,6 +326,22 @@ mod tests {
             ]
         );
         assert_eq!(summary.monthly_breakdowns.len(), 2);
+    }
+
+    #[test]
+    fn splits_uncategorized_income_and_expense_for_chart_breakdowns() {
+        let summary = create_financial_summary(
+            &categories(),
+            &[
+                transaction("2026-02-01", None, 500, "Unknown income"),
+                transaction("2026-02-01", None, -1_500, "Unknown expense"),
+            ],
+        )
+        .unwrap();
+
+        assert_eq!(summary.breakdown.uncategorized_cents, -1_000);
+        assert_eq!(summary.breakdown.uncategorized_income_cents, 500);
+        assert_eq!(summary.breakdown.uncategorized_expenses_cents, 1_500);
     }
 
     #[test]

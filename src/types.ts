@@ -18,6 +18,7 @@ export type ImportPreviewRow = ImportRow & {
 };
 
 export type FinancialSource = {
+  categoryId: number;
   description: string;
   categoryName: string;
   amountCents: number;
@@ -34,6 +35,8 @@ export type FinancialBreakdown = {
   largestIncomeSources: FinancialSource[];
   largestExpenses: FinancialSource[];
   uncategorizedCents: number;
+  uncategorizedIncomeCents: number;
+  uncategorizedExpensesCents: number;
 };
 
 export type MonthlyTotal = {

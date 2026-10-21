@@ -24,6 +24,7 @@ describe("budgetApi IPC contract", () => {
       categoryId: null,
     }]);
     await budgetApi.getFinancialSummary();
+    await budgetApi.getCurrency();
     await budgetApi.resetFinancialData();
 
     expect(invoke.mock.calls).toEqual([
@@ -43,6 +44,7 @@ describe("budgetApi IPC contract", () => {
         }],
       }],
       ["get_financial_summary"],
+      ["get_currency"],
       ["reset_financial_data"],
     ]);
   });
