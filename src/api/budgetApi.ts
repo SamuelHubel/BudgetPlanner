@@ -27,7 +27,10 @@ export interface BudgetApiClient {
     dateOrder?: DateOrder,
   ): Promise<ImportPreviewRow[]>;
   /** Atomically commits reviewed import rows. */
-  commitImport(fileName: string, rows: ImportRow[]): Promise<CommitImportResult>;
+  commitImport(
+    fileName: string,
+    rows: ImportRow[],
+  ): Promise<CommitImportResult>;
   /** Loads the all-time and monthly financial summary. */
   getFinancialSummary(): Promise<FinancialSummary>;
   /** Reads the currency used to format financial amounts. */
@@ -44,7 +47,11 @@ export const budgetApi: BudgetApiClient = {
   lock: () => invoke<void>("lock"),
   listCategories: () => invoke<Category[]>("list_categories"),
   previewImport: (csvText, fileName, dateOrder = "auto") =>
-    invoke<ImportPreviewRow[]>("preview_import", { csvText, fileName, dateOrder }),
+    invoke<ImportPreviewRow[]>("preview_import", {
+      csvText,
+      fileName,
+      dateOrder,
+    }),
   commitImport: (fileName, rows) =>
     invoke<CommitImportResult>("commit_import", { fileName, rows }),
   getFinancialSummary: () => invoke<FinancialSummary>("get_financial_summary"),

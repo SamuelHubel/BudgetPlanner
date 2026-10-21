@@ -6,9 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format:check": "prettier --check .",
     "preview": "vite preview",
     "tauri": "tauri",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest"
   },
   "dependencies": {
@@ -17,6 +21,7 @@
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "@tauri-apps/cli": "^2",
     "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
@@ -25,11 +30,17 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
+    "@vitest/coverage-v8": "^4.1.12",
     "autoprefixer": "^10.5.4",
+    "eslint": "^9.39.5",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "jsdom": "^29.1.1",
     "postcss": "^8.5.22",
+    "prettier": "^3.9.10",
     "tailwindcss": "^3.4.4",
     "typescript": "~5.8.3",
+    "typescript-eslint": "^8.72.0",
     "vite": "^7.0.4",
     "vitest": "^4.1.10"
   }

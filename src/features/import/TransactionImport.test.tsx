@@ -6,16 +6,20 @@ import type { ImportPreviewRow } from "../../types";
 import TransactionImport from "./TransactionImport";
 import { FinancialSummaryProvider } from "../home/FinancialSummaryContext";
 
-const preview: ImportPreviewRow[] = [{
-  date: "2026-01-01",
-  amountCents: -500,
-  description: "Coffee",
-  categoryId: null,
-  statementCategoryName: null,
-  isDuplicate: true,
-}];
+const preview: ImportPreviewRow[] = [
+  {
+    date: "2026-01-01",
+    amountCents: -500,
+    description: "Coffee",
+    categoryId: null,
+    statementCategoryName: null,
+    isDuplicate: true,
+  },
+];
 
-function createApi(previewImport: BudgetApiClient["previewImport"]): BudgetApiClient {
+function createApi(
+  previewImport: BudgetApiClient["previewImport"],
+): BudgetApiClient {
   return {
     isInitialized: async () => true,
     createPassword: async () => {},
@@ -58,34 +62,61 @@ describe("TransactionImport", () => {
     const previewImport = vi.fn(async () => preview);
     const api = createApi(previewImport);
     const onImportCommitted = vi.fn();
-    render(<FinancialSummaryProvider api={api}><TransactionImport api={api} onImportCommitted={onImportCommitted} /></FinancialSummaryProvider>);
+    render(
+      <FinancialSummaryProvider api={api}>
+        <TransactionImport api={api} onImportCommitted={onImportCommitted} />
+      </FinancialSummaryProvider>,
+    );
 
     await user.upload(screen.getByLabelText(/choose a csv file/i), csvFile());
     expect(await screen.findByText("Already imported")).toBeInTheDocument();
-    await user.selectOptions(screen.getByRole("combobox", { name: /category for coffee/i }), "1");
+    expect(screen.getAllByRole("columnheader")).toHaveLength(5);
+    expect(
+      screen
+        .getAllByRole("columnheader")
+        .every((header) => header.getAttribute("scope") === "col"),
+    ).toBe(true);
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: /category for coffee/i }),
+      "1",
+    );
     await user.click(screen.getByRole("button", { name: /confirm import/i }));
 
-    expect(api.commitImport).toHaveBeenCalledWith("statement.csv", [{
-      date: "2026-01-01",
-      amountCents: -500,
-      description: "Coffee",
-      categoryId: 1,
-    }]);
-    expect(await screen.findByRole("status")).toHaveTextContent("0 transactions imported; 1 duplicate skipped.");
+    expect(api.commitImport).toHaveBeenCalledWith("statement.csv", [
+      {
+        date: "2026-01-01",
+        amountCents: -500,
+        description: "Coffee",
+        categoryId: 1,
+      },
+    ]);
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "0 transactions imported; 1 duplicate skipped.",
+    );
     expect(onImportCommitted).toHaveBeenCalledOnce();
   });
 
   it("lets the user resolve an ambiguous CSV date order", async () => {
     const user = userEvent.setup();
-    const previewImport = vi.fn()
+    const previewImport = vi
+      .fn()
       .mockRejectedValueOnce("date order is ambiguous")
       .mockResolvedValueOnce(preview);
     const api = createApi(previewImport);
-    render(<FinancialSummaryProvider api={api}><TransactionImport api={api} /></FinancialSummaryProvider>);
+    render(
+      <FinancialSummaryProvider api={api}>
+        <TransactionImport api={api} />
+      </FinancialSummaryProvider>,
+    );
 
     await user.upload(screen.getByLabelText(/choose a csv file/i), csvFile());
-    expect(await screen.findByRole("alert")).toHaveTextContent("date order is ambiguous");
-    await user.selectOptions(screen.getByRole("combobox", { name: "Statement date order" }), "mdy");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "date order is ambiguous",
+    );
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Statement date order" }),
+      "mdy",
+    );
 
     expect(await screen.findByText("Already imported")).toBeInTheDocument();
     expect(previewImport).toHaveBeenLastCalledWith(

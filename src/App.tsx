@@ -24,7 +24,9 @@ function App() {
       },
       (error: unknown) => {
         if (isMounted) {
-          setUnlockError(toErrorMessage(error, "Unable to check password setup."));
+          setUnlockError(
+            toErrorMessage(error, "Unable to check password setup."),
+          );
           setIsInitialized(null);
         }
       },
@@ -93,7 +95,9 @@ function App() {
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <header className="mb-8 flex items-center justify-between">
-          <p className="text-sm uppercase tracking-[0.32em] text-slate-400">Budget Planner</p>
+          <p className="text-sm uppercase tracking-[0.32em] text-slate-400">
+            Budget Planner
+          </p>
         </header>
 
         {isLocked ? (

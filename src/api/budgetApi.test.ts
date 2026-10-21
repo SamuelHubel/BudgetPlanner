@@ -17,12 +17,14 @@ describe("budgetApi IPC contract", () => {
     await budgetApi.lock();
     await budgetApi.listCategories();
     await budgetApi.previewImport("csv", "bank.csv", "mdy");
-    await budgetApi.commitImport("bank.csv", [{
-      date: "2026-01-01",
-      amountCents: -500,
-      description: "Coffee",
-      categoryId: null,
-    }]);
+    await budgetApi.commitImport("bank.csv", [
+      {
+        date: "2026-01-01",
+        amountCents: -500,
+        description: "Coffee",
+        categoryId: null,
+      },
+    ]);
     await budgetApi.getFinancialSummary();
     await budgetApi.getCurrency();
     await budgetApi.resetFinancialData();
@@ -33,16 +35,24 @@ describe("budgetApi IPC contract", () => {
       ["unlock", { password: "password" }],
       ["lock"],
       ["list_categories"],
-      ["preview_import", { csvText: "csv", fileName: "bank.csv", dateOrder: "mdy" }],
-      ["commit_import", {
-        fileName: "bank.csv",
-        rows: [{
-          date: "2026-01-01",
-          amountCents: -500,
-          description: "Coffee",
-          categoryId: null,
-        }],
-      }],
+      [
+        "preview_import",
+        { csvText: "csv", fileName: "bank.csv", dateOrder: "mdy" },
+      ],
+      [
+        "commit_import",
+        {
+          fileName: "bank.csv",
+          rows: [
+            {
+              date: "2026-01-01",
+              amountCents: -500,
+              description: "Coffee",
+              categoryId: null,
+            },
+          ],
+        },
+      ],
       ["get_financial_summary"],
       ["get_currency"],
       ["reset_financial_data"],

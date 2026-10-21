@@ -2,7 +2,7 @@
 export const TABS = ["home", "ai"] as const;
 
 /** A dashboard tab identifier. */
-export type TabName = typeof TABS[number];
+export type TabName = (typeof TABS)[number];
 
 /** A transaction category returned by the budget API. */
 export type Category = {

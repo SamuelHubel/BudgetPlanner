@@ -9,14 +9,21 @@ type TransactionImportProps = {
 };
 
 /** Lets the user preview and commit a CSV statement import. */
-export default function TransactionImport({ api, onImportCommitted }: TransactionImportProps) {
+export default function TransactionImport({
+  api,
+  onImportCommitted,
+}: TransactionImportProps) {
   const flow = useImportFlow(api, onImportCommitted);
   return (
     <section className="mt-4 rounded-3xl border border-slate-800 bg-slate-950/80 p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Bank statement</p>
-          <h4 className="mt-1 text-lg font-semibold text-white">Import transactions</h4>
+          <p className="text-sm uppercase tracking-[0.24em] text-slate-400">
+            Bank statement
+          </p>
+          <h4 className="mt-1 text-lg font-semibold text-white">
+            Import transactions
+          </h4>
         </div>
         <Button
           type="button"
@@ -27,10 +34,26 @@ export default function TransactionImport({ api, onImportCommitted }: Transactio
         >
           Choose CSV
         </Button>
-        <input ref={flow.inputRef} className="hidden" type="file" accept=".csv,text/csv" aria-label="Choose a CSV file" onChange={flow.handleFile} />
+        <input
+          ref={flow.inputRef}
+          className="hidden"
+          type="file"
+          accept=".csv,text/csv"
+          aria-label="Choose a CSV file"
+          onChange={flow.handleFile}
+        />
       </div>
-      <p className="mt-3 text-sm text-slate-300">Review categories before anything is written to your transactions.</p>
-      {flow.error && <p className="mt-3 rounded-xl bg-rose-950/60 px-3 py-2 text-sm text-rose-200" role="alert">{flow.error}</p>}
+      <p className="mt-3 text-sm text-slate-300">
+        Review categories before anything is written to your transactions.
+      </p>
+      {flow.error && (
+        <p
+          className="mt-3 rounded-xl bg-rose-950/60 px-3 py-2 text-sm text-rose-200"
+          role="alert"
+        >
+          {flow.error}
+        </p>
+      )}
       {flow.needsDateOrder && (
         <label className="mt-3 block text-sm text-slate-300">
           Choose the date order used by this statement
@@ -50,7 +73,14 @@ export default function TransactionImport({ api, onImportCommitted }: Transactio
           </select>
         </label>
       )}
-      {flow.status && <p className="mt-3 rounded-xl bg-emerald-950/60 px-3 py-2 text-sm text-emerald-200" role="status">{flow.status}</p>}
+      {flow.status && (
+        <p
+          className="mt-3 rounded-xl bg-emerald-950/60 px-3 py-2 text-sm text-emerald-200"
+          role="status"
+        >
+          {flow.status}
+        </p>
+      )}
       {flow.transactions.length > 0 && (
         <>
           <ImportPreviewTable

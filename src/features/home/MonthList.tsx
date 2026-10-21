@@ -8,12 +8,26 @@ type MonthListProps = {
 };
 
 /** Renders selectable months from the financial summary. */
-export default function MonthList({ months, selectedMonth, onSelect }: MonthListProps) {
+export default function MonthList({
+  months,
+  selectedMonth,
+  onSelect,
+}: MonthListProps) {
   return (
-    <section className="flex flex-col gap-3 rounded-3xl border border-slate-800 bg-slate-950/80 p-4" aria-labelledby="tracked-months-title">
+    <section
+      className="flex flex-col gap-3 rounded-3xl border border-slate-800 bg-slate-950/80 p-4"
+      aria-labelledby="tracked-months-title"
+    >
       <div>
-        <h4 className="mt-1 text-lg font-semibold text-white" id="tracked-months-title">Tracked months</h4>
-        <p className="mt-1 text-sm text-slate-400">Select a month to view its income and expenses.</p>
+        <h4
+          className="mt-1 text-lg font-semibold text-white"
+          id="tracked-months-title"
+        >
+          Tracked months
+        </h4>
+        <p className="mt-1 text-sm text-slate-400">
+          Select a month to view its income and expenses.
+        </p>
       </div>
       {months.length > 0 ? (
         <ul className="flex flex-wrap gap-2">
@@ -31,7 +45,9 @@ export default function MonthList({ months, selectedMonth, onSelect }: MonthList
           ))}
         </ul>
       ) : (
-        <p className="py-3 text-sm text-slate-500">Months will appear as transactions are imported.</p>
+        <p className="py-3 text-sm text-slate-400">
+          Months will appear as transactions are imported.
+        </p>
       )}
     </section>
   );

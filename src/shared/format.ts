@@ -14,8 +14,23 @@ export function formatCurrency(amountCents: number, currency = "USD"): string {
 }
 
 /** Formats an ISO year-month string for display. */
-export function formatMonth(month: string, monthStyle: "long" | "short" = "long"): string {
-  const [year, monthNumber] = month.split("-").map(Number);
+export function formatMonth(
+  month: string,
+  monthStyle: "long" | "short" = "long",
+): string {
+  const [yearText, monthText] = month.split("-");
+  const year = Number(yearText);
+  const monthNumber = Number(monthText);
+  if (
+    !yearText ||
+    !monthText ||
+    !Number.isInteger(year) ||
+    !Number.isInteger(monthNumber) ||
+    monthNumber < 1 ||
+    monthNumber > 12
+  ) {
+    throw new RangeError(`Invalid year-month value: ${month}`);
+  }
   return new Date(year, monthNumber - 1, 1).toLocaleDateString(undefined, {
     month: monthStyle,
     year: "numeric",

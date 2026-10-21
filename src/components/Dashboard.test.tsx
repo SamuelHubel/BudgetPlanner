@@ -3,7 +3,9 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { BudgetApiClient } from "../api/budgetApi";
 
-vi.mock("../features/home/HomeTab", () => ({ default: () => <div>Home content</div> }));
+vi.mock("../features/home/HomeTab", () => ({
+  default: () => <div>Home content</div>,
+}));
 vi.mock("./AITab", () => ({ default: () => <div>AI content</div> }));
 
 import Dashboard from "./Dashboard";
@@ -52,6 +54,23 @@ function renderDashboard() {
 }
 
 describe("Dashboard reset action", () => {
+  it("associates each dashboard tab with an existing labeled panel", () => {
+    renderDashboard();
+
+    const tabs = screen.getAllByRole("tab");
+    expect(
+      screen.getByRole("tablist", { name: "Dashboard sections" }),
+    ).toBeInTheDocument();
+    expect(tabs).toHaveLength(2);
+    for (const tab of tabs) {
+      const panel = document.getElementById(
+        tab.getAttribute("aria-controls") ?? "",
+      );
+      expect(panel).toHaveAttribute("role", "tabpanel");
+      expect(panel).toHaveAttribute("aria-labelledby", tab.id);
+    }
+  });
+
   it("requires confirmation before clearing financial data", async () => {
     const user = userEvent.setup();
     renderDashboard();
@@ -70,12 +89,18 @@ describe("Dashboard reset action", () => {
     renderDashboard();
 
     await user.click(screen.getByRole("button", { name: /start over/i }));
-    await user.click(screen.getByRole("button", { name: /delete financial data/i }));
+    await user.click(
+      screen.getByRole("button", { name: /delete financial data/i }),
+    );
 
     expect(resetFinancialData).toHaveBeenCalledOnce();
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent(/financial data has been cleared/i);
-    expect(screen.queryByText(/categories and keyword rules/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      /financial data has been cleared/i,
+    );
+    expect(
+      screen.queryByText(/categories and keyword rules/i),
+    ).not.toBeInTheDocument();
   });
 
   it("clears the success notice after 30 seconds", async () => {
@@ -84,10 +109,14 @@ describe("Dashboard reset action", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /start over/i }));
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /delete financial data/i }));
+      fireEvent.click(
+        screen.getByRole("button", { name: /delete financial data/i }),
+      );
     });
 
-    expect(screen.getByRole("status")).toHaveTextContent(/financial data has been cleared/i);
+    expect(screen.getByRole("status")).toHaveTextContent(
+      /financial data has been cleared/i,
+    );
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(29_999);
@@ -106,10 +135,16 @@ describe("Dashboard reset action", () => {
     renderDashboard();
 
     await user.click(screen.getByRole("button", { name: /start over/i }));
-    expect(screen.getByRole("alertdialog")).not.toHaveTextContent(/categories and keyword rules/i);
-    await user.click(screen.getByRole("button", { name: /delete financial data/i }));
+    expect(screen.getByRole("alertdialog")).not.toHaveTextContent(
+      /categories and keyword rules/i,
+    );
+    await user.click(
+      screen.getByRole("button", { name: /delete financial data/i }),
+    );
 
-    expect(screen.getByRole("alert")).toHaveTextContent(/database unavailable/i);
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      /database unavailable/i,
+    );
     expect(screen.getByRole("alertdialog")).toBeInTheDocument();
   });
 });

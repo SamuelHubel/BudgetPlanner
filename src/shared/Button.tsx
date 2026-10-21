@@ -10,11 +10,16 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary: "bg-cyan-500 text-slate-950 hover:bg-cyan-400",
   secondary: "bg-slate-800 text-slate-300 hover:bg-slate-700",
-  danger: "border border-rose-800 bg-rose-950/70 text-rose-200 hover:bg-rose-900",
+  danger:
+    "border border-rose-800 bg-rose-950/70 text-rose-200 hover:bg-rose-900",
 };
 
 /** Renders a button using the shared semantic action variants. */
-export default function Button({ variant, className = "", ...props }: ButtonProps) {
+export default function Button({
+  variant,
+  className = "",
+  ...props
+}: ButtonProps) {
   return (
     <button
       {...props}

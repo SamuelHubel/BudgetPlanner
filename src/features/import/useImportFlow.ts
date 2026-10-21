@@ -1,6 +1,11 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import type { BudgetApiClient } from "../../api/budgetApi";
-import type { Category, DateOrder, ImportPreviewRow, ImportRow } from "../../types";
+import type {
+  Category,
+  DateOrder,
+  ImportPreviewRow,
+  ImportRow,
+} from "../../types";
 import { toErrorMessage } from "../../lib/errors";
 import { useFinancialSummary } from "../home/useFinancialSummary";
 
@@ -10,7 +15,10 @@ export function isDateOrder(value: string): value is DateOrder {
 }
 
 /** Manages CSV selection, preview edits, and import submission state. */
-export function useImportFlow(api: BudgetApiClient, onImportCommitted?: () => void) {
+export function useImportFlow(
+  api: BudgetApiClient,
+  onImportCommitted?: () => void,
+) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [transactions, setTransactions] = useState<ImportPreviewRow[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -23,7 +31,11 @@ export function useImportFlow(api: BudgetApiClient, onImportCommitted?: () => vo
   const [isLoading, setIsLoading] = useState(false);
   const { currency, refresh } = useFinancialSummary();
 
-  const loadPreview = async (contents: string, name: string, order: DateOrder) => {
+  const loadPreview = async (
+    contents: string,
+    name: string,
+    order: DateOrder,
+  ) => {
     const [preview, availableCategories] = await Promise.all([
       api.previewImport(contents, name, order),
       api.listCategories(),
@@ -51,7 +63,9 @@ export function useImportFlow(api: BudgetApiClient, onImportCommitted?: () => vo
     } catch (caughtError) {
       const message = toErrorMessage(caughtError, "Unable to read this CSV.");
       setError(message);
-      setNeedsDateOrder(message.toLowerCase().includes("date order is ambiguous"));
+      setNeedsDateOrder(
+        message.toLowerCase().includes("date order is ambiguous"),
+      );
     } finally {
       setIsLoading(false);
       input.value = "";
@@ -74,8 +88,13 @@ export function useImportFlow(api: BudgetApiClient, onImportCommitted?: () => vo
 
   const updateCategory = (index: number, value: string) => {
     const categoryId = value ? Number(value) : null;
-    setTransactions((current) => current.map((transaction, transactionIndex) =>
-      transactionIndex === index ? { ...transaction, categoryId } : transaction));
+    setTransactions((current) =>
+      current.map((transaction, transactionIndex) =>
+        transactionIndex === index
+          ? { ...transaction, categoryId }
+          : transaction,
+      ),
+    );
   };
 
   const confirmImport = async () => {
@@ -83,14 +102,20 @@ export function useImportFlow(api: BudgetApiClient, onImportCommitted?: () => vo
     setStatus("");
     setIsLoading(true);
     try {
-      const rows: ImportRow[] = transactions.map(({ date, amountCents, description, categoryId }) => ({
-        date, amountCents, description, categoryId,
-      }));
+      const rows: ImportRow[] = transactions.map(
+        ({ date, amountCents, description, categoryId }) => ({
+          date,
+          amountCents,
+          description,
+          categoryId,
+        }),
+      );
       const result = await api.commitImport(fileName, rows);
       const inserted = `${result.inserted} transaction${result.inserted === 1 ? "" : "s"} imported`;
-      const duplicates = result.skippedDuplicates > 0
-        ? `; ${result.skippedDuplicates} duplicate${result.skippedDuplicates === 1 ? "" : "s"} skipped`
-        : "";
+      const duplicates =
+        result.skippedDuplicates > 0
+          ? `; ${result.skippedDuplicates} duplicate${result.skippedDuplicates === 1 ? "" : "s"} skipped`
+          : "";
       setStatus(`${inserted}${duplicates}.`);
       setTransactions([]);
       setFileName("");
@@ -106,8 +131,18 @@ export function useImportFlow(api: BudgetApiClient, onImportCommitted?: () => vo
   };
 
   return {
-    inputRef, transactions, categories, dateOrder, needsDateOrder, error, status,
-    isLoading, currency, handleFile, handleDateOrder,
-    updateCategory, confirmImport,
+    inputRef,
+    transactions,
+    categories,
+    dateOrder,
+    needsDateOrder,
+    error,
+    status,
+    isLoading,
+    currency,
+    handleFile,
+    handleDateOrder,
+    updateCategory,
+    confirmImport,
   };
 }

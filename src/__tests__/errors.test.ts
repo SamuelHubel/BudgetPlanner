@@ -9,7 +9,9 @@ describe("toErrorMessage", () => {
   });
 
   it("returns a string rejection", () => {
-    expect(toErrorMessage("permission denied", "fallback")).toBe("permission denied");
+    expect(toErrorMessage("permission denied", "fallback")).toBe(
+      "permission denied",
+    );
   });
 
   it("uses the fallback when no message is available", () => {

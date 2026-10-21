@@ -21,7 +21,10 @@ export default function ResetDataDialog({ api }: ResetDataDialogProps) {
 
   useEffect(() => {
     if (!resetComplete) return;
-    const timeoutId = window.setTimeout(() => setResetComplete(false), RESET_NOTICE_MS);
+    const timeoutId = window.setTimeout(
+      () => setResetComplete(false),
+      RESET_NOTICE_MS,
+    );
     return () => window.clearTimeout(timeoutId);
   }, [resetComplete]);
 
@@ -52,7 +55,14 @@ export default function ResetDataDialog({ api }: ResetDataDialogProps) {
         <Button type="button" variant="danger" onClick={openDialog}>
           Start over
         </Button>
-        {resetComplete && <p className="rounded-xl border border-emerald-800 bg-emerald-950/50 px-3 py-2 text-sm text-emerald-200" role="status">Financial data has been cleared.</p>}
+        {resetComplete && (
+          <p
+            className="rounded-xl border border-emerald-800 bg-emerald-950/50 px-3 py-2 text-sm text-emerald-200"
+            role="status"
+          >
+            Financial data has been cleared.
+          </p>
+        )}
       </div>
       <ConfirmDialog
         isOpen={isOpen}
@@ -62,11 +72,27 @@ export default function ResetDataDialog({ api }: ResetDataDialogProps) {
           if (!isResetting) setIsOpen(false);
         }}
       >
-        <h3 className="text-xl font-semibold text-white" id="reset-dialog-title">Start over?</h3>
-        <p className="mt-3 text-sm leading-6 text-slate-300" id="reset-dialog-description">
-          This permanently deletes transactions, goals, import history, and AI insights.
+        <h3
+          className="text-xl font-semibold text-white"
+          id="reset-dialog-title"
+        >
+          Start over?
+        </h3>
+        <p
+          className="mt-3 text-sm leading-6 text-slate-300"
+          id="reset-dialog-description"
+        >
+          This permanently deletes transactions, goals, import history, and AI
+          insights.
         </p>
-        {resetError && <p className="mt-4 rounded-xl border border-rose-800 bg-rose-950/60 px-3 py-2 text-sm text-rose-200" role="alert">Unable to reset financial data: {resetError}</p>}
+        {resetError && (
+          <p
+            className="mt-4 rounded-xl border border-rose-800 bg-rose-950/60 px-3 py-2 text-sm text-rose-200"
+            role="alert"
+          >
+            Unable to reset financial data: {resetError}
+          </p>
+        )}
         <div className="mt-6 flex flex-wrap justify-end gap-3">
           <Button
             type="button"

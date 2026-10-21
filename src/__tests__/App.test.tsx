@@ -1,12 +1,18 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const { api } = vi.hoisted(() => ({
   api: {
     isInitialized: vi.fn(async () => true),
-    createPassword: vi.fn(async (_password: string) => {}),
-    unlock: vi.fn(async (_password: string) => {}),
+    createPassword: vi.fn(async () => {}),
+    unlock: vi.fn(async () => {}),
     lock: vi.fn(async () => {}),
     listCategories: vi.fn(async () => []),
     previewImport: vi.fn(async () => []),
@@ -45,8 +51,12 @@ describe("App", () => {
     expect(screen.getByText(/unlock your budget vault/i)).toBeInTheDocument();
     expect(await screen.findByLabelText(/password/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /unlock/i })).toBeInTheDocument();
-    expect(screen.queryByText(/secure desktop budget app/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/tauri \+ react \+ tailwind/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/secure desktop budget app/i),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/tauri \+ react \+ tailwind/i),
+    ).not.toBeInTheDocument();
   });
 
   it("creates a password on first run and confirms the password", async () => {
@@ -54,8 +64,14 @@ describe("App", () => {
     api.isInitialized.mockResolvedValueOnce(false);
     render(<App />);
 
-    await user.type(await screen.findByLabelText(/^password$/i), "a secure password");
-    await user.type(screen.getByLabelText(/confirm password/i), "a secure password");
+    await user.type(
+      await screen.findByLabelText(/^password$/i),
+      "a secure password",
+    );
+    await user.type(
+      screen.getByLabelText(/confirm password/i),
+      "a secure password",
+    );
     await user.click(screen.getByRole("button", { name: /create password/i }));
 
     await waitFor(() => {
@@ -63,7 +79,9 @@ describe("App", () => {
       expect(screen.getByText(/your budget dashboard/i)).toBeInTheDocument();
     });
     expect(api.unlock).not.toHaveBeenCalled();
-    expect(screen.queryByText(/existing unencrypted database/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/existing unencrypted database/i),
+    ).not.toBeInTheDocument();
   });
 
   it("does not create a password when confirmation differs", async () => {
@@ -71,11 +89,19 @@ describe("App", () => {
     api.isInitialized.mockResolvedValueOnce(false);
     render(<App />);
 
-    await user.type(await screen.findByLabelText(/^password$/i), "a secure password");
-    await user.type(screen.getByLabelText(/confirm password/i), "a different password");
+    await user.type(
+      await screen.findByLabelText(/^password$/i),
+      "a secure password",
+    );
+    await user.type(
+      screen.getByLabelText(/confirm password/i),
+      "a different password",
+    );
     await user.click(screen.getByRole("button", { name: /create password/i }));
 
-    expect(screen.getByRole("alert")).toHaveTextContent(/passwords do not match/i);
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      /passwords do not match/i,
+    );
     expect(api.createPassword).not.toHaveBeenCalled();
   });
 
@@ -101,7 +127,9 @@ describe("App", () => {
     await user.type(await screen.findByLabelText(/password/i), "password123");
     await user.click(screen.getByRole("button", { name: /unlock/i }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("database unavailable");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "database unavailable",
+    );
     expect(screen.getByText(/unlock your budget vault/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toHaveValue("");
   });
@@ -117,8 +145,10 @@ describe("App", () => {
       expect(screen.getByText(/your budget dashboard/i)).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("button", { name: /ai/i }));
-    expect(screen.getByText(/ai features are coming soon/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: /ai/i }));
+    expect(
+      screen.getByText(/ai features are coming soon/i),
+    ).toBeInTheDocument();
   });
 
   it("locks the app and closes the database when locking again", async () => {
@@ -144,8 +174,12 @@ describe("App", () => {
       await Promise.resolve();
     });
 
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: "password123" } });
-    const form = screen.getByRole("button", { name: /unlock/i }).closest("form")!;
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: "password123" },
+    });
+    const form = screen
+      .getByRole("button", { name: /unlock/i })
+      .closest("form")!;
     await act(async () => {
       fireEvent.submit(form);
       await Promise.resolve();

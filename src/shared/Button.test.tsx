@@ -12,8 +12,14 @@ describe("Button", () => {
       </>,
     );
 
-    expect(screen.getByRole("button", { name: "Save" })).toHaveClass("bg-cyan-500");
-    expect(screen.getByRole("button", { name: "Cancel" })).toHaveClass("bg-slate-800");
-    expect(screen.getByRole("button", { name: "Delete" })).toHaveClass("bg-rose-950/70");
+    expect(screen.getByRole("button", { name: "Save" })).toHaveClass(
+      "bg-cyan-500",
+    );
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveClass(
+      "bg-slate-800",
+    );
+    expect(screen.getByRole("button", { name: "Delete" })).toHaveClass(
+      "bg-rose-950/70",
+    );
   });
 });

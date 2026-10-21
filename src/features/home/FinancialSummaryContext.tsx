@@ -1,4 +1,11 @@
-import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import type { BudgetApiClient } from "../../api/budgetApi";
 import { toErrorMessage } from "../../lib/errors";
 import type { FinancialSummary } from "../../types";
@@ -13,7 +20,8 @@ export type FinancialSummaryState = {
 };
 
 /** Context carrying financial summary state to nested dashboard features. */
-export const FinancialSummaryContext = createContext<FinancialSummaryState | null>(null);
+export const FinancialSummaryContext =
+  createContext<FinancialSummaryState | null>(null);
 
 /** Provides financial-summary loading state to dashboard features. */
 export function FinancialSummaryProvider({
@@ -45,7 +53,9 @@ export function FinancialSummaryProvider({
       })
       .catch((caughtError: unknown) => {
         if (isCurrent) {
-          setError(toErrorMessage(caughtError, "Unable to load financial data."));
+          setError(
+            toErrorMessage(caughtError, "Unable to load financial data."),
+          );
         }
       })
       .finally(() => {
@@ -61,5 +71,9 @@ export function FinancialSummaryProvider({
     () => ({ summary, currency, error, isLoading, refresh }),
     [summary, currency, error, isLoading, refresh],
   );
-  return <FinancialSummaryContext.Provider value={value}>{children}</FinancialSummaryContext.Provider>;
+  return (
+    <FinancialSummaryContext.Provider value={value}>
+      {children}
+    </FinancialSummaryContext.Provider>
+  );
 }
