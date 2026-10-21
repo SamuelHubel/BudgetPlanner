@@ -372,6 +372,18 @@ mod tests {
     }
 
     #[test]
+    fn parses_negative_currency_with_sign_before_symbol() {
+        let transactions = parse_bank_csv(
+            "Date,Description,Amount,Balance\n2026-10-12,GOOD 2 GO,-$57.28,\"$20,574.82\"",
+            CsvImportOptions::default(),
+        )
+        .unwrap();
+
+        assert_eq!(transactions.len(), 1);
+        assert_eq!(transactions[0].amount_cents, -5_728);
+    }
+
+    #[test]
     fn detects_semicolon_and_tab_delimiters_and_strips_bom() {
         let semicolon = parse_bank_csv(
             "\u{feff}Date;Description;Amount\n2026-01-01;Store;25.00",

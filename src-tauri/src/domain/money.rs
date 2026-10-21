@@ -40,6 +40,9 @@ pub fn parse_amount_to_cents(
     } else {
         (value, None)
     };
+    let value = value
+        .trim_matches(|character| matches!(character, '$' | '€' | '£'))
+        .trim();
     let negative = parenthesized || explicit_sign == Some(true) || credit_debit == Some(true);
     if credit_debit == Some(false) && negative {
         return Err(ImportError::InvalidAmount(original.to_owned()));
@@ -199,6 +202,7 @@ mod tests {
         assert_eq!(parse_amount_to_cents("(€12.34)", None), Ok(-1_234));
         assert_eq!(parse_amount_to_cents("£1.005", None), Ok(101));
         assert_eq!(parse_amount_to_cents("-1.005", None), Ok(-101));
+        assert_eq!(parse_amount_to_cents("-$57.28", None), Ok(-5_728));
         assert_eq!(parse_amount_to_cents("0.004", None), Ok(0));
     }
 
