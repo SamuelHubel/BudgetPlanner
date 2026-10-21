@@ -8,6 +8,7 @@ type ImportPreviewTableProps = {
   onCategoryChange: (index: number, categoryId: string) => void;
 };
 
+/** Shows parsed transactions and permits preview category adjustments. */
 export default function ImportPreviewTable({
   transactions,
   categories,

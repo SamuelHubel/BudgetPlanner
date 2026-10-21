@@ -21,31 +21,47 @@ const MAX_DESCRIPTION_BYTES: usize = 10_000;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
+/// A parsed transaction with category and duplicate metadata for review.
 pub struct ImportPreviewRow {
+    /// Normalized ISO transaction date.
     pub date: String,
+    /// Signed transaction amount in integer cents.
     pub amount_cents: i64,
+    /// Transaction description.
     pub description: String,
+    /// Matched or selected category identifier.
     pub category_id: Option<i64>,
+    /// Category label supplied in the source statement, if any.
     pub statement_category_name: Option<String>,
+    /// Whether an equivalent transaction already exists.
     pub is_duplicate: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
+/// A reviewed transaction row submitted for import.
 pub struct ImportRow {
+    /// Normalized ISO transaction date.
     pub date: String,
+    /// Signed transaction amount in integer cents.
     pub amount_cents: i64,
+    /// Transaction description.
     pub description: String,
+    /// Selected category identifier, or `None` for uncategorized.
     pub category_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
+/// Counts inserted and duplicate rows from an import commit.
 pub struct CommitImportResult {
+    /// Number of newly inserted transactions.
     pub inserted: usize,
+    /// Number of rows skipped as duplicates.
     pub skipped_duplicates: usize,
 }
 
+/// Parses and categorizes a CSV statement for frontend review.
 #[tauri::command]
 pub fn preview_import(
     state: State<'_, AppState>,
@@ -109,6 +125,7 @@ fn preview_import_from(
         .collect()
 }
 
+/// Atomically saves the reviewed rows from an import batch.
 #[tauri::command]
 pub fn commit_import(
     state: State<'_, AppState>,

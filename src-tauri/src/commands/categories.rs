@@ -10,14 +10,20 @@ use crate::{
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
+/// Category fields serialized for the frontend API.
 pub struct CategoryDto {
+    /// Stable database identifier.
     pub id: i64,
+    /// User-facing category name.
     pub name: String,
     #[serde(rename = "type")]
+    /// Category direction: `income` or `expense`.
     pub category_type: String,
+    /// Optional display color as a CSS hex string.
     pub color: Option<String>,
 }
 
+/// Lists the categories available for transaction assignment.
 #[tauri::command]
 pub fn list_categories(state: State<'_, AppState>) -> Result<Vec<CategoryDto>, AppError> {
     let database = super::connection(&state)?;

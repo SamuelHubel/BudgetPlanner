@@ -4,15 +4,21 @@ use super::dates::{detect_date_order, parse_date};
 use super::money::parse_amount_to_cents;
 use super::{AmountLocaleHint, DateOrder, ImportError, ImportedTransaction};
 
+/// Maximum accepted size of a statement CSV.
 pub const MAX_CSV_BYTES: usize = 5 * 1024 * 1024;
+/// Maximum number of parsed transactions accepted from one CSV.
 pub const MAX_TRANSACTION_ROWS: usize = 50_000;
 
+/// Options that control locale-sensitive CSV parsing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct CsvImportOptions {
+    /// Locale hint for ambiguous decimal and grouping separators.
     pub amount_locale: Option<AmountLocaleHint>,
+    /// Interpretation of ambiguous date strings.
     pub date_order: DateOrder,
 }
 
+/// Parses a bank statement CSV into normalized transactions.
 pub fn parse_bank_csv(
     contents: &str,
     options: CsvImportOptions,
@@ -180,7 +186,7 @@ fn parse_record(
     columns: &Columns,
 ) -> Result<ImportedTransaction, ImportError> {
     let date = parse_date(date_value, date_order).map_err(|error| row_error(line, error))?;
-    let description = get_field(record, columns.description)
+    let description = field_value(record, columns.description)
         .map(str::trim)
         .filter(|value| !value.is_empty())
         .ok_or_else(|| ImportError::CsvRow {
@@ -192,10 +198,10 @@ fn parse_record(
         let value = record.get(index).unwrap_or_default().trim();
         parse_amount_to_cents(value, amount_locale).map_err(|error| row_error(line, error))?
     } else {
-        let debit = get_field(record, columns.debit)
+        let debit = field_value(record, columns.debit)
             .map(str::trim)
             .filter(|value| !value.is_empty());
-        let credit = get_field(record, columns.credit)
+        let credit = field_value(record, columns.credit)
             .map(str::trim)
             .filter(|value| !value.is_empty());
         if debit.is_some() && credit.is_some() {
@@ -227,7 +233,7 @@ fn parse_record(
         date,
         description,
         amount_cents,
-        category_name: get_field(record, columns.category)
+        category_name: field_value(record, columns.category)
             .map(str::trim)
             .filter(|value| !value.is_empty())
             .map(str::to_owned),
@@ -235,7 +241,7 @@ fn parse_record(
     })
 }
 
-fn get_field(record: &StringRecord, column: Option<usize>) -> Option<&str> {
+fn field_value(record: &StringRecord, column: Option<usize>) -> Option<&str> {
     column.and_then(|index| record.get(index))
 }
 

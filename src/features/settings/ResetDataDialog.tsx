@@ -3,6 +3,7 @@ import type { BudgetApiClient } from "../../api/budgetApi";
 import { toErrorMessage } from "../../lib/errors";
 import ConfirmDialog from "../../shared/ConfirmDialog";
 import { useFinancialSummary } from "../home/useFinancialSummary";
+import Button from "../../shared/Button";
 
 const RESET_NOTICE_MS = 30_000;
 
@@ -10,6 +11,7 @@ type ResetDataDialogProps = {
   api: BudgetApiClient;
 };
 
+/** Confirms and runs a full financial-data reset. */
 export default function ResetDataDialog({ api }: ResetDataDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
@@ -47,9 +49,9 @@ export default function ResetDataDialog({ api }: ResetDataDialogProps) {
   return (
     <>
       <div className="flex flex-col gap-2">
-        <button type="button" onClick={openDialog} className="rounded-2xl border border-rose-800 bg-rose-950/70 px-3 py-2 text-rose-200 transition hover:bg-rose-900 disabled:cursor-wait disabled:opacity-60">
+        <Button type="button" variant="danger" onClick={openDialog}>
           Start over
-        </button>
+        </Button>
         {resetComplete && <p className="rounded-xl border border-emerald-800 bg-emerald-950/50 px-3 py-2 text-sm text-emerald-200" role="status">Financial data has been cleared.</p>}
       </div>
       <ConfirmDialog
@@ -66,23 +68,23 @@ export default function ResetDataDialog({ api }: ResetDataDialogProps) {
         </p>
         {resetError && <p className="mt-4 rounded-xl border border-rose-800 bg-rose-950/60 px-3 py-2 text-sm text-rose-200" role="alert">Unable to reset financial data: {resetError}</p>}
         <div className="mt-6 flex flex-wrap justify-end gap-3">
-          <button
+          <Button
             type="button"
-            className="rounded-2xl bg-slate-800 px-3 py-2 text-slate-300 transition hover:bg-slate-700"
+            variant="secondary"
             onClick={() => setIsOpen(false)}
             disabled={isResetting}
             autoFocus
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className="rounded-2xl border border-rose-800 bg-rose-950/70 px-3 py-2 text-rose-200 transition hover:bg-rose-900 disabled:cursor-wait disabled:opacity-60"
+            variant="danger"
             onClick={() => void resetData()}
             disabled={isResetting}
           >
             {isResetting ? "Clearing data..." : "Delete financial data"}
-          </button>
+          </Button>
         </div>
       </ConfirmDialog>
     </>

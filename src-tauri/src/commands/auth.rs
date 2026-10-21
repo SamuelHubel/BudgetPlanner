@@ -205,11 +205,13 @@ fn drop_database_connection(state: &AppState) -> Result<(), AppError> {
 }
 
 #[tauri::command]
+/// Reports whether a password verifier and encrypted database are initialized.
 pub fn is_initialized(app: AppHandle) -> Result<bool, AppError> {
     is_initialized_in(&app_data_directory(&app)?)
 }
 
 #[tauri::command]
+/// Creates the encrypted database and unlocks it with the first password.
 pub fn create_password(
     app: AppHandle,
     state: State<'_, AppState>,
@@ -228,6 +230,7 @@ pub fn create_password(
 }
 
 #[tauri::command]
+/// Opens the encrypted database using the supplied password.
 pub fn unlock(
     app: AppHandle,
     state: State<'_, AppState>,
@@ -244,6 +247,7 @@ pub fn unlock(
 }
 
 #[tauri::command]
+/// Closes the database connection and locks financial data.
 pub fn lock(state: State<'_, AppState>) -> Result<(), AppError> {
     drop_database_connection(&state)
 }

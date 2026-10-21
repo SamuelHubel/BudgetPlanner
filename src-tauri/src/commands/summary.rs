@@ -23,64 +23,93 @@ use crate::{
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
+/// A category and its amount in the API summary.
 pub struct CategoryTotalDto {
+    /// Category metadata.
     pub category: CategoryDto,
+    /// Signed category amount in integer cents.
     pub amount_cents: i64,
 }
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
+/// A large categorized transaction included in the summary.
 pub struct FinancialSourceDto {
+    /// Source category identifier.
     pub category_id: i64,
+    /// Transaction description.
     pub description: String,
+    /// User-facing source category.
     pub category_name: String,
+    /// Signed transaction amount in integer cents.
     pub amount_cents: i64,
 }
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
+/// Categorized and uncategorized totals for one period.
 pub struct FinancialBreakdownDto {
+    /// Totals grouped by income category.
     pub income: Vec<CategoryTotalDto>,
+    /// Totals grouped by expense category.
     pub expenses: Vec<CategoryTotalDto>,
+    /// Largest categorized income transactions.
     pub largest_income_sources: Vec<FinancialSourceDto>,
+    /// Largest categorized expense transactions.
     pub largest_expenses: Vec<FinancialSourceDto>,
+    /// Net uncategorized amount in integer cents.
     pub uncategorized_cents: i64,
+    /// Uncategorized income amount in integer cents.
     pub uncategorized_income_cents: i64,
+    /// Uncategorized expense amount in integer cents.
     pub uncategorized_expenses_cents: i64,
 }
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
+/// Monthly income, expense, and uncategorized totals.
 pub struct MonthlyTotalDto {
+    /// Month in ISO `YYYY-MM` format.
     pub month: String,
+    /// Income amount in integer cents.
     pub income_cents: i64,
+    /// Expense amount in integer cents.
     pub expenses_cents: i64,
+    /// Net uncategorized amount in integer cents.
     pub uncategorized_cents: i64,
 }
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
+/// A monthly breakdown in the API response.
 pub struct MonthlyBreakdownDto {
+    /// Month in ISO `YYYY-MM` format.
     pub month: String,
+    /// Category and uncategorized totals for the month.
     pub breakdown: FinancialBreakdownDto,
 }
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
+/// Complete all-time and monthly financial summary response.
 pub struct FinancialSummaryDto {
+    /// Totals across all transactions.
     pub breakdown: FinancialBreakdownDto,
+    /// Aggregate totals for each month.
     pub monthly_totals: Vec<MonthlyTotalDto>,
+    /// Detailed category breakdown for each month.
     pub monthly_breakdowns: Vec<MonthlyBreakdownDto>,
 }
 
+/// Loads the all-time and monthly financial summary.
 #[tauri::command]
 pub fn get_financial_summary(state: State<'_, AppState>) -> Result<FinancialSummaryDto, AppError> {
     let database = connection(&state)?;
     let connection = database.as_ref().ok_or(AppError::Locked)?;
-    get_financial_summary_from(connection)
+    load_financial_summary_from(connection)
 }
 
-fn get_financial_summary_from(connection: &Connection) -> Result<FinancialSummaryDto, AppError> {
+fn load_financial_summary_from(connection: &Connection) -> Result<FinancialSummaryDto, AppError> {
     let categories = load_domain_categories(connection)?;
     let category_colors = list_categories_from(connection)?
         .into_iter()
@@ -220,7 +249,7 @@ fn convert_sources(sources: Vec<FinancialSource>) -> Vec<FinancialSourceDto> {
 mod tests {
     use rusqlite::Connection;
 
-    use super::get_financial_summary_from;
+    use super::load_financial_summary_from;
     use crate::db::run_migrations;
 
     #[test]
@@ -240,7 +269,7 @@ mod tests {
                 [],
             )
             .unwrap();
-        let summary = get_financial_summary_from(&connection).unwrap();
+        let summary = load_financial_summary_from(&connection).unwrap();
         assert_eq!(summary.breakdown.uncategorized_cents, -800);
         assert_eq!(summary.breakdown.expenses[0].amount_cents, 5500);
         assert_eq!(summary.breakdown.largest_expenses[0].category_id, 2);
@@ -276,7 +305,7 @@ mod tests {
             )
             .unwrap();
 
-        let error = get_financial_summary_from(&connection).unwrap_err();
+        let error = load_financial_summary_from(&connection).unwrap_err();
 
         assert!(error.to_string().contains("safe integer range"));
     }

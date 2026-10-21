@@ -3,6 +3,7 @@ import type { BudgetApiClient } from "../../api/budgetApi";
 import { toErrorMessage } from "../../lib/errors";
 import type { FinancialSummary } from "../../types";
 
+/** Financial summary values and refresh operations for dashboard features. */
 export type FinancialSummaryState = {
   summary: FinancialSummary | null;
   currency: string | null;
@@ -11,8 +12,10 @@ export type FinancialSummaryState = {
   refresh: () => void;
 };
 
+/** Context carrying financial summary state to nested dashboard features. */
 export const FinancialSummaryContext = createContext<FinancialSummaryState | null>(null);
 
+/** Provides financial-summary loading state to dashboard features. */
 export function FinancialSummaryProvider({
   api,
   children,

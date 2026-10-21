@@ -57,8 +57,8 @@ describe("TransactionImport", () => {
     const user = userEvent.setup();
     const previewImport = vi.fn(async () => preview);
     const api = createApi(previewImport);
-    const onImported = vi.fn();
-    render(<FinancialSummaryProvider api={api}><TransactionImport api={api} onImported={onImported} /></FinancialSummaryProvider>);
+    const onImportCommitted = vi.fn();
+    render(<FinancialSummaryProvider api={api}><TransactionImport api={api} onImportCommitted={onImportCommitted} /></FinancialSummaryProvider>);
 
     await user.upload(screen.getByLabelText(/choose a csv file/i), csvFile());
     expect(await screen.findByText("Already imported")).toBeInTheDocument();
@@ -72,7 +72,7 @@ describe("TransactionImport", () => {
       categoryId: 1,
     }]);
     expect(await screen.findByRole("status")).toHaveTextContent("0 transactions imported; 1 duplicate skipped.");
-    expect(onImported).toHaveBeenCalledOnce();
+    expect(onImportCommitted).toHaveBeenCalledOnce();
   });
 
   it("lets the user resolve an ambiguous CSV date order", async () => {

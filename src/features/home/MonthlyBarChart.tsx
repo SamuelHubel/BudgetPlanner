@@ -6,6 +6,7 @@ type MonthlyBarChartProps = {
   currency: string;
 };
 
+/** Charts monthly income and expense totals. */
 export default function MonthlyBarChart({ totals, currency }: MonthlyBarChartProps) {
   const maxAmountCents = Math.max(0, ...totals.flatMap(({ incomeCents, expensesCents }) => [
     Math.max(0, incomeCents),

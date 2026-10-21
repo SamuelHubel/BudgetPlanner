@@ -12,13 +12,14 @@ type HomeTabProps = {
   api: BudgetApiClient;
 };
 
+/** Loads and displays the selected period's financial overview. */
 export default function HomeTab({ api }: HomeTabProps) {
   const { summary, currency, error, isLoading } = useFinancialSummary();
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
-  const currentMonth = summary?.monthlyBreakdowns.find(({ month }) => month === selectedMonth)
+  const selectedMonthBreakdown = summary?.monthlyBreakdowns.find(({ month }) => month === selectedMonth)
     ?? summary?.monthlyBreakdowns[summary.monthlyBreakdowns.length - 1]
     ?? null;
-  const displayedBreakdown = currentMonth?.breakdown ?? summary?.breakdown ?? null;
+  const displayedBreakdown = selectedMonthBreakdown?.breakdown ?? summary?.breakdown ?? null;
 
   return (
     <div className="space-y-4">
@@ -30,10 +31,10 @@ export default function HomeTab({ api }: HomeTabProps) {
       {isLoading && <p className="py-3 text-sm text-slate-500" role="status">Loading financial data…</p>}
       {!isLoading && !error && summary && displayedBreakdown && currency && (
         <>
-          <MonthList months={summary.monthlyBreakdowns} selectedMonth={currentMonth?.month ?? null} onSelect={setSelectedMonth} />
-          {currentMonth && (
+          <MonthList months={summary.monthlyBreakdowns} selectedMonth={selectedMonthBreakdown?.month ?? null} onSelect={setSelectedMonth} />
+          {selectedMonthBreakdown && (
             <p className="-mb-2 text-sm text-slate-400" aria-live="polite">
-              Showing income and expenses for {formatMonth(currentMonth.month)}
+              Showing income and expenses for {formatMonth(selectedMonthBreakdown.month)}
             </p>
           )}
           <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-2">

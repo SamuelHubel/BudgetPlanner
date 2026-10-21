@@ -8,6 +8,7 @@ type ConfirmDialogProps = {
   children: ReactNode;
 };
 
+/** Presents modal confirmation content with native dialog focus behavior. */
 export default function ConfirmDialog({
   isOpen,
   titleId,

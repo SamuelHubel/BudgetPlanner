@@ -4,52 +4,81 @@ use super::{Category, CategoryType, FinancialTransaction, ImportError};
 
 const TOP_SOURCES_LIMIT: usize = 5;
 
+/// A total amount for one category.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CategoryTotal {
+    /// Category represented by this total.
     pub category: Category,
+    /// Signed amount in integer cents.
     pub amount_cents: i64,
 }
 
+/// A large individual transaction source within a category.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FinancialSource {
+    /// Database identifier of the source category.
     pub category_id: i64,
+    /// Transaction description.
     pub description: String,
+    /// User-facing category name.
     pub category_name: String,
+    /// Signed transaction amount in integer cents.
     pub amount_cents: i64,
 }
 
+/// Income, expenses, and uncategorized totals for a month.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MonthlyTotal {
+    /// Month in ISO `YYYY-MM` format.
     pub month: String,
+    /// Income amount in integer cents.
     pub income_cents: i64,
+    /// Expense amount in integer cents.
     pub expenses_cents: i64,
+    /// Uncategorized net amount in integer cents.
     pub uncategorized_cents: i64,
 }
 
+/// Categorized and uncategorized activity over a period.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct FinancialBreakdown {
+    /// Totals grouped by income category.
     pub income: Vec<CategoryTotal>,
+    /// Totals grouped by expense category.
     pub expenses: Vec<CategoryTotal>,
+    /// Largest categorized income transactions.
     pub largest_income_sources: Vec<FinancialSource>,
+    /// Largest categorized expense transactions.
     pub largest_expenses: Vec<FinancialSource>,
+    /// Net amount of all uncategorized transactions.
     pub uncategorized_cents: i64,
+    /// Income amount of uncategorized transactions.
     pub uncategorized_income_cents: i64,
+    /// Expense amount of uncategorized transactions.
     pub uncategorized_expenses_cents: i64,
 }
 
+/// A financial breakdown associated with one month.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MonthlyBreakdown {
+    /// Month in ISO `YYYY-MM` format.
     pub month: String,
+    /// Financial values for the month.
     pub breakdown: FinancialBreakdown,
 }
 
+/// Financial totals across all time and by month.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FinancialSummary {
+    /// Financial values across all transactions.
     pub breakdown: FinancialBreakdown,
+    /// Totals for each month.
     pub monthly_totals: Vec<MonthlyTotal>,
+    /// Detailed category breakdown for each month.
     pub monthly_breakdowns: Vec<MonthlyBreakdown>,
 }
 
+/// Aggregates transactions into all-time and monthly financial summaries.
 pub fn create_financial_summary(
     categories: &[Category],
     transactions: &[FinancialTransaction],

@@ -4,18 +4,19 @@ import AITab from "./AITab";
 import type { BudgetApiClient } from "../api/budgetApi";
 import { FinancialSummaryProvider } from "../features/home/FinancialSummaryContext";
 import ResetDataDialog from "../features/settings/ResetDataDialog";
+import type { TabName } from "../types";
+import Button from "../shared/Button";
 
-type TabName = "home" | "ai";
-
-type Props = {
+type DashboardProps = {
   api: BudgetApiClient;
-  lockApp: () => Promise<boolean>;
+  onLock: () => Promise<boolean>;
   lockError: string;
   activeTab: TabName;
-  setActiveTab: (t: TabName) => void;
+  onTabChange: (tab: TabName) => void;
 };
 
-export default function Dashboard({ api, lockApp, lockError, activeTab, setActiveTab }: Props) {
+/** Displays dashboard content, tabs, and lock/reset actions. */
+export default function Dashboard({ api, onLock, lockError, activeTab, onTabChange }: DashboardProps) {
   return (
     <FinancialSummaryProvider api={api}>
       <div className="flex flex-1 flex-col rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-xl shadow-slate-950/40">
@@ -26,14 +27,14 @@ export default function Dashboard({ api, lockApp, lockError, activeTab, setActiv
           </div>
           <div className="flex flex-wrap items-center gap-3 text-sm text-slate-400">
             <ResetDataDialog api={api} />
-            <button type="button" onClick={() => void lockApp()} className="rounded-2xl bg-slate-800 px-3 py-2 text-slate-300 transition hover:bg-slate-700">Lock app</button>
+            <Button type="button" variant="secondary" onClick={() => void onLock()}>Lock app</Button>
           </div>
         </div>
 
         {lockError && <p className="mt-4 rounded-xl border border-rose-800 bg-rose-950/60 px-3 py-2 text-sm text-rose-200" role="alert">{lockError}</p>}
 
         <div className="mt-8 overflow-hidden rounded-3xl border border-slate-800 bg-slate-950/90">
-          <TabBar activeTab={activeTab} setActiveTab={setActiveTab} />
+          <TabBar activeTab={activeTab} onTabChange={onTabChange} />
 
           <div className="p-6 text-slate-200">
             {activeTab === "home" ? <HomeTab api={api} /> : <AITab />}

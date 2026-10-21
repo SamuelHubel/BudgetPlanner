@@ -2,6 +2,7 @@ use chrono::NaiveDate;
 
 use super::{DateOrder, ImportError};
 
+/// Infers a common month/day order from a collection of date strings.
 pub fn detect_date_order<'a>(
     dates: impl IntoIterator<Item = &'a str>,
 ) -> Result<DateOrder, ImportError> {
@@ -42,6 +43,7 @@ pub fn detect_date_order<'a>(
     }
 }
 
+/// Parses a supported date string using the requested order.
 pub fn parse_date(value: &str, order: DateOrder) -> Result<NaiveDate, ImportError> {
     let value = value.trim();
     if let Some(date) = parse_unambiguous_date(value) {

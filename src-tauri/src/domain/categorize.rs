@@ -2,6 +2,7 @@ use regex::Regex;
 
 use super::{Category, ImportError, ImportedTransaction, KeywordCategory};
 
+/// Assigns categories to parsed transactions using matching rules.
 pub fn categorize_transactions(
     transactions: &[ImportedTransaction],
     categories: &[Category],

@@ -4,11 +4,11 @@ import UnlockScreen from "./features/lock/UnlockScreen";
 import Dashboard from "./components/Dashboard";
 import { budgetApi } from "./api/budgetApi";
 import { toErrorMessage } from "./lib/errors";
-
-type TabName = "home" | "ai";
+import type { TabName } from "./types";
 
 const INACTIVITY_LOCK_MS = 5 * 60 * 1000;
 
+/** Coordinates password setup, locking, and dashboard navigation. */
 function App() {
   const [isLocked, setIsLocked] = useState(true);
   const [isInitialized, setIsInitialized] = useState<boolean | null>(null);
@@ -34,7 +34,7 @@ function App() {
     };
   }, []);
 
-  const lockApp = useCallback(async () => {
+  const handleLock = useCallback(async () => {
     try {
       await budgetApi.lock();
       setIsLocked(true);
@@ -53,7 +53,7 @@ function App() {
     const resetInactivityTimer = () => {
       window.clearTimeout(timeoutId);
       timeoutId = window.setTimeout(() => {
-        void lockApp().then((locked) => {
+        void handleLock().then((locked) => {
           if (!locked) resetInactivityTimer();
         });
       }, INACTIVITY_LOCK_MS);
@@ -72,9 +72,9 @@ function App() {
       window.removeEventListener("wheel", resetInactivityTimer);
       window.removeEventListener("keydown", resetInactivityTimer);
     };
-  }, [isLocked, lockApp]);
+  }, [isLocked, handleLock]);
 
-  const submitPassword = async (password: string) => {
+  const handleUnlock = async (password: string) => {
     setUnlockError("");
     try {
       if (isInitialized) {
@@ -99,16 +99,16 @@ function App() {
         {isLocked ? (
           <UnlockScreen
             isInitialized={isInitialized}
-            onSubmit={submitPassword}
+            onUnlock={handleUnlock}
             error={unlockError}
           />
         ) : (
           <Dashboard
             api={budgetApi}
-            lockApp={lockApp}
+            onLock={handleLock}
             lockError={lockError}
             activeTab={activeTab}
-            setActiveTab={setActiveTab}
+            onTabChange={setActiveTab}
           />
         )}
       </div>

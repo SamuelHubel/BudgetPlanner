@@ -1,8 +1,14 @@
+/// Password setup and encrypted database lifecycle commands.
 pub mod auth;
+/// Transaction category lookup commands.
 pub mod categories;
+/// Statement preview and transaction import commands.
 pub mod import;
+/// Financial-data maintenance commands.
 pub mod maintenance;
+/// Application settings commands.
 pub mod settings;
+/// Financial summary commands.
 pub mod summary;
 
 use std::sync::MutexGuard;

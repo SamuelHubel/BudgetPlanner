@@ -3,6 +3,7 @@ use tauri::State;
 use crate::{error::AppError, state::AppState};
 
 #[tauri::command]
+/// Atomically clears transactions and related financial records.
 pub fn reset_financial_data(state: State<'_, AppState>) -> Result<(), AppError> {
     let mut database = super::connection(&state)?;
     let connection = database.as_mut().ok_or(AppError::Locked)?;

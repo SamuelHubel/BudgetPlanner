@@ -1,10 +1,12 @@
 mod commands;
 mod db;
+/// Domain types and pure financial-data operations.
 pub mod domain;
 mod error;
 mod state;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+/// Configures and starts the Budget Planner Tauri application.
 pub fn run() {
     tauri::Builder::default()
         .manage(state::AppState::default())

@@ -15,6 +15,7 @@ type SummaryDonutProps = {
   currency: string;
 };
 
+/** Displays category totals as an interactive donut and legend. */
 export default function SummaryDonut({
   title,
   categories,

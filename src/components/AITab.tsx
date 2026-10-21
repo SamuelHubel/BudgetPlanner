@@ -1,3 +1,4 @@
+/** Shows the placeholder for planned AI insights. */
 export default function AITab() {
   return (
     <div className="space-y-4">

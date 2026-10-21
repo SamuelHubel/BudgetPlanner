@@ -43,10 +43,10 @@ function renderDashboard() {
   return render(
     <Dashboard
       api={api}
-      lockApp={vi.fn(async () => true)}
+      onLock={vi.fn(async () => true)}
       lockError=""
       activeTab="home"
-      setActiveTab={vi.fn()}
+      onTabChange={vi.fn()}
     />,
   );
 }

@@ -15,6 +15,7 @@ const MIGRATIONS: &[(i64, &str)] = &[
     ),
 ];
 
+/// Applies any pending numbered database migrations.
 pub fn run_migrations(connection: &mut Connection) -> Result<(), AppError> {
     let mut current_version: i64 =
         connection.query_row("PRAGMA user_version", [], |row| row.get(0))?;

@@ -1,5 +1,6 @@
 use super::{AmountLocaleHint, ImportError};
 
+/// Parses a decimal currency amount into signed integer cents.
 pub fn parse_amount_to_cents(
     value: &str,
     locale_hint: Option<AmountLocaleHint>,

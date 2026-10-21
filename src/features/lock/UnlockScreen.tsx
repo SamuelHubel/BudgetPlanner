@@ -1,14 +1,16 @@
 import { useState, type FormEvent } from "react";
+import Button from "../../shared/Button";
 
 type UnlockScreenProps = {
   isInitialized: boolean | null;
-  onSubmit: (password: string) => Promise<void>;
+  onUnlock: (password: string) => Promise<void>;
   error: string;
 };
 
 const MINIMUM_PASSWORD_LENGTH = 12;
 
-export default function UnlockScreen({ isInitialized, onSubmit, error }: UnlockScreenProps) {
+/** Collects and submits a password to create or unlock the encrypted budget. */
+export default function UnlockScreen({ isInitialized, onUnlock, error }: UnlockScreenProps) {
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [formError, setFormError] = useState("");
@@ -24,7 +26,7 @@ export default function UnlockScreen({ isInitialized, onSubmit, error }: UnlockS
       return;
     }
     try {
-      await onSubmit(password);
+      await onUnlock(password);
     } finally {
       setPassword("");
       setConfirmation("");
@@ -78,9 +80,9 @@ export default function UnlockScreen({ isInitialized, onSubmit, error }: UnlockS
               />
             </>
           )}
-          <button type="submit" className="inline-flex w-full justify-center rounded-2xl bg-sky-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-400">
+          <Button type="submit" variant="primary" className="w-full px-4 py-3 text-sm">
             {isCreatingPassword ? "Create password" : "Unlock"}
-          </button>
+          </Button>
         </form>
       )}
       <div className="mt-6 rounded-2xl border border-dashed border-slate-700 bg-slate-950/80 p-4 text-xs text-slate-500">

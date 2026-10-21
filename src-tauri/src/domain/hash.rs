@@ -1,5 +1,6 @@
 use sha2::{Digest, Sha256};
 
+/// Creates a stable hash for a transaction and its duplicate occurrence.
 pub fn dedupe_hash(
     date: &str,
     amount_cents: i64,

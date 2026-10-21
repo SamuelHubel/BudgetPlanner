@@ -7,6 +7,7 @@ type SourceListProps = {
   currency: string;
 };
 
+/** Lists the largest categorized sources for a financial summary. */
 export default function SourceList({ title, sources, currency }: SourceListProps) {
   const headingId = `${title.toLowerCase().replace(/ /g, "-")}-title`;
   return (

@@ -1,14 +1,16 @@
 import type { BudgetApiClient } from "../../api/budgetApi";
 import ImportPreviewTable from "./ImportPreviewTable";
 import { isDateOrder, useImportFlow } from "./useImportFlow";
+import Button from "../../shared/Button";
 
 type TransactionImportProps = {
   api: BudgetApiClient;
-  onImported?: () => void;
+  onImportCommitted?: () => void;
 };
 
-export default function TransactionImport({ api, onImported }: TransactionImportProps) {
-  const flow = useImportFlow(api, onImported);
+/** Lets the user preview and commit a CSV statement import. */
+export default function TransactionImport({ api, onImportCommitted }: TransactionImportProps) {
+  const flow = useImportFlow(api, onImportCommitted);
   return (
     <section className="mt-4 rounded-3xl border border-slate-800 bg-slate-950/80 p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -16,14 +18,15 @@ export default function TransactionImport({ api, onImported }: TransactionImport
           <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Bank statement</p>
           <h4 className="mt-1 text-lg font-semibold text-white">Import transactions</h4>
         </div>
-        <button
+        <Button
           type="button"
-          className="inline-flex justify-center rounded-2xl bg-cyan-500 px-4 py-2 font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
+          variant="primary"
+          className="px-4 py-2"
           onClick={() => flow.inputRef.current?.click()}
           disabled={flow.isLoading}
         >
           Choose CSV
-        </button>
+        </Button>
         <input ref={flow.inputRef} className="hidden" type="file" accept=".csv,text/csv" aria-label="Choose a CSV file" onChange={flow.handleFile} />
       </div>
       <p className="mt-3 text-sm text-slate-300">Review categories before anything is written to your transactions.</p>
@@ -56,14 +59,15 @@ export default function TransactionImport({ api, onImported }: TransactionImport
             currency={flow.currency}
             onCategoryChange={flow.updateCategory}
           />
-          <button
+          <Button
             type="button"
-            className="mt-4 inline-flex justify-center rounded-2xl bg-cyan-500 px-4 py-2 font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
+            variant="primary"
+            className="mt-4 px-4 py-2"
             onClick={flow.confirmImport}
             disabled={flow.isLoading || !flow.currency}
           >
             Confirm import
-          </button>
+          </Button>
         </>
       )}
     </section>

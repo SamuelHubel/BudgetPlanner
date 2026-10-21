@@ -7,6 +7,7 @@ type MonthListProps = {
   onSelect: (month: string) => void;
 };
 
+/** Renders selectable months from the financial summary. */
 export default function MonthList({ months, selectedMonth, onSelect }: MonthListProps) {
   return (
     <section className="flex flex-col gap-3 rounded-3xl border border-slate-800 bg-slate-950/80 p-4" aria-labelledby="tracked-months-title">

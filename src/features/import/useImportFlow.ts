@@ -4,11 +4,13 @@ import type { Category, DateOrder, ImportPreviewRow, ImportRow } from "../../typ
 import { toErrorMessage } from "../../lib/errors";
 import { useFinancialSummary } from "../home/useFinancialSummary";
 
+/** Returns whether a string matches a supported import date order. */
 export function isDateOrder(value: string): value is DateOrder {
   return value === "auto" || value === "mdy" || value === "dmy";
 }
 
-export function useImportFlow(api: BudgetApiClient, onImported?: () => void) {
+/** Manages CSV selection, preview edits, and import submission state. */
+export function useImportFlow(api: BudgetApiClient, onImportCommitted?: () => void) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [transactions, setTransactions] = useState<ImportPreviewRow[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -95,7 +97,7 @@ export function useImportFlow(api: BudgetApiClient, onImported?: () => void) {
       setCsvText("");
       setNeedsDateOrder(false);
       refresh();
-      onImported?.();
+      onImportCommitted?.();
     } catch (caughtError) {
       setError(toErrorMessage(caughtError, "Unable to save transactions."));
     } finally {
