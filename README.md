@@ -37,4 +37,6 @@ npm test
 npm run test:coverage
 ```
 
+Frontend tests read fake password fixtures from the tracked `.env.test` file. Do not put real credentials in Vite environment variables; frontend variables may be included in client builds.
+
 Run Rust checks from `src-tauri` with `cargo fmt --check`, `cargo clippy -- -D warnings`, and `cargo test`. Rust tests cover the domain, migrations, commands, and encrypted database behavior; Rust coverage reports are not currently collected.

@@ -7,6 +7,11 @@ import {
   waitFor,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {
+  invalidTestPassword,
+  mismatchedTestPassword,
+  testPassword,
+} from "./testCredentials";
 
 const { api } = vi.hoisted(() => ({
   api: {
@@ -64,18 +69,12 @@ describe("App", () => {
     api.isInitialized.mockResolvedValueOnce(false);
     render(<App />);
 
-    await user.type(
-      await screen.findByLabelText(/^password$/i),
-      "a secure password",
-    );
-    await user.type(
-      screen.getByLabelText(/confirm password/i),
-      "a secure password",
-    );
+    await user.type(await screen.findByLabelText(/^password$/i), testPassword);
+    await user.type(screen.getByLabelText(/confirm password/i), testPassword);
     await user.click(screen.getByRole("button", { name: /create password/i }));
 
     await waitFor(() => {
-      expect(api.createPassword).toHaveBeenCalledWith("a secure password");
+      expect(api.createPassword).toHaveBeenCalledWith(testPassword);
       expect(screen.getByText(/your budget dashboard/i)).toBeInTheDocument();
     });
     expect(api.unlock).not.toHaveBeenCalled();
@@ -89,13 +88,10 @@ describe("App", () => {
     api.isInitialized.mockResolvedValueOnce(false);
     render(<App />);
 
-    await user.type(
-      await screen.findByLabelText(/^password$/i),
-      "a secure password",
-    );
+    await user.type(await screen.findByLabelText(/^password$/i), testPassword);
     await user.type(
       screen.getByLabelText(/confirm password/i),
-      "a different password",
+      mismatchedTestPassword,
     );
     await user.click(screen.getByRole("button", { name: /create password/i }));
 
@@ -109,12 +105,12 @@ describe("App", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.type(await screen.findByLabelText(/password/i), "hunter2");
+    await user.type(await screen.findByLabelText(/password/i), testPassword);
     await user.click(screen.getByRole("button", { name: /unlock/i }));
 
     await waitFor(async () => {
       expect(api.unlock).toHaveBeenCalledTimes(1);
-      expect(api.unlock).toHaveBeenCalledWith("hunter2");
+      expect(api.unlock).toHaveBeenCalledWith(testPassword);
       expect(screen.getByText(/your budget dashboard/i)).toBeInTheDocument();
     });
   });
@@ -124,7 +120,10 @@ describe("App", () => {
     api.unlock.mockRejectedValueOnce("database unavailable");
     render(<App />);
 
-    await user.type(await screen.findByLabelText(/password/i), "password123");
+    await user.type(
+      await screen.findByLabelText(/password/i),
+      invalidTestPassword,
+    );
     await user.click(screen.getByRole("button", { name: /unlock/i }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
@@ -138,7 +137,7 @@ describe("App", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.type(await screen.findByLabelText(/password/i), "letmein");
+    await user.type(await screen.findByLabelText(/password/i), testPassword);
     await user.click(screen.getByRole("button", { name: /unlock/i }));
 
     await waitFor(() => {
@@ -155,7 +154,7 @@ describe("App", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.type(await screen.findByLabelText(/password/i), "password123");
+    await user.type(await screen.findByLabelText(/password/i), testPassword);
     await user.click(screen.getByRole("button", { name: /unlock/i }));
 
     await waitFor(() => {
@@ -175,7 +174,7 @@ describe("App", () => {
     });
 
     fireEvent.change(screen.getByLabelText(/password/i), {
-      target: { value: "password123" },
+      target: { value: testPassword },
     });
     const form = screen
       .getByRole("button", { name: /unlock/i })

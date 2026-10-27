@@ -13,6 +13,11 @@ dist-ssr
 coverage
 *.local
 
+# Environment files are local except for the fake test fixtures.
+.env
+.env.*
+!.env.test
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
