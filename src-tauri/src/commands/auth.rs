@@ -291,15 +291,20 @@ mod tests {
     fn creates_an_encrypted_database_and_reopens_it_with_the_password() {
         let directory = TestDirectory::new();
         assert!(!is_initialized_in(&directory.0).unwrap());
+        let test_password = format!(
+            "test-password-{}-{}",
+            std::process::id(),
+            NEXT_TEMP_DIR.fetch_add(1, Ordering::Relaxed)
+        );
 
-        let connection = create_encrypted_database(&directory.0, "correct horse battery").unwrap();
+        let connection = create_encrypted_database(&directory.0, &test_password).unwrap();
         drop(connection);
 
         assert!(is_initialized_in(&directory.0).unwrap());
         let database_bytes = fs::read(directory.0.join("budget.db")).unwrap();
         assert!(!database_bytes.starts_with(b"SQLite format 3"));
 
-        let connection = open_encrypted_database(&directory.0, "correct horse battery").unwrap();
+        let connection = open_encrypted_database(&directory.0, &test_password).unwrap();
         let schema_version: i64 = connection
             .query_row("PRAGMA user_version", [], |row| row.get(0))
             .unwrap();
