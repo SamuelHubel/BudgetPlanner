@@ -287,6 +287,14 @@ mod tests {
         }
     }
 
+    fn test_password(name: &str) -> &'static str {
+        include_str!("../../../.env.test")
+            .lines()
+            .find_map(|line| line.strip_prefix(&format!("{name}=")))
+            .filter(|password| !password.is_empty())
+            .unwrap_or_else(|| panic!("missing {name} in .env.test"))
+    }
+
     #[test]
     fn creates_an_encrypted_database_and_reopens_it_with_the_password() {
         let directory = TestDirectory::new();
@@ -314,9 +322,11 @@ mod tests {
     #[test]
     fn rejects_a_wrong_password_without_opening_the_database() {
         let directory = TestDirectory::new();
-        drop(create_encrypted_database(&directory.0, "correct horse battery").unwrap());
+        let password = test_password("BUDGET_PLANNER_TEST_PASSWORD");
+        let wrong_password = test_password("BUDGET_PLANNER_TEST_WRONG_PASSWORD");
+        drop(create_encrypted_database(&directory.0, password).unwrap());
 
-        let result = open_encrypted_database(&directory.0, "incorrect horse battery");
+        let result = open_encrypted_database(&directory.0, wrong_password);
         assert!(matches!(result, Err(AppError::BadPassword)));
     }
 
@@ -333,9 +343,10 @@ mod tests {
         drop(legacy);
         fs::write(directory.0.join("budget.db-wal"), b"legacy wal").unwrap();
 
-        drop(create_encrypted_database(&directory.0, "correct horse battery").unwrap());
+        let password = test_password("BUDGET_PLANNER_TEST_PASSWORD");
+        drop(create_encrypted_database(&directory.0, password).unwrap());
 
-        let connection = open_encrypted_database(&directory.0, "correct horse battery").unwrap();
+        let connection = open_encrypted_database(&directory.0, password).unwrap();
         let legacy_table_exists: bool = connection
             .query_row(
                 "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE name = 'legacy_data')",
@@ -350,7 +361,8 @@ mod tests {
     #[test]
     fn password_creation_rejects_short_passwords() {
         let directory = TestDirectory::new();
-        let result = create_encrypted_database(&directory.0, "short");
+        let short_password = test_password("BUDGET_PLANNER_TEST_SHORT_PASSWORD");
+        let result = create_encrypted_database(&directory.0, short_password);
         assert!(matches!(result, Err(AppError::InvalidInput(_))));
         assert!(!directory.0.join("kdf.salt").exists());
         assert!(!directory.0.join("budget.db").exists());
