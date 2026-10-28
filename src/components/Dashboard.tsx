@@ -1,126 +1,80 @@
-// This component will be used to display users financial data in a dashboard format
-// This is the "background" component that will be used to display the HomeTab and AITab components on top of itself
-
-import "./Dashboard.css";
-import { useEffect, useState } from "react";
-import TabBar from "./TabBar";
-import HomeTab from "./HomeTab";
+import TabBar from "../shared/TabBar";
+import HomeTab from "../features/home/HomeTab";
 import AITab from "./AITab";
-import { resetFinancialData } from "../lib/db";
+import type { BudgetApiClient } from "../api/budgetApi";
+import { FinancialSummaryProvider } from "../features/home/FinancialSummaryContext";
+import ResetDataDialog from "../features/settings/ResetDataDialog";
+import { TABS, type TabName } from "../types";
+import Button from "../shared/Button";
 
-type TabName = "home" | "ai";
-
-type Props = {
-  lockApp: () => Promise<void>;
+type DashboardProps = {
+  api: BudgetApiClient;
+  onLock: () => Promise<boolean>;
+  lockError: string;
   activeTab: TabName;
-  setActiveTab: (t: TabName) => void;
+  onTabChange: (tab: TabName) => void;
 };
 
-export default function Dashboard({ lockApp, activeTab, setActiveTab }: Props) {
-  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
-  const [isResetting, setIsResetting] = useState(false);
-  const [resetError, setResetError] = useState<string | null>(null);
-  const [resetComplete, setResetComplete] = useState(false);
-  const [resetVersion, setResetVersion] = useState(0);
-
-  useEffect(() => {
-    if (!resetComplete) return;
-
-    const timeoutId = window.setTimeout(() => setResetComplete(false), 30_000);
-    return () => window.clearTimeout(timeoutId);
-  }, [resetComplete]);
-
-  const openResetDialog = () => {
-    setResetError(null);
-    setResetComplete(false);
-    setIsResetDialogOpen(true);
-  };
-
-  const resetData = async () => {
-    setIsResetting(true);
-    setResetError(null);
-
-    try {
-      await resetFinancialData();
-      setResetVersion((version) => version + 1);
-      setResetComplete(true);
-      setIsResetDialogOpen(false);
-    } catch (error) {
-      setResetError(error instanceof Error ? error.message : String(error));
-    } finally {
-      setIsResetting(false);
-    }
-  };
-
+/** Displays dashboard content, tabs, and lock/reset actions. */
+export default function Dashboard({
+  api,
+  onLock,
+  lockError,
+  activeTab,
+  onTabChange,
+}: DashboardProps) {
   return (
-    <div className="dashboard-root">
-      <div className="dashboard-header">
-        <div>
-          <p className="kicker">Welcome back</p>
-          <h2 className="dashboard-title">Your budget dashboard</h2>
-        </div>
-        <div className="dashboard-actions">
-          <span className="pill">Locked mode</span>
-          <button type="button" onClick={openResetDialog} className="reset-btn">Start over</button>
-          <button type="button" onClick={lockApp} className="muted-btn">Lock app</button>
-        </div>
-      </div>
-
-      {resetComplete && (
-        <p className="reset-feedback reset-success" role="status">
-          Financial data has been cleared.
-        </p>
-      )}
-
-      <div className="panel">
-        <TabBar activeTab={activeTab} setActiveTab={setActiveTab} />
-
-        <div className="panel-body">
-          {activeTab === "home" ? <HomeTab key={resetVersion} /> : <AITab />}
-        </div>
-      </div>
-
-      {isResetDialogOpen && (
-        <div className="reset-backdrop">
-          <section
-            className="reset-dialog"
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="reset-dialog-title"
-            aria-describedby="reset-dialog-description"
-            onKeyDown={(event) => {
-              if (event.key === "Escape" && !isResetting) {
-                setIsResetDialogOpen(false);
-              }
-            }}
-          >
-            <h3 id="reset-dialog-title">Start over?</h3>
-            <p id="reset-dialog-description">
-              This permanently deletes transactions, goals, import history, and AI insights.
+    <FinancialSummaryProvider api={api}>
+      <div className="flex flex-1 flex-col rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-xl shadow-slate-950/40">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm uppercase tracking-[0.32em] text-slate-400">
+              Welcome back
             </p>
-            {resetError && <p className="reset-feedback reset-error" role="alert">Unable to reset financial data: {resetError}</p>}
-            <div className="reset-dialog-actions">
-              <button
-                type="button"
-                className="muted-btn"
-                onClick={() => setIsResetDialogOpen(false)}
-                disabled={isResetting}
-                autoFocus
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="reset-btn"
-                onClick={resetData}
-                disabled={isResetting}
-              >
-                {isResetting ? "Clearing data..." : "Delete financial data"}
-              </button>
-            </div>
-          </section>
+            <h2 className="mt-2 text-2xl font-semibold text-white">
+              Your budget dashboard
+            </h2>
+          </div>
+          <div className="flex flex-wrap items-center gap-3 text-sm text-slate-400">
+            <ResetDataDialog api={api} />
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => void onLock()}
+            >
+              Lock app
+            </Button>
+          </div>
         </div>
-      )}
-    </div>
+
+        {lockError && (
+          <p
+            className="mt-4 rounded-xl border border-rose-800 bg-rose-950/60 px-3 py-2 text-sm text-rose-200"
+            role="alert"
+          >
+            {lockError}
+          </p>
+        )}
+
+        <div className="mt-8 overflow-hidden rounded-3xl border border-slate-800 bg-slate-950/90">
+          <TabBar activeTab={activeTab} onTabChange={onTabChange} />
+
+          {TABS.map((tab) => (
+            <div
+              key={tab}
+              id={`dashboard-panel-${tab}`}
+              role="tabpanel"
+              aria-labelledby={`dashboard-tab-${tab}`}
+              tabIndex={activeTab === tab ? 0 : -1}
+              hidden={activeTab !== tab}
+              className="p-6 text-slate-200"
+            >
+              {activeTab === tab &&
+                (tab === "home" ? <HomeTab api={api} /> : <AITab />)}
+            </div>
+          ))}
+        </div>
+      </div>
+    </FinancialSummaryProvider>
   );
 }

@@ -1,48 +1,119 @@
-﻿// This is the main entry point for the app. 
-// It will display the unlock screen if the app is locked,
-//  and the dashboard if the app is unlocked.
-
-
-import { useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
 import "./index.css";
-import "./App.css";
-import UnlockScreen from "./components/UnlockScreen";
+import UnlockScreen from "./features/lock/UnlockScreen";
 import Dashboard from "./components/Dashboard";
-import { getDb, closeDb } from "./lib/db";
+import { budgetApi } from "./api/budgetApi";
+import { toErrorMessage } from "./lib/errors";
+import type { TabName } from "./types";
 
-type TabName = "home" | "ai";
+const INACTIVITY_LOCK_MS = 5 * 60 * 1000;
 
+/** Coordinates password setup, locking, and dashboard navigation. */
 function App() {
   const [isLocked, setIsLocked] = useState(true);
-  const [password, setPassword] = useState("");
+  const [isInitialized, setIsInitialized] = useState<boolean | null>(null);
   const [activeTab, setActiveTab] = useState<TabName>("home");
+  const [unlockError, setUnlockError] = useState("");
+  const [lockError, setLockError] = useState("");
 
-  const unlockApp = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    // TODO: implement password hashing/verification and key derivation.
-    // For now, this just opens the (unencrypted) connection so migrations
-    // run and CRUD milestones have something to build against.
-    await getDb();
-    setIsLocked(false);
-    setPassword("");
-  };
+  useEffect(() => {
+    let isMounted = true;
+    void budgetApi.isInitialized().then(
+      (initialized) => {
+        if (isMounted) setIsInitialized(initialized);
+      },
+      (error: unknown) => {
+        if (isMounted) {
+          setUnlockError(
+            toErrorMessage(error, "Unable to check password setup."),
+          );
+          setIsInitialized(null);
+        }
+      },
+    );
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
-  const lockApp = async () => {
-    await closeDb();
-    setIsLocked(true);
+  const handleLock = useCallback(async () => {
+    try {
+      await budgetApi.lock();
+      setIsLocked(true);
+      setLockError("");
+      return true;
+    } catch (error) {
+      setLockError(toErrorMessage(error, "Unable to lock the app."));
+      return false;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isLocked) return;
+
+    let timeoutId: number;
+    const resetInactivityTimer = () => {
+      window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(() => {
+        void handleLock().then((locked) => {
+          if (!locked) resetInactivityTimer();
+        });
+      }, INACTIVITY_LOCK_MS);
+    };
+
+    resetInactivityTimer();
+    window.addEventListener("mousemove", resetInactivityTimer);
+    window.addEventListener("mousedown", resetInactivityTimer);
+    window.addEventListener("wheel", resetInactivityTimer);
+    window.addEventListener("keydown", resetInactivityTimer);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.removeEventListener("mousemove", resetInactivityTimer);
+      window.removeEventListener("mousedown", resetInactivityTimer);
+      window.removeEventListener("wheel", resetInactivityTimer);
+      window.removeEventListener("keydown", resetInactivityTimer);
+    };
+  }, [isLocked, handleLock]);
+
+  const handleUnlock = async (password: string) => {
+    setUnlockError("");
+    try {
+      if (isInitialized) {
+        await budgetApi.unlock(password);
+      } else {
+        await budgetApi.createPassword(password);
+        setIsInitialized(true);
+      }
+      setIsLocked(false);
+    } catch (error) {
+      setUnlockError(toErrorMessage(error, "Unable to unlock the app."));
+    }
   };
 
   return (
-    <div className="app-shell">
-      <div className="container">
-        <header className="header">
-          <p className="brand-kicker">Budget Planner</p>
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+        <header className="mb-8 flex items-center justify-between">
+          <p className="text-sm uppercase tracking-[0.32em] text-slate-400">
+            Budget Planner
+          </p>
         </header>
 
         {isLocked ? (
-          <UnlockScreen password={password} setPassword={setPassword} unlockApp={unlockApp} />
+          <UnlockScreen
+            isInitialized={isInitialized}
+            onUnlock={handleUnlock}
+            error={unlockError}
+          />
         ) : (
-          <Dashboard lockApp={lockApp} activeTab={activeTab} setActiveTab={setActiveTab} />
+          <Dashboard
+            api={budgetApi}
+            onLock={handleLock}
+            lockError={lockError}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
         )}
       </div>
     </div>

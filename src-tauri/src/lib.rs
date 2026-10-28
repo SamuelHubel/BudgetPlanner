@@ -1,43 +1,27 @@
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-use tauri_plugin_sql::{Migration, MigrationKind};
-
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
+mod commands;
+mod db;
+/// Domain types and pure financial-data operations.
+pub mod domain;
+mod error;
+mod state;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+/// Configures and starts the Budget Planner Tauri application.
 pub fn run() {
-    // SQLCipher support is enabled at compile time using libsqlite3-sys bundled SQLCipher.
-    let migrations = vec![
-        Migration {
-            version: 1,
-            description: "initial_schema",
-            sql: include_str!("../migrations/init.sql"),
-            kind: MigrationKind::Up,
-        },
-        Migration {
-            version: 2,
-            description: "default_categories",
-            sql: include_str!("../migrations/default_categories.sql"),
-            kind: MigrationKind::Up,
-        },
-        Migration {
-            version: 3,
-            description: "default_keyword_categories",
-            sql: include_str!("../migrations/default_keyword_categories.sql"),
-            kind: MigrationKind::Up,
-        },
-    ];
-
     tauri::Builder::default()
-        .plugin(tauri_plugin_opener::init())
-        .plugin(
-            tauri_plugin_sql::Builder::new()
-                .add_migrations("sqlite:budget.db", migrations)
-                .build(),
-        )
-        .invoke_handler(tauri::generate_handler![greet])
+        .manage(state::AppState::default())
+        .invoke_handler(tauri::generate_handler![
+            commands::auth::is_initialized,
+            commands::auth::create_password,
+            commands::auth::unlock,
+            commands::auth::lock,
+            commands::categories::list_categories,
+            commands::import::preview_import,
+            commands::import::commit_import,
+            commands::summary::get_financial_summary,
+            commands::settings::get_currency,
+            commands::maintenance::reset_financial_data,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
