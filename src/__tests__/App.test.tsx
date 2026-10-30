@@ -37,6 +37,10 @@ const { api } = vi.hoisted(() => ({
     })),
     getCurrency: vi.fn(async () => "USD"),
     resetFinancialData: vi.fn(async () => {}),
+    listGoals: vi.fn(async () => []),
+    createGoal: vi.fn(),
+    updateGoal: vi.fn(),
+    deleteGoal: vi.fn(async () => {}),
   },
 }));
 

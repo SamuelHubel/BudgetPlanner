@@ -7,6 +7,9 @@ vi.mock("../features/home/HomeTab", () => ({
   default: () => <div>Home content</div>,
 }));
 vi.mock("./AITab", () => ({ default: () => <div>AI content</div> }));
+vi.mock("../features/goals/GoalsTab", () => ({
+  default: () => <div>Goals content</div>,
+}));
 
 import Dashboard from "./Dashboard";
 
@@ -34,6 +37,14 @@ const api: BudgetApiClient = {
   }),
   getCurrency: async () => "USD",
   resetFinancialData,
+  listGoals: async () => [],
+  createGoal: async () => {
+    throw new Error("not used");
+  },
+  updateGoal: async () => {
+    throw new Error("not used");
+  },
+  deleteGoal: async () => {},
 };
 
 afterEach(() => {
@@ -61,7 +72,7 @@ describe("Dashboard reset action", () => {
     expect(
       screen.getByRole("tablist", { name: "Dashboard sections" }),
     ).toBeInTheDocument();
-    expect(tabs).toHaveLength(2);
+    expect(tabs).toHaveLength(3);
     for (const tab of tabs) {
       const panel = document.getElementById(
         tab.getAttribute("aria-controls") ?? "",

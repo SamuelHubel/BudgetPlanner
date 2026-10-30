@@ -1,5 +1,5 @@
 /** The frontend tabs available in the dashboard. */
-export const TABS = ["home", "ai"] as const;
+export const TABS = ["home", "goals", "ai"] as const;
 
 /** A dashboard tab identifier. */
 export type TabName = (typeof TABS)[number];
@@ -79,4 +79,34 @@ export type DateOrder = "auto" | "mdy" | "dmy";
 export type CommitImportResult = {
   inserted: number;
   skippedDuplicates: number;
+};
+
+/** Spending progress for a goal linked to an expense category. */
+export type GoalProgress = {
+  /** Month the progress covers, as `YYYY-MM` (latest month with data). */
+  month: string;
+  /** Non-negative net spending in the linked category, in cents. */
+  spentCents: number;
+  /** Monthly spending limit, in cents. */
+  limitCents: number;
+};
+
+/** A user financial goal returned by the budget API. */
+export type Goal = {
+  id: number;
+  title: string;
+  /** Linked expense category, or `null` for an untracked goal. */
+  categoryId: number | null;
+  /** Monthly spending limit in cents, or `null` for an untracked goal. */
+  spendingLimitCents: number | null;
+  createdAt: string;
+  /** Computed progress, or `null` when untracked or no data exists yet. */
+  progress: GoalProgress | null;
+};
+
+/** Editable goal fields sent to the create and update APIs. */
+export type GoalInput = {
+  title: string;
+  categoryId: number | null;
+  spendingLimitCents: number | null;
 };

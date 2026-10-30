@@ -2,6 +2,8 @@
 pub mod auth;
 /// Transaction category lookup commands.
 pub mod categories;
+/// Financial goal tracking commands.
+pub mod goals;
 /// Statement preview and transaction import commands.
 pub mod import;
 /// Financial-data maintenance commands.

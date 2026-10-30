@@ -1,6 +1,7 @@
 import TabBar from "../shared/TabBar";
 import HomeTab from "../features/home/HomeTab";
 import AITab from "./AITab";
+import GoalsTab from "../features/goals/GoalsTab";
 import type { BudgetApiClient } from "../api/budgetApi";
 import { FinancialSummaryProvider } from "../features/home/FinancialSummaryContext";
 import ResetDataDialog from "../features/settings/ResetDataDialog";
@@ -14,6 +15,18 @@ type DashboardProps = {
   activeTab: TabName;
   onTabChange: (tab: TabName) => void;
 };
+
+/** Renders the content for one dashboard tab. */
+function renderTab(tab: TabName, api: BudgetApiClient) {
+  switch (tab) {
+    case "home":
+      return <HomeTab api={api} />;
+    case "goals":
+      return <GoalsTab api={api} />;
+    case "ai":
+      return <AITab />;
+  }
+}
 
 /** Displays dashboard content, tabs, and lock/reset actions. */
 export default function Dashboard({
@@ -69,8 +82,9 @@ export default function Dashboard({
               hidden={activeTab !== tab}
               className="p-6 text-slate-200"
             >
-              {activeTab === tab &&
-                (tab === "home" ? <HomeTab api={api} /> : <AITab />)}
+              {/* Only the active panel mounts, so each tab reloads its data
+                  (e.g. goal progress after an import) when it is opened. */}
+              {activeTab === tab && renderTab(tab, api)}
             </div>
           ))}
         </div>

@@ -8,6 +8,7 @@ type TabBarProps = {
 
 const TAB_LABELS: Record<TabName, string> = {
   home: "Home",
+  goals: "Goals",
   ai: "AI",
 };
 

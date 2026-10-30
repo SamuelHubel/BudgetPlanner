@@ -4,6 +4,8 @@ import type {
   CommitImportResult,
   DateOrder,
   FinancialSummary,
+  Goal,
+  GoalInput,
   ImportPreviewRow,
   ImportRow,
 } from "../types";
@@ -37,6 +39,14 @@ export interface BudgetApiClient {
   getCurrency(): Promise<string>;
   /** Deletes transactions and related financial data. */
   resetFinancialData(): Promise<void>;
+  /** Lists goals newest first, including computed spending progress. */
+  listGoals(): Promise<Goal[]>;
+  /** Creates a goal and returns it with its computed progress. */
+  createGoal(input: GoalInput): Promise<Goal>;
+  /** Replaces a goal's text and spending link. */
+  updateGoal(id: number, input: GoalInput): Promise<Goal>;
+  /** Permanently deletes a goal. */
+  deleteGoal(id: number): Promise<void>;
 }
 
 /** Tauri-backed implementation of the frontend budget API. */
@@ -57,4 +67,10 @@ export const budgetApi: BudgetApiClient = {
   getFinancialSummary: () => invoke<FinancialSummary>("get_financial_summary"),
   getCurrency: () => invoke<string>("get_currency"),
   resetFinancialData: () => invoke<void>("reset_financial_data"),
+  listGoals: () => invoke<Goal[]>("list_goals"),
+  createGoal: ({ title, categoryId, spendingLimitCents }) =>
+    invoke<Goal>("create_goal", { title, categoryId, spendingLimitCents }),
+  updateGoal: (id, { title, categoryId, spendingLimitCents }) =>
+    invoke<Goal>("update_goal", { id, title, categoryId, spendingLimitCents }),
+  deleteGoal: (id) => invoke<void>("delete_goal", { id }),
 };

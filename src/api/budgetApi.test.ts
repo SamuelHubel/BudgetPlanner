@@ -32,6 +32,18 @@ describe("budgetApi IPC contract", () => {
     await budgetApi.getFinancialSummary();
     await budgetApi.getCurrency();
     await budgetApi.resetFinancialData();
+    await budgetApi.listGoals();
+    await budgetApi.createGoal({
+      title: "Spend less on dining out",
+      categoryId: 4,
+      spendingLimitCents: 30000,
+    });
+    await budgetApi.updateGoal(7, {
+      title: "Save more",
+      categoryId: null,
+      spendingLimitCents: null,
+    });
+    await budgetApi.deleteGoal(7);
 
     expect(invoke.mock.calls).toEqual([
       ["is_initialized"],
@@ -60,6 +72,25 @@ describe("budgetApi IPC contract", () => {
       ["get_financial_summary"],
       ["get_currency"],
       ["reset_financial_data"],
+      ["list_goals"],
+      [
+        "create_goal",
+        {
+          title: "Spend less on dining out",
+          categoryId: 4,
+          spendingLimitCents: 30000,
+        },
+      ],
+      [
+        "update_goal",
+        {
+          id: 7,
+          title: "Save more",
+          categoryId: null,
+          spendingLimitCents: null,
+        },
+      ],
+      ["delete_goal", { id: 7 }],
     ]);
   });
 });
