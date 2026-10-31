@@ -1,5 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
+  Budget,
+  BudgetMonth,
   Category,
   CommitImportResult,
   DateOrder,
@@ -47,6 +49,12 @@ export interface BudgetApiClient {
   updateGoal(id: number, input: GoalInput): Promise<Goal>;
   /** Permanently deletes a goal. */
   deleteGoal(id: number): Promise<void>;
+  /** Loads a month's budget, copy-forward template, and actual spending. */
+  getBudget(month: string): Promise<BudgetMonth>;
+  /** Creates or replaces a month's budget. */
+  saveBudget(budget: Budget): Promise<Budget>;
+  /** Permanently deletes a month's budget. */
+  deleteBudget(month: string): Promise<void>;
 }
 
 /** Tauri-backed implementation of the frontend budget API. */
@@ -73,4 +81,13 @@ export const budgetApi: BudgetApiClient = {
   updateGoal: (id, { title, categoryId, spendingLimitCents }) =>
     invoke<Goal>("update_goal", { id, title, categoryId, spendingLimitCents }),
   deleteGoal: (id) => invoke<void>("delete_goal", { id }),
+  getBudget: (month) => invoke<BudgetMonth>("get_budget", { month }),
+  saveBudget: ({ month, expectedIncomeCents, inputMode, allocations }) =>
+    invoke<Budget>("save_budget", {
+      month,
+      expectedIncomeCents,
+      inputMode,
+      allocations,
+    }),
+  deleteBudget: (month) => invoke<void>("delete_budget", { month }),
 };

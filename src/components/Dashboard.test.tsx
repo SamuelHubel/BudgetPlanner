@@ -45,6 +45,15 @@ const api: BudgetApiClient = {
     throw new Error("not used");
   },
   deleteGoal: async () => {},
+  getBudget: async (month) => ({
+    month,
+    budget: null,
+    template: null,
+    actuals: [],
+    uncategorizedSpentCents: 0,
+  }),
+  saveBudget: async (budget) => budget,
+  deleteBudget: async () => {},
 };
 
 afterEach(() => {
@@ -72,7 +81,7 @@ describe("Dashboard reset action", () => {
     expect(
       screen.getByRole("tablist", { name: "Dashboard sections" }),
     ).toBeInTheDocument();
-    expect(tabs).toHaveLength(3);
+    expect(tabs).toHaveLength(4);
     for (const tab of tabs) {
       const panel = document.getElementById(
         tab.getAttribute("aria-controls") ?? "",

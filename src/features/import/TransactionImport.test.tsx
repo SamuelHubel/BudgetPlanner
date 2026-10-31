@@ -53,6 +53,15 @@ function createApi(
       throw new Error("not used");
     },
     deleteGoal: async () => {},
+    getBudget: async (month) => ({
+      month,
+      budget: null,
+      template: null,
+      actuals: [],
+      uncategorizedSpentCents: 0,
+    }),
+    saveBudget: async (budget) => budget,
+    deleteBudget: async () => {},
   };
 }
 

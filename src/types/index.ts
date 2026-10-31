@@ -1,5 +1,5 @@
 /** The frontend tabs available in the dashboard. */
-export const TABS = ["home", "goals", "ai"] as const;
+export const TABS = ["home", "budget", "goals", "ai"] as const;
 
 /** A dashboard tab identifier. */
 export type TabName = (typeof TABS)[number];
@@ -109,4 +109,43 @@ export type GoalInput = {
   title: string;
   categoryId: number | null;
   spendingLimitCents: number | null;
+};
+
+/**
+ * How a budget's allocations are entered. This also decides what stays fixed
+ * when income changes: percents for `percent`, amounts for `amount`.
+ */
+export type BudgetInputMode = "percent" | "amount";
+
+/** The amount budgeted for one expense category. */
+export type BudgetAllocation = {
+  categoryId: number;
+  amountCents: number;
+};
+
+/** A saved budget, also the fields sent to the save API. */
+export type Budget = {
+  /** Month the budget covers, as `YYYY-MM`. */
+  month: string;
+  expectedIncomeCents: number;
+  inputMode: BudgetInputMode;
+  allocations: BudgetAllocation[];
+};
+
+/** Actual net spending in one expense category. */
+export type BudgetActual = {
+  categoryId: number;
+  spentCents: number;
+};
+
+/** Everything the Budget tab shows for one calendar month. */
+export type BudgetMonth = {
+  month: string;
+  /** The month's saved budget, or `null` when none exists. */
+  budget: Budget | null;
+  /** The nearest earlier budget, or `null` when `budget` is set or none exists. */
+  template: Budget | null;
+  actuals: BudgetActual[];
+  /** Outflows this month with no category, in cents. */
+  uncategorizedSpentCents: number;
 };

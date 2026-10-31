@@ -2,7 +2,13 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { BudgetApiClient } from "../../api/budgetApi";
-import type { Category, Goal, GoalInput, GoalProgress } from "../../types";
+import type {
+  Budget,
+  Category,
+  Goal,
+  GoalInput,
+  GoalProgress,
+} from "../../types";
 import { FinancialSummaryProvider } from "../home/FinancialSummaryContext";
 import GoalsTab from "./GoalsTab";
 
@@ -61,6 +67,15 @@ function createApi(
     deleteGoal: vi.fn(async (id: number) => {
       goals = goals.filter((goal) => goal.id !== id);
     }),
+    getBudget: async (month: string) => ({
+      month,
+      budget: null,
+      template: null,
+      actuals: [],
+      uncategorizedSpentCents: 0,
+    }),
+    saveBudget: async (budget: Budget) => budget,
+    deleteBudget: async () => {},
   } satisfies BudgetApiClient;
   return api;
 }

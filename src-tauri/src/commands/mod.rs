@@ -1,5 +1,7 @@
 /// Password setup and encrypted database lifecycle commands.
 pub mod auth;
+/// Monthly budget commands.
+pub mod budget;
 /// Transaction category lookup commands.
 pub mod categories;
 /// Financial goal tracking commands.

@@ -1,3 +1,5 @@
+/// Monthly budget validation rules.
+pub mod budget;
 /// Transaction categorization rules and helpers.
 pub mod categorize;
 /// CSV parsing and import limits.

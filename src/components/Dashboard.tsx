@@ -1,6 +1,7 @@
 import TabBar from "../shared/TabBar";
 import HomeTab from "../features/home/HomeTab";
 import AITab from "./AITab";
+import BudgetTab from "../features/budget/BudgetTab";
 import GoalsTab from "../features/goals/GoalsTab";
 import type { BudgetApiClient } from "../api/budgetApi";
 import { FinancialSummaryProvider } from "../features/home/FinancialSummaryContext";
@@ -21,6 +22,8 @@ function renderTab(tab: TabName, api: BudgetApiClient) {
   switch (tab) {
     case "home":
       return <HomeTab api={api} />;
+    case "budget":
+      return <BudgetTab api={api} />;
     case "goals":
       return <GoalsTab api={api} />;
     case "ai":

@@ -15,6 +15,8 @@ fn reset_in_connection(connection: &mut rusqlite::Connection) -> Result<(), AppE
     transaction.execute_batch(
         "DELETE FROM transactions;
          DELETE FROM goals;
+         DELETE FROM budget_allocations;
+         DELETE FROM budgets;
          DELETE FROM ai_insights_log;
          DELETE FROM import_batches;",
     )?;
@@ -62,6 +64,20 @@ mod tests {
             .unwrap();
         connection
             .execute(
+                "INSERT INTO budgets (month, expected_income_cents, input_mode)
+                 VALUES ('2026-01', 500000, 'percent')",
+                [],
+            )
+            .unwrap();
+        connection
+            .execute(
+                "INSERT INTO budget_allocations (budget_id, category_id, amount_cents)
+                 VALUES (1, 1, 150000)",
+                [],
+            )
+            .unwrap();
+        connection
+            .execute(
                 "CREATE TRIGGER reject_goal_delete
                  BEFORE DELETE ON goals
                  BEGIN
@@ -84,7 +100,14 @@ mod tests {
             .execute_batch("DROP TRIGGER reject_goal_delete;")
             .unwrap();
         reset_in_connection(&mut connection).unwrap();
-        for table in ["transactions", "goals", "ai_insights_log", "import_batches"] {
+        for table in [
+            "transactions",
+            "goals",
+            "ai_insights_log",
+            "import_batches",
+            "budget_allocations",
+            "budgets",
+        ] {
             let count: i64 = connection
                 .query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |row| {
                     row.get(0)

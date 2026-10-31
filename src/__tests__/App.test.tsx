@@ -7,6 +7,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { Budget } from "../types";
 import {
   invalidTestPassword,
   mismatchedTestPassword,
@@ -41,6 +42,15 @@ const { api } = vi.hoisted(() => ({
     createGoal: vi.fn(),
     updateGoal: vi.fn(),
     deleteGoal: vi.fn(async () => {}),
+    getBudget: vi.fn(async (month: string) => ({
+      month,
+      budget: null,
+      template: null,
+      actuals: [],
+      uncategorizedSpentCents: 0,
+    })),
+    saveBudget: vi.fn(async (budget: Budget) => budget),
+    deleteBudget: vi.fn(async () => {}),
   },
 }));
 
