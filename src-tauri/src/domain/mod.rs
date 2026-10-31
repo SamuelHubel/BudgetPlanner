@@ -1,9 +1,13 @@
+/// Monthly budget validation rules.
+pub mod budget;
 /// Transaction categorization rules and helpers.
 pub mod categorize;
 /// CSV parsing and import limits.
 pub mod csv_import;
 /// Date parsing and order detection.
 pub mod dates;
+/// Goal validation and spending-progress rules.
+pub mod goals;
 /// Stable transaction deduplication hashes.
 pub mod hash;
 /// Currency amount parsing and validation.

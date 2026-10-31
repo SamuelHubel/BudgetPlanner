@@ -1,0 +1,43 @@
+import { describe, expect, it } from "vitest";
+import { parseAmountInput } from "./parseAmountInput";
+
+describe("parseAmountInput", () => {
+  it("treats an empty field as no amount", () => {
+    expect(parseAmountInput("  ", { label: "income" })).toEqual({
+      ok: true,
+      cents: null,
+    });
+  });
+
+  it("parses amounts into integer cents", () => {
+    expect(parseAmountInput("5000.5", { label: "income" })).toEqual({
+      ok: true,
+      cents: 500050,
+    });
+  });
+
+  it("names the field in its error messages", () => {
+    expect(parseAmountInput("abc", { label: "income" })).toEqual({
+      ok: false,
+      error: "Enter the income as a number, like 300 or 300.50.",
+    });
+    expect(parseAmountInput("0", { label: "income" })).toEqual({
+      ok: false,
+      error: "The income must be greater than zero.",
+    });
+  });
+
+  it("accepts zero only when allowed", () => {
+    expect(
+      parseAmountInput("0.00", { label: "amount", allowZero: true }),
+    ).toEqual({ ok: true, cents: 0 });
+  });
+
+  it("rejects amounts beyond the safe integer range", () => {
+    expect(
+      parseAmountInput("90071992547409.92", {
+        label: "income",
+      }),
+    ).toEqual({ ok: false, error: "The income is too large." });
+  });
+});

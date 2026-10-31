@@ -82,8 +82,8 @@ export default function ResetDataDialog({ api }: ResetDataDialogProps) {
           className="mt-3 text-sm leading-6 text-slate-300"
           id="reset-dialog-description"
         >
-          This permanently deletes transactions, goals, import history, and AI
-          insights.
+          This permanently deletes transactions, budgets, goals, import history,
+          and AI insights.
         </p>
         {resetError && (
           <p

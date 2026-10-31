@@ -88,6 +88,23 @@ const api: BudgetApiClient = {
   getFinancialSummary: vi.fn(async () => summary),
   getCurrency: vi.fn(async () => "USD"),
   resetFinancialData: async () => {},
+  listGoals: async () => [],
+  createGoal: async () => {
+    throw new Error("not used");
+  },
+  updateGoal: async () => {
+    throw new Error("not used");
+  },
+  deleteGoal: async () => {},
+  getBudget: async (month) => ({
+    month,
+    budget: null,
+    template: null,
+    actuals: [],
+    uncategorizedSpentCents: 0,
+  }),
+  saveBudget: async (budget) => budget,
+  deleteBudget: async () => {},
 };
 
 function FinancialSummaryRefreshProbe() {

@@ -35,6 +35,7 @@ export default tseslint.config(
     files: [
       "src/features/lock/UnlockScreen.tsx",
       "src/features/settings/ResetDataDialog.tsx",
+      "src/features/goals/DeleteGoalDialog.tsx",
     ],
     rules: {
       "jsx-a11y/no-autofocus": "off",

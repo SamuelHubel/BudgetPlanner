@@ -1,9 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
+  Budget,
+  BudgetMonth,
   Category,
   CommitImportResult,
   DateOrder,
   FinancialSummary,
+  Goal,
+  GoalInput,
   ImportPreviewRow,
   ImportRow,
 } from "../types";
@@ -37,6 +41,20 @@ export interface BudgetApiClient {
   getCurrency(): Promise<string>;
   /** Deletes transactions and related financial data. */
   resetFinancialData(): Promise<void>;
+  /** Lists goals newest first, including computed spending progress. */
+  listGoals(): Promise<Goal[]>;
+  /** Creates a goal and returns it with its computed progress. */
+  createGoal(input: GoalInput): Promise<Goal>;
+  /** Replaces a goal's text and spending link. */
+  updateGoal(id: number, input: GoalInput): Promise<Goal>;
+  /** Permanently deletes a goal. */
+  deleteGoal(id: number): Promise<void>;
+  /** Loads a month's budget, copy-forward template, and actual spending. */
+  getBudget(month: string): Promise<BudgetMonth>;
+  /** Creates or replaces a month's budget. */
+  saveBudget(budget: Budget): Promise<Budget>;
+  /** Permanently deletes a month's budget. */
+  deleteBudget(month: string): Promise<void>;
 }
 
 /** Tauri-backed implementation of the frontend budget API. */
@@ -57,4 +75,19 @@ export const budgetApi: BudgetApiClient = {
   getFinancialSummary: () => invoke<FinancialSummary>("get_financial_summary"),
   getCurrency: () => invoke<string>("get_currency"),
   resetFinancialData: () => invoke<void>("reset_financial_data"),
+  listGoals: () => invoke<Goal[]>("list_goals"),
+  createGoal: ({ title, categoryId, spendingLimitCents }) =>
+    invoke<Goal>("create_goal", { title, categoryId, spendingLimitCents }),
+  updateGoal: (id, { title, categoryId, spendingLimitCents }) =>
+    invoke<Goal>("update_goal", { id, title, categoryId, spendingLimitCents }),
+  deleteGoal: (id) => invoke<void>("delete_goal", { id }),
+  getBudget: (month) => invoke<BudgetMonth>("get_budget", { month }),
+  saveBudget: ({ month, expectedIncomeCents, inputMode, allocations }) =>
+    invoke<Budget>("save_budget", {
+      month,
+      expectedIncomeCents,
+      inputMode,
+      allocations,
+    }),
+  deleteBudget: (month) => invoke<void>("delete_budget", { month }),
 };

@@ -13,6 +13,7 @@ const MIGRATIONS: &[(i64, &str)] = &[
         4,
         include_str!("../../migrations/0004_currency_setting.sql"),
     ),
+    (5, include_str!("../../migrations/0005_budgets.sql")),
 ];
 
 /// Applies any pending numbered database migrations.
@@ -98,7 +99,7 @@ mod tests {
             .unwrap()
             .collect::<Result<Vec<_>, _>>()
             .unwrap();
-        assert_eq!(version, 4);
+        assert_eq!(version, 5);
         assert_eq!(category_count, 11);
         assert!(rule_count > 0);
         assert!(!has_app_lock);
@@ -110,6 +111,8 @@ mod tests {
             "keyword_category_map",
             "ai_insights_log",
             "settings",
+            "budgets",
+            "budget_allocations",
         ] {
             assert!(tables.iter().any(|table| table == expected));
         }

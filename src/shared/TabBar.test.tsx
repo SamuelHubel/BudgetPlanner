@@ -45,9 +45,19 @@ describe("TabBar", () => {
     const user = userEvent.setup();
     render(<TabBarHarness />);
     const homeTab = screen.getByRole("tab", { name: "Home" });
+    const budgetTab = screen.getByRole("tab", { name: "Budget" });
+    const goalsTab = screen.getByRole("tab", { name: "Goals" });
     const aiTab = screen.getByRole("tab", { name: "AI" });
 
     homeTab.focus();
+    await user.keyboard("{ArrowRight}");
+    expect(budgetTab).toHaveFocus();
+    expect(budgetTab).toHaveAttribute("aria-selected", "true");
+
+    await user.keyboard("{ArrowRight}");
+    expect(goalsTab).toHaveFocus();
+    expect(goalsTab).toHaveAttribute("aria-selected", "true");
+
     await user.keyboard("{ArrowRight}");
     expect(aiTab).toHaveFocus();
     expect(aiTab).toHaveAttribute("aria-selected", "true");
@@ -55,6 +65,9 @@ describe("TabBar", () => {
     await user.keyboard("{ArrowRight}");
     expect(homeTab).toHaveFocus();
     expect(homeTab).toHaveAttribute("aria-selected", "true");
+
+    await user.keyboard("{ArrowLeft}");
+    expect(aiTab).toHaveFocus();
 
     await user.keyboard("{End}");
     expect(aiTab).toHaveFocus();
