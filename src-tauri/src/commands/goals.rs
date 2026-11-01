@@ -46,7 +46,7 @@ struct GoalInput {
 }
 
 /// Lists goals newest first, with spending progress for tracked goals.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn list_goals(state: State<'_, AppState>) -> Result<Vec<GoalDto>, AppError> {
     let database = super::connection(&state)?;
     let connection = database.as_ref().ok_or(AppError::Locked)?;
@@ -54,7 +54,7 @@ pub fn list_goals(state: State<'_, AppState>) -> Result<Vec<GoalDto>, AppError> 
 }
 
 /// Creates a goal and returns it with its computed progress.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn create_goal(
     state: State<'_, AppState>,
     title: String,
@@ -67,7 +67,7 @@ pub fn create_goal(
 }
 
 /// Replaces a goal's text and spending link, returning the updated goal.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn update_goal(
     state: State<'_, AppState>,
     id: i64,
@@ -81,7 +81,7 @@ pub fn update_goal(
 }
 
 /// Permanently deletes a goal.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn delete_goal(state: State<'_, AppState>, id: i64) -> Result<(), AppError> {
     let database = super::connection(&state)?;
     let connection = database.as_ref().ok_or(AppError::Locked)?;
@@ -163,22 +163,11 @@ fn validate_input(
         super::validate_safe_cents(limit)?;
     }
     if let Some(category_id) = category_id {
-        let category_type: Option<String> = connection
-            .query_row(
-                "SELECT type FROM categories WHERE id = ?1",
-                [category_id],
-                |row| row.get(0),
-            )
-            .optional()?;
-        match category_type.as_deref() {
-            Some("expense") => {}
-            Some(_) => {
-                return Err(AppError::InvalidInput(
-                    "goals can only track expense categories".to_owned(),
-                ))
-            }
-            None => return Err(AppError::InvalidInput("category not found".to_owned())),
-        }
+        super::ensure_expense_category(
+            connection,
+            category_id,
+            "goals can only track expense categories",
+        )?;
     }
     Ok(GoalInput {
         title,
@@ -270,16 +259,7 @@ mod tests {
     use rusqlite::Connection;
 
     use super::*;
-    use crate::db::run_migrations;
-
-    fn migrated_connection() -> Connection {
-        let mut connection = Connection::open_in_memory().unwrap();
-        connection
-            .pragma_update(None, "foreign_keys", "ON")
-            .unwrap();
-        run_migrations(&mut connection).unwrap();
-        connection
-    }
+    use crate::db::migrated_connection;
 
     fn category_id(connection: &Connection, name: &str) -> i64 {
         connection

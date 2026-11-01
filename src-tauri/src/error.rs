@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{ser::SerializeStruct, Serialize};
 use thiserror::Error;
 
 use crate::domain::ImportError;
@@ -35,11 +35,57 @@ pub enum AppError {
     Randomness(String),
 }
 
+impl AppError {
+    /// Stable identifier the frontend can branch on, unlike the display text.
+    pub fn code(&self) -> &'static str {
+        match self {
+            Self::Import(ImportError::AmbiguousDateOrder) => "ambiguousDateOrder",
+            Self::Import(
+                ImportError::AmbiguousAmount(_) | ImportError::AmbiguousAmountRow { .. },
+            ) => "ambiguousAmount",
+            Self::Locked => "locked",
+            Self::BadPassword => "badPassword",
+            _ => "other",
+        }
+    }
+}
+
 impl Serialize for AppError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
-        serializer.serialize_str(&self.to_string())
+        let mut error = serializer.serialize_struct("AppError", 2)?;
+        error.serialize_field("code", self.code())?;
+        error.serialize_field("message", &self.to_string())?;
+        error.end()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::AppError;
+    use crate::domain::ImportError;
+
+    #[test]
+    fn errors_serialize_with_a_code_and_a_message() {
+        let value = serde_json::to_value(AppError::BadPassword).unwrap();
+        assert_eq!(
+            value,
+            serde_json::json!({ "code": "badPassword", "message": "incorrect password" })
+        );
+    }
+
+    #[test]
+    fn ambiguous_imports_have_codes_the_import_flow_can_branch_on() {
+        let date = AppError::Import(ImportError::AmbiguousDateOrder);
+        let amount = AppError::Import(ImportError::AmbiguousAmountRow {
+            line: 2,
+            value: "1,234".to_owned(),
+        });
+        let other = AppError::InvalidInput("nope".to_owned());
+        assert_eq!(date.code(), "ambiguousDateOrder");
+        assert_eq!(amount.code(), "ambiguousAmount");
+        assert_eq!(other.code(), "other");
     }
 }

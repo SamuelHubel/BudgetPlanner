@@ -17,6 +17,15 @@ const preview: ImportPreviewRow[] = [
   },
 ];
 
+const ambiguousDateOrder = {
+  code: "ambiguousDateOrder",
+  message: "date order is ambiguous",
+};
+const ambiguousAmount = {
+  code: "ambiguousAmount",
+  message: 'row 2: amount "1,234" could be read two ways',
+};
+
 function createApi(
   previewImport: BudgetApiClient["previewImport"],
 ): BudgetApiClient {
@@ -25,6 +34,7 @@ function createApi(
     createPassword: async () => {},
     unlock: async () => {},
     lock: async () => {},
+    resetVault: async () => {},
     listCategories: async () => [
       { id: 1, name: "Groceries", type: "expense", color: "#22c55e" },
     ],
@@ -78,10 +88,9 @@ describe("TransactionImport", () => {
     const user = userEvent.setup();
     const previewImport = vi.fn(async () => preview);
     const api = createApi(previewImport);
-    const onImportCommitted = vi.fn();
     render(
       <FinancialSummaryProvider api={api}>
-        <TransactionImport api={api} onImportCommitted={onImportCommitted} />
+        <TransactionImport api={api} />
       </FinancialSummaryProvider>,
     );
 
@@ -110,14 +119,13 @@ describe("TransactionImport", () => {
     expect(await screen.findByRole("status")).toHaveTextContent(
       "0 transactions imported; 1 duplicate skipped.",
     );
-    expect(onImportCommitted).toHaveBeenCalledOnce();
   });
 
   it("lets the user resolve an ambiguous CSV date order", async () => {
     const user = userEvent.setup();
     const previewImport = vi
       .fn()
-      .mockRejectedValueOnce("date order is ambiguous")
+      .mockRejectedValueOnce(ambiguousDateOrder)
       .mockResolvedValueOnce(preview);
     const api = createApi(previewImport);
     render(
@@ -140,6 +148,68 @@ describe("TransactionImport", () => {
       "Date,Description,Amount\n01/02/2026,Coffee,-5.00",
       "statement.csv",
       "mdy",
+      "auto",
+    );
+  });
+
+  it("lets the user resolve an ambiguous amount format", async () => {
+    const user = userEvent.setup();
+    const previewImport = vi
+      .fn()
+      .mockRejectedValueOnce(ambiguousAmount)
+      .mockResolvedValueOnce(preview);
+    const api = createApi(previewImport);
+    render(
+      <FinancialSummaryProvider api={api}>
+        <TransactionImport api={api} />
+      </FinancialSummaryProvider>,
+    );
+
+    await user.upload(screen.getByLabelText(/choose a csv file/i), csvFile());
+    await user.selectOptions(
+      await screen.findByRole("combobox", { name: "Statement amount format" }),
+      "decimalComma",
+    );
+
+    expect(await screen.findByText("Already imported")).toBeInTheDocument();
+    expect(previewImport).toHaveBeenLastCalledWith(
+      "Date,Description,Amount\n01/02/2026,Coffee,-5.00",
+      "statement.csv",
+      "auto",
+      "decimalComma",
+    );
+  });
+
+  it("keeps both choices when a statement needs a date order and an amount format", async () => {
+    const user = userEvent.setup();
+    const previewImport = vi
+      .fn()
+      .mockRejectedValueOnce(ambiguousDateOrder)
+      .mockRejectedValueOnce(ambiguousAmount)
+      .mockResolvedValueOnce(preview);
+    const api = createApi(previewImport);
+    render(
+      <FinancialSummaryProvider api={api}>
+        <TransactionImport api={api} />
+      </FinancialSummaryProvider>,
+    );
+
+    await user.upload(screen.getByLabelText(/choose a csv file/i), csvFile());
+    await user.selectOptions(
+      await screen.findByRole("combobox", { name: "Statement date order" }),
+      "dmy",
+    );
+    await user.selectOptions(
+      await screen.findByRole("combobox", { name: "Statement amount format" }),
+      "decimalDot",
+    );
+
+    expect(await screen.findByText("Already imported")).toBeInTheDocument();
+    expect(previewImport).toHaveBeenLastCalledWith(
+      "Date,Description,Amount\n01/02/2026,Coffee,-5.00",
+      "statement.csv",
+      "dmy",
+      "decimalDot",
     );
   });
 });

@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
+  AmountFormat,
   Budget,
   BudgetMonth,
   Category,
@@ -22,6 +23,8 @@ export interface BudgetApiClient {
   unlock(password: string): Promise<void>;
   /** Closes the active database connection. */
   lock(): Promise<void>;
+  /** Permanently erases all budget data so a new password can be created. */
+  resetVault(): Promise<void>;
   /** Lists transaction categories available for imports. */
   listCategories(): Promise<Category[]>;
   /** Parses a CSV statement into preview rows without committing them. */
@@ -29,6 +32,7 @@ export interface BudgetApiClient {
     csvText: string,
     fileName: string,
     dateOrder?: DateOrder,
+    amountFormat?: AmountFormat,
   ): Promise<ImportPreviewRow[]>;
   /** Atomically commits reviewed import rows. */
   commitImport(
@@ -63,12 +67,19 @@ export const budgetApi: BudgetApiClient = {
   createPassword: (password) => invoke<void>("create_password", { password }),
   unlock: (password) => invoke<void>("unlock", { password }),
   lock: () => invoke<void>("lock"),
+  resetVault: () => invoke<void>("reset_vault"),
   listCategories: () => invoke<Category[]>("list_categories"),
-  previewImport: (csvText, fileName, dateOrder = "auto") =>
+  previewImport: (
+    csvText,
+    fileName,
+    dateOrder = "auto",
+    amountFormat = "auto",
+  ) =>
     invoke<ImportPreviewRow[]>("preview_import", {
       csvText,
       fileName,
       dateOrder,
+      amountFormat,
     }),
   commitImport: (fileName, rows) =>
     invoke<CommitImportResult>("commit_import", { fileName, rows }),

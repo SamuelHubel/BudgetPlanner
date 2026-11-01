@@ -1,12 +1,14 @@
 import { useState } from "react";
+import Alert from "../../shared/Alert";
 import type { BudgetApiClient } from "../../api/budgetApi";
 import Button from "../../shared/Button";
+import ConfirmDialog from "../../shared/ConfirmDialog";
+import { formatMonth } from "../../shared/format";
 import type { Budget } from "../../types";
 import { useFinancialSummary } from "../home/useFinancialSummary";
 import BudgetBuilderDialog from "./BudgetBuilderDialog";
 import { currentMonth } from "./budgetMath";
 import BudgetSummary from "./BudgetSummary";
-import DeleteBudgetDialog from "./DeleteBudgetDialog";
 import IncomeForm from "./IncomeForm";
 import MonthSelector from "./MonthSelector";
 import { useBudget } from "./useBudget";
@@ -66,14 +68,7 @@ export default function BudgetTab({ api }: BudgetTabProps) {
 
       <MonthSelector month={month} onChange={changeMonth} />
 
-      {error && (
-        <p
-          className="rounded-xl bg-rose-950/60 px-3 py-2 text-sm text-rose-200"
-          role="alert"
-        >
-          Unable to load the budget: {error}
-        </p>
-      )}
+      {error && <Alert>Unable to load the budget: {error}</Alert>}
       {!monthView && !error && (
         <p className="py-3 text-sm text-slate-400" role="status">
           Loading budget…
@@ -133,9 +128,13 @@ export default function BudgetTab({ api }: BudgetTabProps) {
               onCancel={() => setStep({ phase: "income" })}
             />
           )}
-          <DeleteBudgetDialog
+          <ConfirmDialog
             isOpen={isDeleteOpen}
-            month={month}
+            title="Delete this budget?"
+            description={`Your ${formatMonth(month)} budget will be permanently removed. Your transactions are not affected.`}
+            confirmLabel="Delete budget"
+            pendingLabel="Deleting..."
+            errorFallback="Unable to delete the budget."
             onConfirm={handleDelete}
             onClose={() => setIsDeleteOpen(false)}
           />

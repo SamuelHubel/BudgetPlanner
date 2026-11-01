@@ -2,7 +2,7 @@ use tauri::State;
 
 use crate::{error::AppError, state::AppState};
 
-#[tauri::command]
+#[tauri::command(async)]
 /// Atomically clears transactions and related financial records.
 pub fn reset_financial_data(state: State<'_, AppState>) -> Result<(), AppError> {
     let mut database = super::connection(&state)?;
@@ -26,18 +26,12 @@ fn reset_in_connection(connection: &mut rusqlite::Connection) -> Result<(), AppE
 
 #[cfg(test)]
 mod tests {
-    use rusqlite::Connection;
-
     use super::reset_in_connection;
-    use crate::db::run_migrations;
+    use crate::db::migrated_connection;
 
     #[test]
     fn reset_is_atomic_and_clears_all_financial_records() {
-        let mut connection = Connection::open_in_memory().unwrap();
-        connection
-            .pragma_update(None, "foreign_keys", "ON")
-            .unwrap();
-        run_migrations(&mut connection).unwrap();
+        let mut connection = migrated_connection();
         connection
             .execute(
                 "INSERT INTO import_batches (file_name, imported_at, transaction_count)

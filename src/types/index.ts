@@ -51,12 +51,11 @@ export type FinancialBreakdown = {
   uncategorizedExpensesCents: number;
 };
 
-/** Income and expense totals for one calendar month. */
+/** Income and expense totals for one month, including uncategorized activity. */
 export type MonthlyTotal = {
   month: string;
   incomeCents: number;
   expensesCents: number;
-  uncategorizedCents: number;
 };
 
 /** A monthly financial breakdown. */
@@ -74,6 +73,9 @@ export type FinancialSummary = {
 
 /** Supported date order choices for statement imports. */
 export type DateOrder = "auto" | "mdy" | "dmy";
+
+/** How a statement writes amounts such as `1,234`. */
+export type AmountFormat = "auto" | "decimalDot" | "decimalComma";
 
 /** Counts returned after an import commit. */
 export type CommitImportResult = {

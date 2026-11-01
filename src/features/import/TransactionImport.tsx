@@ -1,19 +1,16 @@
 import type { BudgetApiClient } from "../../api/budgetApi";
+import Alert from "../../shared/Alert";
 import ImportPreviewTable from "./ImportPreviewTable";
-import { isDateOrder, useImportFlow } from "./useImportFlow";
+import { isAmountFormat, isDateOrder, useImportFlow } from "./useImportFlow";
 import Button from "../../shared/Button";
 
 type TransactionImportProps = {
   api: BudgetApiClient;
-  onImportCommitted?: () => void;
 };
 
 /** Lets the user preview and commit a CSV statement import. */
-export default function TransactionImport({
-  api,
-  onImportCommitted,
-}: TransactionImportProps) {
-  const flow = useImportFlow(api, onImportCommitted);
+export default function TransactionImport({ api }: TransactionImportProps) {
+  const flow = useImportFlow(api);
   return (
     <section className="mt-4 rounded-3xl border border-slate-800 bg-slate-950/80 p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -46,14 +43,7 @@ export default function TransactionImport({
       <p className="mt-3 text-sm text-slate-300">
         Review categories before anything is written to your transactions.
       </p>
-      {flow.error && (
-        <p
-          className="mt-3 rounded-xl bg-rose-950/60 px-3 py-2 text-sm text-rose-200"
-          role="alert"
-        >
-          {flow.error}
-        </p>
-      )}
+      {flow.error && <Alert className="mt-3">{flow.error}</Alert>}
       {flow.needsDateOrder && (
         <label className="mt-3 block text-sm text-slate-300">
           Choose the date order used by this statement
@@ -70,6 +60,29 @@ export default function TransactionImport({
             <option value="auto">Automatic</option>
             <option value="mdy">Month / day / year</option>
             <option value="dmy">Day / month / year</option>
+          </select>
+        </label>
+      )}
+      {flow.needsAmountFormat && (
+        <label className="mt-3 block text-sm text-slate-300">
+          Choose how this statement writes amounts
+          <select
+            className="ml-2 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-slate-200"
+            aria-label="Statement amount format"
+            value={flow.amountFormat}
+            onChange={(event) => {
+              const value = event.currentTarget.value;
+              if (isAmountFormat(value)) void flow.handleAmountFormat(value);
+            }}
+            disabled={flow.isLoading}
+          >
+            <option value="auto">Automatic</option>
+            <option value="decimalDot">
+              1,234.56 (comma groups thousands)
+            </option>
+            <option value="decimalComma">
+              1.234,56 (comma marks decimals)
+            </option>
           </select>
         </label>
       )}

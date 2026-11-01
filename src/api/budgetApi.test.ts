@@ -19,8 +19,9 @@ describe("budgetApi IPC contract", () => {
     await budgetApi.createPassword(testPassword);
     await budgetApi.unlock(invalidTestPassword);
     await budgetApi.lock();
+    await budgetApi.resetVault();
     await budgetApi.listCategories();
-    await budgetApi.previewImport("csv", "bank.csv", "mdy");
+    await budgetApi.previewImport("csv", "bank.csv", "mdy", "decimalComma");
     await budgetApi.commitImport("bank.csv", [
       {
         date: "2026-01-01",
@@ -58,10 +59,16 @@ describe("budgetApi IPC contract", () => {
       ["create_password", { password: testPassword }],
       ["unlock", { password: invalidTestPassword }],
       ["lock"],
+      ["reset_vault"],
       ["list_categories"],
       [
         "preview_import",
-        { csvText: "csv", fileName: "bank.csv", dateOrder: "mdy" },
+        {
+          csvText: "csv",
+          fileName: "bank.csv",
+          dateOrder: "mdy",
+          amountFormat: "decimalComma",
+        },
       ],
       [
         "commit_import",

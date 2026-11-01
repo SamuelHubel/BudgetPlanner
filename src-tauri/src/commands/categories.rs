@@ -24,7 +24,7 @@ pub struct CategoryDto {
 }
 
 /// Lists the categories available for transaction assignment.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn list_categories(state: State<'_, AppState>) -> Result<Vec<CategoryDto>, AppError> {
     let database = super::connection(&state)?;
     let connection = database.as_ref().ok_or(AppError::Locked)?;
@@ -48,35 +48,29 @@ pub(crate) fn list_categories_from(connection: &Connection) -> Result<Vec<Catego
 }
 
 pub(crate) fn load_domain_categories(connection: &Connection) -> Result<Vec<Category>, AppError> {
-    let mut statement =
-        connection.prepare("SELECT id, name, type FROM categories ORDER BY name")?;
-    let rows = statement
-        .query_map([], |row| {
-            Ok((
-                row.get::<_, i64>(0)?,
-                row.get::<_, String>(1)?,
-                row.get::<_, String>(2)?,
-            ))
-        })?
-        .collect::<Result<Vec<_>, _>>()?;
-    let categories = rows
-        .into_iter()
-        .map(|(id, name, category_type)| {
-            let category_type = match category_type.as_str() {
+    domain_categories(&list_categories_from(connection)?)
+}
+
+/// Converts API category records into the domain's typed categories.
+pub(crate) fn domain_categories(categories: &[CategoryDto]) -> Result<Vec<Category>, AppError> {
+    categories
+        .iter()
+        .map(|category| {
+            let category_type = match category.category_type.as_str() {
                 "income" => CategoryType::Income,
                 "expense" => CategoryType::Expense,
                 _ => {
                     return Err(AppError::InvalidInput(format!(
-                        "category {id} has an invalid type"
+                        "category {} has an invalid type",
+                        category.id
                     )))
                 }
             };
             Ok(Category {
-                id,
-                name,
+                id: category.id,
+                name: category.name.clone(),
                 category_type,
             })
         })
-        .collect::<Result<Vec<_>, _>>()?;
-    Ok(categories)
+        .collect()
 }

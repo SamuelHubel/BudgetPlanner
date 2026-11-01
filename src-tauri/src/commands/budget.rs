@@ -62,7 +62,7 @@ pub struct BudgetMonthDto {
 }
 
 /// Loads a month's budget, copy-forward template, and actual spending.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn get_budget(state: State<'_, AppState>, month: String) -> Result<BudgetMonthDto, AppError> {
     let database = super::connection(&state)?;
     let connection = database.as_ref().ok_or(AppError::Locked)?;
@@ -70,7 +70,7 @@ pub fn get_budget(state: State<'_, AppState>, month: String) -> Result<BudgetMon
 }
 
 /// Creates or replaces a month's budget and returns it.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn save_budget(
     state: State<'_, AppState>,
     month: String,
@@ -90,7 +90,7 @@ pub fn save_budget(
 }
 
 /// Permanently deletes a month's budget.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn delete_budget(state: State<'_, AppState>, month: String) -> Result<(), AppError> {
     let database = super::connection(&state)?;
     let connection = database.as_ref().ok_or(AppError::Locked)?;
@@ -227,7 +227,11 @@ fn save_budget_in_connection(
 
     let transaction = connection.transaction()?;
     for allocation in allocations {
-        ensure_expense_category(&transaction, allocation.category_id)?;
+        super::ensure_expense_category(
+            &transaction,
+            allocation.category_id,
+            "budgets can only allocate expense categories",
+        )?;
     }
     let budget_id: i64 = transaction.query_row(
         "INSERT INTO budgets (month, expected_income_cents, input_mode)
@@ -266,24 +270,6 @@ fn delete_budget_in_connection(connection: &Connection, month: &str) -> Result<(
     Ok(())
 }
 
-/// Checks that a category exists and tracks expenses.
-fn ensure_expense_category(connection: &Connection, category_id: i64) -> Result<(), AppError> {
-    let category_type: Option<String> = connection
-        .query_row(
-            "SELECT type FROM categories WHERE id = ?1",
-            [category_id],
-            |row| row.get(0),
-        )
-        .optional()?;
-    match category_type.as_deref() {
-        Some("expense") => Ok(()),
-        Some(_) => Err(AppError::InvalidInput(
-            "budgets can only allocate expense categories".to_owned(),
-        )),
-        None => Err(AppError::InvalidInput("category not found".to_owned())),
-    }
-}
-
 fn budget_error(error: BudgetError) -> AppError {
     AppError::InvalidInput(error.to_string())
 }
@@ -297,16 +283,7 @@ mod tests {
     use rusqlite::{params, Connection};
 
     use super::*;
-    use crate::db::run_migrations;
-
-    fn migrated_connection() -> Connection {
-        let mut connection = Connection::open_in_memory().unwrap();
-        connection
-            .pragma_update(None, "foreign_keys", "ON")
-            .unwrap();
-        run_migrations(&mut connection).unwrap();
-        connection
-    }
+    use crate::db::migrated_connection;
 
     fn category_id(connection: &Connection, name: &str) -> i64 {
         connection

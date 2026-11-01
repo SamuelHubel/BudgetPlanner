@@ -1,4 +1,5 @@
 import { formatCurrency } from "../../shared/format";
+import Alert from "../../shared/Alert";
 import type { AllocationSummary } from "./budgetMath";
 
 type OverAllocationWarningProps = {
@@ -13,14 +14,11 @@ export default function OverAllocationWarning({
 }: OverAllocationWarningProps) {
   if (summary.overCents === 0) return null;
   return (
-    <p
-      className="rounded-xl border border-rose-800 bg-rose-950/60 px-3 py-2 text-sm text-rose-200"
-      role="alert"
-    >
+    <Alert>
       You&apos;ve allocated {summary.allocatedPercent}% of your expected income,{" "}
       {formatCurrency(summary.overCents, currency)} more than you expect to
       earn. Spending this plan would mean dipping into savings or going into
       debt, so we recommend reducing your categories to 100% or less.
-    </p>
+    </Alert>
   );
 }

@@ -5,7 +5,7 @@ use std::{
 };
 
 use argon2::{Algorithm, Argon2, Params, Version};
-use rusqlite::Connection;
+use rusqlite::{Connection, ErrorCode};
 use tauri::{AppHandle, Manager, State};
 use zeroize::Zeroizing;
 
@@ -94,7 +94,16 @@ fn verify_database_key(connection: &Connection) -> Result<(), AppError> {
             row.get::<_, i64>(0)
         })
         .map(|_| ())
-        .map_err(|_| AppError::BadPassword)
+        .map_err(key_error)
+}
+
+/// SQLCipher reports a wrong key as "not a database". Any other failure, such
+/// as a busy or unreadable file, says nothing about the password.
+fn key_error(error: rusqlite::Error) -> AppError {
+    match error.sqlite_error_code() {
+        Some(ErrorCode::NotADatabase) => AppError::BadPassword,
+        _ => error.into(),
+    }
 }
 
 fn remove_sqlite_files(path: &Path) -> Result<(), AppError> {
@@ -111,6 +120,16 @@ fn remove_sqlite_files(path: &Path) -> Result<(), AppError> {
     Ok(())
 }
 
+/// Opens an existing database, proves the key works, and brings it up to date.
+fn connect_with_key(path: &Path, key: &[u8; KEY_LENGTH]) -> Result<Connection, AppError> {
+    let mut connection = Connection::open(path)?;
+    set_database_key(&connection, key)?;
+    verify_database_key(&connection)?;
+    connection.pragma_update(None, "foreign_keys", true)?;
+    run_migrations(&mut connection)?;
+    Ok(connection)
+}
+
 fn open_encrypted_database(data_dir: &Path, password: &str) -> Result<Connection, AppError> {
     let (database_path, salt_path) = paths(data_dir);
     let salt = read_salt(&salt_path)?;
@@ -122,12 +141,7 @@ fn open_encrypted_database(data_dir: &Path, password: &str) -> Result<Connection
     }
 
     let key = derive_key(password, &salt)?;
-    let mut connection = Connection::open(database_path)?;
-    set_database_key(&connection, &key)?;
-    verify_database_key(&connection)?;
-    connection.pragma_update(None, "foreign_keys", true)?;
-    run_migrations(&mut connection)?;
-    Ok(connection)
+    connect_with_key(&database_path, &key)
 }
 
 fn create_encrypted_database(data_dir: &Path, password: &str) -> Result<Connection, AppError> {
@@ -187,12 +201,19 @@ fn create_encrypted_database(data_dir: &Path, password: &str) -> Result<Connecti
         return Err(error);
     }
 
-    let mut connection = Connection::open(&database_path)?;
-    set_database_key(&connection, &key)?;
-    verify_database_key(&connection)?;
-    connection.pragma_update(None, "foreign_keys", true)?;
-    run_migrations(&mut connection)?;
-    Ok(connection)
+    connect_with_key(&database_path, &key)
+}
+
+/// Erases the encrypted database and salt. The salt goes last so an
+/// interrupted reset leaves a state the lock screen can retry from.
+fn reset_vault_in(data_dir: &Path) -> Result<(), AppError> {
+    let (database_path, salt_path) = paths(data_dir);
+    remove_sqlite_files(&database_path)?;
+    match fs::remove_file(salt_path) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(error.into()),
+    }
 }
 
 fn drop_database_connection(state: &AppState) -> Result<(), AppError> {
@@ -204,13 +225,13 @@ fn drop_database_connection(state: &AppState) -> Result<(), AppError> {
     Ok(())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 /// Reports whether a password verifier and encrypted database are initialized.
 pub fn is_initialized(app: AppHandle) -> Result<bool, AppError> {
     is_initialized_in(&app_data_directory(&app)?)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 /// Creates the encrypted database and unlocks it with the first password.
 pub fn create_password(
     app: AppHandle,
@@ -229,7 +250,7 @@ pub fn create_password(
     Ok(())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 /// Opens the encrypted database using the supplied password.
 pub fn unlock(
     app: AppHandle,
@@ -246,7 +267,20 @@ pub fn unlock(
     Ok(())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
+/// Permanently erases all budget data so a new password can be created.
+pub fn reset_vault(app: AppHandle, state: State<'_, AppState>) -> Result<(), AppError> {
+    // The guard stays held so an unlock can't reopen the files mid-erase.
+    let database = super::connection(&state)?;
+    if database.is_some() {
+        return Err(AppError::InvalidInput(
+            "lock the app before erasing its data".to_owned(),
+        ));
+    }
+    reset_vault_in(&app_data_directory(&app)?)
+}
+
+#[tauri::command(async)]
 /// Closes the database connection and locks financial data.
 pub fn lock(state: State<'_, AppState>) -> Result<(), AppError> {
     drop_database_connection(&state)
@@ -262,7 +296,10 @@ mod tests {
 
     use rusqlite::Connection;
 
-    use super::{create_encrypted_database, is_initialized_in, open_encrypted_database};
+    use super::{
+        create_encrypted_database, is_initialized_in, key_error, open_encrypted_database,
+        reset_vault_in,
+    };
     use crate::{error::AppError, state::AppState};
 
     static NEXT_TEMP_DIR: AtomicU64 = AtomicU64::new(0);
@@ -366,6 +403,51 @@ mod tests {
         assert!(matches!(result, Err(AppError::InvalidInput(_))));
         assert!(!directory.0.join("kdf.salt").exists());
         assert!(!directory.0.join("budget.db").exists());
+    }
+
+    #[test]
+    fn only_a_wrong_key_error_counts_as_a_bad_password() {
+        let failure = |code| rusqlite::Error::SqliteFailure(rusqlite::ffi::Error::new(code), None);
+        assert!(matches!(
+            key_error(failure(rusqlite::ffi::SQLITE_NOTADB)),
+            AppError::BadPassword
+        ));
+        assert!(matches!(
+            key_error(failure(rusqlite::ffi::SQLITE_BUSY)),
+            AppError::Database(_)
+        ));
+    }
+
+    #[test]
+    fn resetting_erases_the_vault_so_a_new_password_can_be_created() {
+        let directory = TestDirectory::new();
+        let password = test_password("BUDGET_PLANNER_TEST_PASSWORD");
+        drop(create_encrypted_database(&directory.0, password).unwrap());
+        fs::write(directory.0.join("budget.db-wal"), b"wal").unwrap();
+
+        reset_vault_in(&directory.0).unwrap();
+
+        assert_eq!(fs::read_dir(&directory.0).unwrap().count(), 0);
+        assert!(!is_initialized_in(&directory.0).unwrap());
+        drop(create_encrypted_database(&directory.0, password).unwrap());
+        assert!(is_initialized_in(&directory.0).unwrap());
+    }
+
+    #[test]
+    fn resetting_recovers_from_a_salt_without_a_database() {
+        let directory = TestDirectory::new();
+        fs::write(directory.0.join("kdf.salt"), [0_u8; 16]).unwrap();
+        assert!(is_initialized_in(&directory.0).is_err());
+
+        reset_vault_in(&directory.0).unwrap();
+
+        assert!(!is_initialized_in(&directory.0).unwrap());
+    }
+
+    #[test]
+    fn resetting_an_empty_directory_succeeds() {
+        let directory = TestDirectory::new();
+        reset_vault_in(&directory.0).unwrap();
     }
 
     #[test]

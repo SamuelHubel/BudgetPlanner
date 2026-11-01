@@ -4,23 +4,17 @@ use sha2::{Digest, Sha256};
 pub fn dedupe_hash(
     date: &str,
     amount_cents: i64,
-    description_normalized: &str,
+    description: &str,
     occurrence_index: u32,
 ) -> String {
-    let description = normalize_description(description_normalized);
+    let description = normalize_description(description);
     let mut hasher = Sha256::new();
     hash_field(&mut hasher, date.as_bytes());
     hash_field(&mut hasher, amount_cents.to_string().as_bytes());
     hash_field(&mut hasher, description.as_bytes());
     hash_field(&mut hasher, occurrence_index.to_string().as_bytes());
 
-    let digest = hasher.finalize();
-    let mut output = String::with_capacity(digest.len() * 2);
-    for byte in digest {
-        use std::fmt::Write;
-        write!(output, "{byte:02x}").expect("writing to a String cannot fail");
-    }
-    output
+    hex::encode(hasher.finalize())
 }
 
 fn hash_field(hasher: &mut Sha256, value: &[u8]) {

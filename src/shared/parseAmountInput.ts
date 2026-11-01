@@ -45,3 +45,11 @@ export function parseAmountInput(
   }
   return { ok: true, cents: Number(cents) };
 }
+
+/** Formats integer cents as a plain `300.50` string for an editable input. */
+export function centsToAmountInput(cents: number | null): string {
+  if (cents === null) return "";
+  const whole = Math.trunc(cents / 100);
+  const fraction = String(cents % 100).padStart(2, "0");
+  return fraction === "00" ? String(whole) : `${whole}.${fraction}`;
+}

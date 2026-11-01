@@ -3,7 +3,7 @@ import "./index.css";
 import UnlockScreen from "./features/lock/UnlockScreen";
 import Dashboard from "./components/Dashboard";
 import { budgetApi } from "./api/budgetApi";
-import { toErrorMessage } from "./lib/errors";
+import { toErrorMessage } from "./shared/errors";
 import type { TabName } from "./types";
 
 const INACTIVITY_LOCK_MS = 5 * 60 * 1000;
@@ -52,16 +52,29 @@ function App() {
     if (isLocked) return;
 
     let timeoutId: number;
-    const resetInactivityTimer = () => {
+    let lastActivityAt = Date.now();
+    const restartTimer = () => {
+      lastActivityAt = Date.now();
       window.clearTimeout(timeoutId);
-      timeoutId = window.setTimeout(() => {
-        void handleLock().then((locked) => {
-          if (!locked) resetInactivityTimer();
-        });
-      }, INACTIVITY_LOCK_MS);
+      timeoutId = window.setTimeout(lockNow, INACTIVITY_LOCK_MS);
+    };
+    const lockNow = () => {
+      void handleLock().then((locked) => {
+        if (!locked) restartTimer();
+      });
+    };
+    // Timers can pause while the machine sleeps, so activity on waking must not
+    // extend a limit that has already passed.
+    const resetInactivityTimer = () => {
+      if (Date.now() - lastActivityAt >= INACTIVITY_LOCK_MS) {
+        window.clearTimeout(timeoutId);
+        lockNow();
+      } else {
+        restartTimer();
+      }
     };
 
-    resetInactivityTimer();
+    restartTimer();
     window.addEventListener("mousemove", resetInactivityTimer);
     window.addEventListener("mousedown", resetInactivityTimer);
     window.addEventListener("wheel", resetInactivityTimer);
@@ -91,6 +104,12 @@ function App() {
     }
   };
 
+  const handleResetVault = async () => {
+    await budgetApi.resetVault();
+    setUnlockError("");
+    setIsInitialized(false);
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
@@ -104,6 +123,7 @@ function App() {
           <UnlockScreen
             isInitialized={isInitialized}
             onUnlock={handleUnlock}
+            onResetVault={handleResetVault}
             error={unlockError}
           />
         ) : (

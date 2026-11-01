@@ -55,6 +55,17 @@ pub fn run_migrations(connection: &mut Connection) -> Result<(), AppError> {
     Ok(())
 }
 
+/// Opens an in-memory database with foreign keys on and all migrations applied.
+#[cfg(test)]
+pub(crate) fn migrated_connection() -> Connection {
+    let mut connection = Connection::open_in_memory().unwrap();
+    connection
+        .pragma_update(None, "foreign_keys", "ON")
+        .unwrap();
+    run_migrations(&mut connection).unwrap();
+    connection
+}
+
 #[cfg(test)]
 mod tests {
     use rusqlite::Connection;

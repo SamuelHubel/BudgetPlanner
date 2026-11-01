@@ -1,10 +1,9 @@
+import { DonutArc, donutGeometry, DonutSvg } from "../../shared/Donut";
 import { formatCurrency, formatMonth } from "../../shared/format";
 import type { GoalProgress } from "../../types";
 
-const RADIUS = 26;
-const VIEWBOX = 64;
-const CENTER = VIEWBOX / 2;
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+const GEOMETRY = donutGeometry(64, 26);
+const STROKE_WIDTH = 8;
 /** Share of the limit at which the meter turns from "on track" to "close". */
 const WARNING_RATIO = 0.75;
 
@@ -45,20 +44,12 @@ export default function GoalProgressDonut({
           role="img"
           aria-label={label}
         >
-          <svg
-            viewBox={`0 0 ${VIEWBOX} ${VIEWBOX}`}
-            aria-hidden="true"
-            focusable="false"
-          >
-            <circle
-              className="fill-none stroke-slate-700"
-              cx={CENTER}
-              cy={CENTER}
-              r={RADIUS}
-              strokeWidth="8"
-              strokeDasharray="4 4"
-            />
-          </svg>
+          <DonutSvg
+            geometry={GEOMETRY}
+            strokeWidth={STROKE_WIDTH}
+            trackClassName="stroke-slate-700"
+            trackDasharray="4 4"
+          />
           <span
             className="absolute inset-0 flex items-center justify-center text-sm text-slate-500"
             aria-hidden="true"
@@ -76,7 +67,7 @@ export default function GoalProgressDonut({
   const { month, spentCents, limitCents } = progress;
   const ratio = spentCents / limitCents;
   const percent = Math.round(ratio * 100);
-  const filledLength = Math.min(ratio, 1) * CIRCUMFERENCE;
+  const filledLength = Math.min(ratio, 1) * GEOMETRY.circumference;
   const overCents = spentCents - limitCents;
   const spent = formatCurrency(spentCents, currency);
   const limit = formatCurrency(limitCents, currency);
@@ -92,30 +83,15 @@ export default function GoalProgressDonut({
         role="img"
         aria-label={label}
       >
-        <svg
-          viewBox={`0 0 ${VIEWBOX} ${VIEWBOX}`}
-          aria-hidden="true"
-          focusable="false"
-        >
-          <circle
-            className="fill-none stroke-slate-800"
-            cx={CENTER}
-            cy={CENTER}
-            r={RADIUS}
-            strokeWidth="8"
+        <DonutSvg geometry={GEOMETRY} strokeWidth={STROKE_WIDTH}>
+          <DonutArc
+            geometry={GEOMETRY}
+            color={meterColor(ratio)}
+            strokeWidth={STROKE_WIDTH}
+            length={filledLength}
+            linecap={filledLength > 0 && ratio < 1 ? "round" : "butt"}
           />
-          <circle
-            cx={CENTER}
-            cy={CENTER}
-            r={RADIUS}
-            fill="none"
-            stroke={meterColor(ratio)}
-            strokeWidth="8"
-            strokeLinecap={filledLength > 0 && ratio < 1 ? "round" : "butt"}
-            strokeDasharray={`${filledLength} ${CIRCUMFERENCE - filledLength}`}
-            transform={`rotate(-90 ${CENTER} ${CENTER})`}
-          />
-        </svg>
+        </DonutSvg>
         <span
           className="absolute inset-0 flex items-center justify-center text-xs font-semibold tabular-nums text-white"
           aria-hidden="true"

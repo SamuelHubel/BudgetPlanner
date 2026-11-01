@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import type { BudgetApiClient } from "../../api/budgetApi";
-import { toErrorMessage } from "../../lib/errors";
+import { toErrorMessage } from "../../shared/errors";
 import type { Category, Goal, GoalInput } from "../../types";
+import { useFinancialSummary } from "../home/useFinancialSummary";
 
 /** Goal list state and mutations for the Goals tab. */
 export type GoalsState = {
@@ -27,9 +28,13 @@ export function useGoals(api: BudgetApiClient): GoalsState {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
+  // "Start over" lives outside this tab and refreshes the summary, so a new
+  // summary means goals may have been deleted. Reloads stay silent: showing the
+  // loading state would unmount the list and discard any edit in progress.
+  const { summary } = useFinancialSummary();
+
   useEffect(() => {
     let isCurrent = true;
-    setIsLoading(true);
     setError("");
     void Promise.all([api.listGoals(), api.listCategories()])
       .then(([nextGoals, nextCategories]) => {
@@ -51,7 +56,7 @@ export function useGoals(api: BudgetApiClient): GoalsState {
     return () => {
       isCurrent = false;
     };
-  }, [api]);
+  }, [api, summary]);
 
   // Reload after every mutation instead of patching local state, so the order
   // and computed progress always come from the backend.

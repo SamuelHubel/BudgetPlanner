@@ -20,6 +20,7 @@ const { api } = vi.hoisted(() => ({
     createPassword: vi.fn(async () => {}),
     unlock: vi.fn(async () => {}),
     lock: vi.fn(async () => {}),
+    resetVault: vi.fn(async () => {}),
     listCategories: vi.fn(async () => []),
     previewImport: vi.fn(async () => []),
     commitImport: vi.fn(async () => ({ inserted: 0, skippedDuplicates: 0 })),
@@ -76,6 +77,28 @@ describe("App", () => {
     expect(
       screen.queryByText(/tauri \+ react \+ tailwind/i),
     ).not.toBeInTheDocument();
+  });
+
+  it("disables the unlock button while the password is being checked", async () => {
+    const user = userEvent.setup();
+    let finishUnlock = () => {};
+    api.unlock.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishUnlock = resolve;
+        }),
+    );
+    render(<App />);
+
+    await user.type(await screen.findByLabelText(/password/i), testPassword);
+    const unlockButton = screen.getByRole("button", { name: /unlock/i });
+    await user.click(unlockButton);
+
+    expect(unlockButton).toBeDisabled();
+    act(() => finishUnlock());
+    expect(
+      await screen.findByText(/your budget dashboard/i),
+    ).toBeInTheDocument();
   });
 
   it("creates a password on first run and confirms the password", async () => {
@@ -147,6 +170,58 @@ describe("App", () => {
     expect(screen.getByLabelText(/password/i)).toHaveValue("");
   });
 
+  it("erases the vault only after DELETE is typed, then offers setup", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(
+      await screen.findByRole("button", { name: /forgot your password/i }),
+    );
+    const erase = screen.getByRole("button", { name: /erase all data/i });
+    expect(erase).toBeDisabled();
+
+    await user.type(screen.getByLabelText(/type delete/i), "delete");
+    expect(erase).toBeDisabled();
+    await user.clear(screen.getByLabelText(/type delete/i));
+    await user.type(screen.getByLabelText(/type delete/i), "DELETE");
+    await user.click(erase);
+
+    expect(api.resetVault).toHaveBeenCalledOnce();
+    expect(
+      await screen.findByRole("heading", { name: /create your password/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("offers erasing when the password setup check fails", async () => {
+    const user = userEvent.setup();
+    api.isInitialized.mockRejectedValueOnce({
+      code: "other",
+      message: "the encrypted database is missing",
+    });
+    render(<App />);
+
+    await user.click(
+      await screen.findByRole("button", { name: /erase and start over/i }),
+    );
+    await user.type(screen.getByLabelText(/type delete/i), "DELETE");
+    await user.click(screen.getByRole("button", { name: /erase all data/i }));
+
+    expect(
+      await screen.findByRole("heading", { name: /create your password/i }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("offers no erase action on first run", async () => {
+    api.isInitialized.mockResolvedValueOnce(false);
+    render(<App />);
+
+    await screen.findByRole("heading", { name: /create your password/i });
+    expect(
+      screen.queryByRole("button", { name: /forgot your password/i }),
+    ).not.toBeInTheDocument();
+  });
+
   it("shows the AI tab content after clicking the AI tab", async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -213,6 +288,34 @@ describe("App", () => {
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1);
+    });
+
+    expect(api.lock).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(/unlock your budget vault/i)).toBeInTheDocument();
+  });
+
+  it("locks on the first activity after the machine sleeps past the limit", async () => {
+    vi.useFakeTimers();
+    render(<App />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: testPassword },
+    });
+    await act(async () => {
+      fireEvent.submit(
+        screen.getByRole("button", { name: /unlock/i }).closest("form")!,
+      );
+      await Promise.resolve();
+    });
+    expect(screen.getByText(/your budget dashboard/i)).toBeInTheDocument();
+
+    // Sleep moves the clock forward while timers stay paused.
+    vi.setSystemTime(Date.now() + 6 * 60 * 1000);
+    await act(async () => {
+      fireEvent.mouseMove(window);
+      await Promise.resolve();
     });
 
     expect(api.lock).toHaveBeenCalledTimes(1);

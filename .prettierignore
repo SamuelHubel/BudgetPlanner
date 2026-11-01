@@ -1,3 +1,4 @@
+.claude/
 .github/instructions/**
 .vscode/
 package-lock.json

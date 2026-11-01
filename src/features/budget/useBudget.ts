@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { BudgetApiClient } from "../../api/budgetApi";
-import { toErrorMessage } from "../../lib/errors";
+import { toErrorMessage } from "../../shared/errors";
 import type { Budget, BudgetMonth, Category } from "../../types";
 import { useFinancialSummary } from "../home/useFinancialSummary";
 

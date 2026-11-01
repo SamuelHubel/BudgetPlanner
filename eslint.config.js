@@ -5,7 +5,7 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    ignores: ["dist/**", "node_modules/**", "src-tauri/**"],
+    ignores: [".claude/**", "dist/**", "node_modules/**", "src-tauri/**"],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -34,8 +34,7 @@ export default tseslint.config(
     // These inputs provide intentional initial focus for the lock form and the dialog's safe action.
     files: [
       "src/features/lock/UnlockScreen.tsx",
-      "src/features/settings/ResetDataDialog.tsx",
-      "src/features/goals/DeleteGoalDialog.tsx",
+      "src/shared/ConfirmDialog.tsx",
     ],
     rules: {
       "jsx-a11y/no-autofocus": "off",
