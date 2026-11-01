@@ -9,7 +9,7 @@ use rusqlite::{Connection, ErrorCode};
 use tauri::{AppHandle, Manager, State};
 use zeroize::Zeroizing;
 
-use crate::{db::run_migrations, error::AppError, state::AppState};
+use crate::{db::run_migrations, error::AppError, state::AppState, APP_DIRECTORY_NAME};
 
 const DATABASE_FILE: &str = "budget.db";
 const SALT_FILE: &str = "kdf.salt";
@@ -22,7 +22,8 @@ const MINIMUM_PASSWORD_LENGTH: usize = 12;
 
 fn app_data_directory(app: &AppHandle) -> Result<PathBuf, AppError> {
     app.path()
-        .app_data_dir()
+        .data_dir()
+        .map(|data_dir| data_dir.join(APP_DIRECTORY_NAME))
         .map_err(|error| AppError::ApplicationPath(error.to_string()))
 }
 
