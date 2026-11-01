@@ -88,10 +88,9 @@ describe("TransactionImport", () => {
     const user = userEvent.setup();
     const previewImport = vi.fn(async () => preview);
     const api = createApi(previewImport);
-    const onImportCommitted = vi.fn();
     render(
       <FinancialSummaryProvider api={api}>
-        <TransactionImport api={api} onImportCommitted={onImportCommitted} />
+        <TransactionImport api={api} />
       </FinancialSummaryProvider>,
     );
 
@@ -120,7 +119,6 @@ describe("TransactionImport", () => {
     expect(await screen.findByRole("status")).toHaveTextContent(
       "0 transactions imported; 1 duplicate skipped.",
     );
-    expect(onImportCommitted).toHaveBeenCalledOnce();
   });
 
   it("lets the user resolve an ambiguous CSV date order", async () => {

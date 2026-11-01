@@ -21,10 +21,7 @@ export function isAmountFormat(value: string): value is AmountFormat {
 }
 
 /** Manages CSV selection, preview edits, and import submission state. */
-export function useImportFlow(
-  api: BudgetApiClient,
-  onImportCommitted?: () => void,
-) {
+export function useImportFlow(api: BudgetApiClient) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [transactions, setTransactions] = useState<ImportPreviewRow[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -143,7 +140,6 @@ export function useImportFlow(
       setNeedsDateOrder(false);
       setNeedsAmountFormat(false);
       refresh();
-      onImportCommitted?.();
     } catch (caughtError) {
       setError(toErrorMessage(caughtError, "Unable to save transactions."));
     } finally {

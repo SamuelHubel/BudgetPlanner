@@ -26,7 +26,7 @@ pub struct FinancialSource {
     pub amount_cents: i64,
 }
 
-/// Income, expenses, and uncategorized totals for a month.
+/// Income and expense totals for a month, including uncategorized activity.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MonthlyTotal {
     /// Month in ISO `YYYY-MM` format.
@@ -35,8 +35,6 @@ pub struct MonthlyTotal {
     pub income_cents: i64,
     /// Expense amount in integer cents.
     pub expenses_cents: i64,
-    /// Uncategorized net amount in integer cents.
-    pub uncategorized_cents: i64,
 }
 
 /// Categorized and uncategorized activity over a period.
@@ -87,25 +85,22 @@ pub fn create_financial_summary(
         .iter()
         .map(|category| (category.id, category))
         .collect::<HashMap<_, _>>();
-    let mut all_time = Vec::new();
     let mut by_month = std::collections::BTreeMap::<String, Vec<FinancialTransaction>>::new();
 
     for transaction in transactions {
         let month = transaction.date.format("%Y-%m").to_string();
         by_month.entry(month).or_default().push(transaction.clone());
-        all_time.push(transaction.clone());
     }
 
-    let breakdown = create_breakdown(categories, &category_by_id, &all_time)?;
+    let breakdown = create_breakdown(categories, &category_by_id, transactions)?;
     let mut monthly_totals = Vec::with_capacity(by_month.len());
     let mut monthly_breakdowns = Vec::with_capacity(by_month.len());
     for (month, month_transactions) in by_month {
         let month_breakdown = create_breakdown(categories, &category_by_id, &month_transactions)?;
         let mut totals = MonthlyTotal {
             month: month.clone(),
-            income_cents: 0,
-            expenses_cents: 0,
-            uncategorized_cents: month_breakdown.uncategorized_cents,
+            income_cents: month_breakdown.uncategorized_income_cents,
+            expenses_cents: month_breakdown.uncategorized_expenses_cents,
         };
         for total in &month_breakdown.income {
             totals.income_cents = checked_sum(totals.income_cents, total.amount_cents)?;
@@ -343,14 +338,12 @@ mod tests {
                 MonthlyTotal {
                     month: "2026-02".into(),
                     income_cents: 0,
-                    expenses_cents: 0,
-                    uncategorized_cents: -2_000,
+                    expenses_cents: 2_000,
                 },
                 MonthlyTotal {
                     month: "2026-03".into(),
                     income_cents: 0,
                     expenses_cents: 0,
-                    uncategorized_cents: 0,
                 },
             ]
         );
@@ -371,6 +364,29 @@ mod tests {
         assert_eq!(summary.breakdown.uncategorized_cents, -1_000);
         assert_eq!(summary.breakdown.uncategorized_income_cents, 500);
         assert_eq!(summary.breakdown.uncategorized_expenses_cents, 1_500);
+    }
+
+    #[test]
+    fn monthly_totals_add_uncategorized_activity_to_categorized_totals() {
+        let summary = create_financial_summary(
+            &categories(),
+            &[
+                transaction("2026-02-01", Some(1), 100_000, "Payroll"),
+                transaction("2026-02-02", None, 500, "Unknown income"),
+                transaction("2026-02-03", Some(2), -7_500, "Market"),
+                transaction("2026-02-04", None, -1_500, "Unknown expense"),
+            ],
+        )
+        .unwrap();
+
+        assert_eq!(
+            summary.monthly_totals,
+            [MonthlyTotal {
+                month: "2026-02".into(),
+                income_cents: 100_500,
+                expenses_cents: 9_000,
+            }]
+        );
     }
 
     #[test]

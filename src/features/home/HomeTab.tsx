@@ -2,7 +2,7 @@ import { useState } from "react";
 import Alert from "../../shared/Alert";
 import type { BudgetApiClient } from "../../api/budgetApi";
 import { formatCurrency, formatMonth } from "../../shared/format";
-import MonthList from "./MonthList";
+import MonthList, { ALL_TIME } from "./MonthList";
 import MonthlyBarChart from "./MonthlyBarChart";
 import { useFinancialSummary } from "./useFinancialSummary";
 import SourceList from "./SourceList";
@@ -17,10 +17,14 @@ type HomeTabProps = {
 export default function HomeTab({ api }: HomeTabProps) {
   const { summary, currency, error, isLoading } = useFinancialSummary();
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
-  const selectedMonthBreakdown =
-    summary?.monthlyBreakdowns.find(({ month }) => month === selectedMonth) ??
-    summary?.monthlyBreakdowns[summary.monthlyBreakdowns.length - 1] ??
-    null;
+  const isAllTime = selectedMonth === ALL_TIME;
+  const selectedMonthBreakdown = isAllTime
+    ? null
+    : (summary?.monthlyBreakdowns.find(
+        ({ month }) => month === selectedMonth,
+      ) ??
+      summary?.monthlyBreakdowns[summary.monthlyBreakdowns.length - 1] ??
+      null);
   const displayedBreakdown =
     selectedMonthBreakdown?.breakdown ?? summary?.breakdown ?? null;
 
@@ -42,13 +46,17 @@ export default function HomeTab({ api }: HomeTabProps) {
         <>
           <MonthList
             months={summary.monthlyBreakdowns}
-            selectedMonth={selectedMonthBreakdown?.month ?? null}
+            selectedMonth={
+              isAllTime ? ALL_TIME : (selectedMonthBreakdown?.month ?? null)
+            }
             onSelect={setSelectedMonth}
           />
-          {selectedMonthBreakdown && (
+          {(isAllTime || selectedMonthBreakdown) && (
             <p className="-mb-2 text-sm text-slate-400" aria-live="polite">
               Showing income and expenses for{" "}
-              {formatMonth(selectedMonthBreakdown.month)}
+              {selectedMonthBreakdown
+                ? formatMonth(selectedMonthBreakdown.month)
+                : "all time"}
             </p>
           )}
           <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-2">

@@ -6,15 +6,11 @@ import Button from "../../shared/Button";
 
 type TransactionImportProps = {
   api: BudgetApiClient;
-  onImportCommitted?: () => void;
 };
 
 /** Lets the user preview and commit a CSV statement import. */
-export default function TransactionImport({
-  api,
-  onImportCommitted,
-}: TransactionImportProps) {
-  const flow = useImportFlow(api, onImportCommitted);
+export default function TransactionImport({ api }: TransactionImportProps) {
+  const flow = useImportFlow(api);
   return (
     <section className="mt-4 rounded-3xl border border-slate-800 bg-slate-950/80 p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

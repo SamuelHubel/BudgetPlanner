@@ -51,12 +51,11 @@ export type FinancialBreakdown = {
   uncategorizedExpensesCents: number;
 };
 
-/** Income and expense totals for one calendar month. */
+/** Income and expense totals for one month, including uncategorized activity. */
 export type MonthlyTotal = {
   month: string;
   incomeCents: number;
   expensesCents: number;
-  uncategorizedCents: number;
 };
 
 /** A monthly financial breakdown. */

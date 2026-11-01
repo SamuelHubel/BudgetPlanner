@@ -9,6 +9,12 @@ Build a budget for each month and compare it with actual spending, and set goals
 
 Use **Start over** in the dashboard and confirm to permanently delete transactions, budgets, goals, import history, and AI insight logs. The database schema and lock data are retained.
 
+## Scope decisions
+
+- **Single user, local lock screen.** There are no accounts. The password derives the database encryption key, so a forgotten password means the data cannot be recovered; the only way forward is to erase it and start over.
+- **File import, not live bank sync.** Bank sync would need a hosted service to hold access tokens, which conflicts with keeping all data on your machine.
+- **Local AI only.** Planned AI features will use Ollama on your machine, with a rules-based fallback when it isn't running. Nothing is sent to a cloud service.
+
 ## Tech Stack
 
 | Layer          | Choice                                                                                 |

@@ -8,7 +8,7 @@ use tauri::State;
 use crate::{
     commands::{
         categories::CategoryDto,
-        categories::{list_categories_from, load_domain_categories},
+        categories::{domain_categories, list_categories_from},
         connection,
     },
     domain::{
@@ -67,7 +67,7 @@ pub struct FinancialBreakdownDto {
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-/// Monthly income, expense, and uncategorized totals.
+/// Monthly income and expense totals, including uncategorized activity.
 pub struct MonthlyTotalDto {
     /// Month in ISO `YYYY-MM` format.
     pub month: String,
@@ -75,8 +75,6 @@ pub struct MonthlyTotalDto {
     pub income_cents: i64,
     /// Expense amount in integer cents.
     pub expenses_cents: i64,
-    /// Net uncategorized amount in integer cents.
-    pub uncategorized_cents: i64,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -110,8 +108,9 @@ pub fn get_financial_summary(state: State<'_, AppState>) -> Result<FinancialSumm
 }
 
 fn load_financial_summary_from(connection: &Connection) -> Result<FinancialSummaryDto, AppError> {
-    let categories = load_domain_categories(connection)?;
-    let category_colors = list_categories_from(connection)?
+    let category_records = list_categories_from(connection)?;
+    let categories = domain_categories(&category_records)?;
+    let category_colors = category_records
         .into_iter()
         .map(|category| (category.id, category))
         .collect::<HashMap<_, _>>();
@@ -128,7 +127,6 @@ fn load_financial_summary_from(connection: &Connection) -> Result<FinancialSumma
                 month: total.month,
                 income_cents: total.income_cents,
                 expenses_cents: total.expenses_cents,
-                uncategorized_cents: total.uncategorized_cents,
             })
             .collect(),
         monthly_breakdowns: summary
@@ -147,7 +145,6 @@ fn validate_summary_cents(summary: &FinancialSummary) -> Result<(), AppError> {
     for total in &summary.monthly_totals {
         super::validate_safe_cents(total.income_cents)?;
         super::validate_safe_cents(total.expenses_cents)?;
-        super::validate_safe_cents(total.uncategorized_cents)?;
     }
     for monthly in &summary.monthly_breakdowns {
         validate_breakdown_cents(&monthly.breakdown)?;
@@ -269,7 +266,8 @@ mod tests {
         assert_eq!(summary.breakdown.largest_expenses[0].category_id, 2);
         assert_eq!(summary.breakdown.uncategorized_expenses_cents, 1000);
         assert_eq!(summary.breakdown.uncategorized_income_cents, 200);
-        assert_eq!(summary.monthly_totals[0].uncategorized_cents, -800);
+        assert_eq!(summary.monthly_totals[0].income_cents, 200);
+        assert_eq!(summary.monthly_totals[0].expenses_cents, 6500);
 
         let value = serde_json::to_value(summary).unwrap();
         assert!(value["monthlyTotals"][0]["incomeCents"].is_number());

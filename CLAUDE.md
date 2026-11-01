@@ -33,7 +33,7 @@ cargo test
 cargo test import::    # filter by test name
 ```
 
-CI (`.github/workflows/ci.yml`) runs all of the above on every push and PR. Clippy warnings fail the build. The first Rust build is slow because `rusqlite` compiles SQLCipher and OpenSSL from source (`bundled-sqlcipher-vendored-openssl`).
+CI (`.github/workflows/ci.yml`) runs these checks, except `tauri dev`, on pushes to `main` and on every PR. It also compiles the app (without installers) and runs `cargo test` on Windows. Clippy warnings fail the build. The first Rust build is slow because `rusqlite` compiles SQLCipher and OpenSSL from source (`bundled-sqlcipher-vendored-openssl`).
 
 ## Architecture
 

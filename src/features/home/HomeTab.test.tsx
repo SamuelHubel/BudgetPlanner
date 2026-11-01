@@ -43,13 +43,11 @@ const summary = {
       month: "2026-01",
       incomeCents: 250000,
       expensesCents: 7500,
-      uncategorizedCents: 0,
     },
     {
       month: "2026-02",
       incomeCents: 0,
       expensesCents: 90000,
-      uncategorizedCents: 0,
     },
   ],
   monthlyBreakdowns: [
@@ -290,6 +288,34 @@ describe("HomeTab category charts", () => {
     expect(
       within(screen.getByRole("group", { name: /Expenses chart/ })).getByText(
         "$75.00",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("shows all-time totals when All time is selected", async () => {
+    const user = userEvent.setup();
+    render(
+      <FinancialSummaryProvider api={api}>
+        <HomeTab api={api} />
+      </FinancialSummaryProvider>,
+    );
+
+    await screen.findByRole("heading", { name: "Expenses" });
+    const allTime = screen.getByRole("button", { name: "All time" });
+    expect(allTime).toHaveAttribute("aria-pressed", "false");
+
+    await user.click(allTime);
+
+    expect(allTime).toHaveAttribute("aria-pressed", "true");
+    expect(
+      screen.getByRole("button", { name: "February 2026" }),
+    ).toHaveAttribute("aria-pressed", "false");
+    expect(
+      screen.getByText("Showing income and expenses for all time"),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("group", { name: /Expenses chart/ })).getByText(
+        "$975.00",
       ),
     ).toBeInTheDocument();
   });

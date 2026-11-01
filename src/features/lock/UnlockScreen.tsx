@@ -24,6 +24,7 @@ export default function UnlockScreen({
   const [confirmation, setConfirmation] = useState("");
   const [formError, setFormError] = useState("");
   const [isResetOpen, setIsResetOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const isCreatingPassword = isInitialized === false;
   const isSetupBroken = isInitialized === null && error !== "";
 
@@ -36,9 +37,11 @@ export default function UnlockScreen({
       setConfirmation("");
       return;
     }
+    setIsSubmitting(true);
     try {
       await onUnlock(password);
     } finally {
+      setIsSubmitting(false);
       setPassword("");
       setConfirmation("");
     }
@@ -119,6 +122,7 @@ export default function UnlockScreen({
             type="submit"
             variant="primary"
             className="w-full px-4 py-3 text-sm"
+            disabled={isSubmitting}
           >
             {isCreatingPassword ? "Create password" : "Unlock"}
           </Button>

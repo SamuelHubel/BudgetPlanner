@@ -79,6 +79,28 @@ describe("App", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("disables the unlock button while the password is being checked", async () => {
+    const user = userEvent.setup();
+    let finishUnlock = () => {};
+    api.unlock.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishUnlock = resolve;
+        }),
+    );
+    render(<App />);
+
+    await user.type(await screen.findByLabelText(/password/i), testPassword);
+    const unlockButton = screen.getByRole("button", { name: /unlock/i });
+    await user.click(unlockButton);
+
+    expect(unlockButton).toBeDisabled();
+    act(() => finishUnlock());
+    expect(
+      await screen.findByText(/your budget dashboard/i),
+    ).toBeInTheDocument();
+  });
+
   it("creates a password on first run and confirms the password", async () => {
     const user = userEvent.setup();
     api.isInitialized.mockResolvedValueOnce(false);
