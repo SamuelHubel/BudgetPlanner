@@ -37,6 +37,7 @@ function createApi(
     createPassword: async () => {},
     unlock: async () => {},
     lock: async () => {},
+    resetVault: async () => {},
     listCategories: async () => categories,
     previewImport: async () => [],
     commitImport: async () => ({ inserted: 0, skippedDuplicates: 0 }),

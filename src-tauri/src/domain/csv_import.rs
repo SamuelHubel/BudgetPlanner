@@ -246,9 +246,13 @@ fn field_value(record: &StringRecord, column: Option<usize>) -> Option<&str> {
 }
 
 fn row_error(line: u64, error: ImportError) -> ImportError {
-    ImportError::CsvRow {
-        line,
-        message: error.to_string(),
+    match error {
+        // Stays typed so the frontend can offer a format choice.
+        ImportError::AmbiguousAmount(value) => ImportError::AmbiguousAmountRow { line, value },
+        error => ImportError::CsvRow {
+            line,
+            message: error.to_string(),
+        },
     }
 }
 

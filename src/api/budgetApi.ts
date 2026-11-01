@@ -23,6 +23,8 @@ export interface BudgetApiClient {
   unlock(password: string): Promise<void>;
   /** Closes the active database connection. */
   lock(): Promise<void>;
+  /** Permanently erases all budget data so a new password can be created. */
+  resetVault(): Promise<void>;
   /** Lists transaction categories available for imports. */
   listCategories(): Promise<Category[]>;
   /** Parses a CSV statement into preview rows without committing them. */
@@ -65,6 +67,7 @@ export const budgetApi: BudgetApiClient = {
   createPassword: (password) => invoke<void>("create_password", { password }),
   unlock: (password) => invoke<void>("unlock", { password }),
   lock: () => invoke<void>("lock"),
+  resetVault: () => invoke<void>("reset_vault"),
   listCategories: () => invoke<Category[]>("list_categories"),
   previewImport: (
     csvText,

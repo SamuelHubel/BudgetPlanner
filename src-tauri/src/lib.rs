@@ -15,6 +15,7 @@ pub fn run() {
             commands::auth::create_password,
             commands::auth::unlock,
             commands::auth::lock,
+            commands::auth::reset_vault,
             commands::budget::get_budget,
             commands::budget::save_budget,
             commands::budget::delete_budget,

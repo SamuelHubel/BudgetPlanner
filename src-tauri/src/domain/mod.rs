@@ -26,6 +26,13 @@ pub enum ImportError {
     InvalidAmount(String),
     /// An amount requires an explicit locale hint to disambiguate separators.
     AmbiguousAmount(String),
+    /// A CSV record's amount requires an explicit locale hint.
+    AmbiguousAmountRow {
+        /// Source line number of the record.
+        line: u64,
+        /// The amount as written in the statement.
+        value: String,
+    },
     /// An amount exceeds the supported integer range.
     AmountTooLarge(String),
     /// A date string could not be parsed.
@@ -66,9 +73,12 @@ impl Display for ImportError {
         match self {
             Self::InvalidAmount(value) => write!(formatter, "invalid amount: {value:?}"),
             Self::AmbiguousAmount(value) => {
+                write!(formatter, "amount {value:?} could be read two ways")
+            }
+            Self::AmbiguousAmountRow { line, value } => {
                 write!(
                     formatter,
-                    "ambiguous amount requires a locale hint: {value:?}"
+                    "row {line}: amount {value:?} could be read two ways"
                 )
             }
             Self::AmountTooLarge(value) => write!(formatter, "amount is too large: {value:?}"),

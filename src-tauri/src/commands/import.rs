@@ -197,6 +197,14 @@ fn commit_import_in_connection(
             ),
         )?;
     }
+    if inserted == 0 {
+        // Dropping the transaction rolls back, so an all-duplicate file leaves
+        // no empty batch behind.
+        return Ok(CommitImportResult {
+            inserted,
+            skipped_duplicates: rows.len(),
+        });
+    }
     transaction.execute(
         "UPDATE import_batches SET transaction_count = ?1 WHERE id = ?2",
         (inserted, batch_id),
@@ -382,7 +390,7 @@ mod tests {
             .unwrap()
             .collect::<Result<Vec<_>, _>>()
             .unwrap();
-        assert_eq!(batch_counts, [1, 0]);
+        assert_eq!(batch_counts, [1]);
     }
 
     #[test]
@@ -414,7 +422,8 @@ mod tests {
         let csv = "Date,Description,Amount\n2026-01-15,Rent,\"1,234\"\n";
 
         let error = preview_import_from(&connection, csv, "statement.csv", None, None).unwrap_err();
-        assert!(error.to_string().contains("ambiguous amount"));
+        assert_eq!(error.code(), "ambiguousAmount");
+        assert!(error.to_string().starts_with("row 2:"));
 
         let preview = |format| {
             preview_import_from(&connection, csv, "statement.csv", None, Some(format)).unwrap()

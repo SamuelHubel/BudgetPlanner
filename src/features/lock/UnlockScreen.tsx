@@ -1,10 +1,13 @@
 import { useState, type FormEvent } from "react";
 import Alert from "../../shared/Alert";
 import Button from "../../shared/Button";
+import ConfirmDialog from "../../shared/ConfirmDialog";
 
 type UnlockScreenProps = {
   isInitialized: boolean | null;
   onUnlock: (password: string) => Promise<void>;
+  /** Permanently erases all data. A rejection keeps the dialog open. */
+  onResetVault: () => Promise<void>;
   error: string;
 };
 
@@ -14,12 +17,15 @@ const MINIMUM_PASSWORD_LENGTH = 12;
 export default function UnlockScreen({
   isInitialized,
   onUnlock,
+  onResetVault,
   error,
 }: UnlockScreenProps) {
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [formError, setFormError] = useState("");
+  const [isResetOpen, setIsResetOpen] = useState(false);
   const isCreatingPassword = isInitialized === false;
+  const isSetupBroken = isInitialized === null && error !== "";
 
   const submitPassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -129,7 +135,31 @@ export default function UnlockScreen({
           If you forget your password, your encrypted budget data cannot be
           recovered.
         </p>
+        {(isInitialized === true || isSetupBroken) && (
+          <Button
+            type="button"
+            variant="danger"
+            className="mt-3"
+            onClick={() => setIsResetOpen(true)}
+          >
+            {isSetupBroken ? "Erase and start over" : "Forgot your password?"}
+          </Button>
+        )}
       </div>
+      <ConfirmDialog
+        isOpen={isResetOpen}
+        title="Erase all budget data?"
+        description="This permanently deletes your encrypted budget, including transactions, budgets, and goals, so you can create a new password. It cannot be undone."
+        confirmLabel="Erase all data"
+        pendingLabel="Erasing..."
+        errorFallback="Unable to erase the budget data."
+        confirmationPhrase="DELETE"
+        onConfirm={async () => {
+          await onResetVault();
+          setIsResetOpen(false);
+        }}
+        onClose={() => setIsResetOpen(false)}
+      />
     </div>
   );
 }

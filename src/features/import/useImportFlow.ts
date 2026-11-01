@@ -7,7 +7,7 @@ import type {
   ImportPreviewRow,
   ImportRow,
 } from "../../types";
-import { toErrorMessage } from "../../shared/errors";
+import { errorCode, toErrorMessage } from "../../shared/errors";
 import { useFinancialSummary } from "../home/useFinancialSummary";
 
 /** Returns whether a string matches a supported import date order. */
@@ -62,15 +62,10 @@ export function useImportFlow(
       setNeedsDateOrder(false);
       setNeedsAmountFormat(false);
     } catch (caughtError) {
-      const message = toErrorMessage(caughtError, "Unable to read this CSV.");
-      const lowerMessage = message.toLowerCase();
-      setError(message);
-      if (lowerMessage.includes("date order is ambiguous")) {
-        setNeedsDateOrder(true);
-      }
-      if (lowerMessage.includes("ambiguous amount")) {
-        setNeedsAmountFormat(true);
-      }
+      setError(toErrorMessage(caughtError, "Unable to read this CSV."));
+      const code = errorCode(caughtError);
+      if (code === "ambiguousDateOrder") setNeedsDateOrder(true);
+      if (code === "ambiguousAmount") setNeedsAmountFormat(true);
     } finally {
       setIsLoading(false);
     }

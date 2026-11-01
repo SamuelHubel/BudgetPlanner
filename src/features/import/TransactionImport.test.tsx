@@ -17,6 +17,15 @@ const preview: ImportPreviewRow[] = [
   },
 ];
 
+const ambiguousDateOrder = {
+  code: "ambiguousDateOrder",
+  message: "date order is ambiguous",
+};
+const ambiguousAmount = {
+  code: "ambiguousAmount",
+  message: 'row 2: amount "1,234" could be read two ways',
+};
+
 function createApi(
   previewImport: BudgetApiClient["previewImport"],
 ): BudgetApiClient {
@@ -25,6 +34,7 @@ function createApi(
     createPassword: async () => {},
     unlock: async () => {},
     lock: async () => {},
+    resetVault: async () => {},
     listCategories: async () => [
       { id: 1, name: "Groceries", type: "expense", color: "#22c55e" },
     ],
@@ -117,7 +127,7 @@ describe("TransactionImport", () => {
     const user = userEvent.setup();
     const previewImport = vi
       .fn()
-      .mockRejectedValueOnce("date order is ambiguous")
+      .mockRejectedValueOnce(ambiguousDateOrder)
       .mockResolvedValueOnce(preview);
     const api = createApi(previewImport);
     render(
@@ -148,7 +158,7 @@ describe("TransactionImport", () => {
     const user = userEvent.setup();
     const previewImport = vi
       .fn()
-      .mockRejectedValueOnce('row 2: ambiguous amount: "1,234"')
+      .mockRejectedValueOnce(ambiguousAmount)
       .mockResolvedValueOnce(preview);
     const api = createApi(previewImport);
     render(
@@ -176,8 +186,8 @@ describe("TransactionImport", () => {
     const user = userEvent.setup();
     const previewImport = vi
       .fn()
-      .mockRejectedValueOnce("date order is ambiguous")
-      .mockRejectedValueOnce('row 2: ambiguous amount: "1,234"')
+      .mockRejectedValueOnce(ambiguousDateOrder)
+      .mockRejectedValueOnce(ambiguousAmount)
       .mockResolvedValueOnce(preview);
     const api = createApi(previewImport);
     render(

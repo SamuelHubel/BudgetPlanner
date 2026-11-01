@@ -14,6 +14,8 @@ type ConfirmDialogProps = {
   pendingLabel: string;
   /** Shown when `onConfirm` rejects without a usable message. */
   errorFallback: string;
+  /** Text the user must type to enable the action, for irreversible erasure. */
+  confirmationPhrase?: string;
   /** Runs the action; a rejection keeps the dialog open with the error. */
   onConfirm: () => Promise<void>;
   onClose: () => void;
@@ -30,18 +32,23 @@ export default function ConfirmDialog({
   confirmLabel,
   pendingLabel,
   errorFallback,
+  confirmationPhrase,
   onConfirm,
   onClose,
 }: ConfirmDialogProps) {
   const dialogId = useId();
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [typedPhrase, setTypedPhrase] = useState("");
   const titleId = `${dialogId}-title`;
   const descriptionId = `${dialogId}-description`;
+  const isPhraseMissing =
+    confirmationPhrase !== undefined && typedPhrase !== confirmationPhrase;
 
   const close = () => {
     if (isPending) return;
     setError(null);
+    setTypedPhrase("");
     onClose();
   };
 
@@ -50,6 +57,7 @@ export default function ConfirmDialog({
     setError(null);
     try {
       await onConfirm();
+      setTypedPhrase("");
     } catch (caughtError) {
       setError(toErrorMessage(caughtError, errorFallback));
     } finally {
@@ -72,6 +80,24 @@ export default function ConfirmDialog({
       <p className="mt-3 text-sm leading-6 text-slate-300" id={descriptionId}>
         {description}
       </p>
+      {confirmationPhrase !== undefined && (
+        <div className="mt-4 space-y-1">
+          <label
+            className="text-sm font-medium text-slate-300"
+            htmlFor={`${dialogId}-phrase`}
+          >
+            Type {confirmationPhrase} to confirm
+          </label>
+          <input
+            id={`${dialogId}-phrase`}
+            className="block w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
+            autoComplete="off"
+            value={typedPhrase}
+            onChange={(event) => setTypedPhrase(event.target.value)}
+            disabled={isPending}
+          />
+        </div>
+      )}
       {error && <Alert className="mt-4">{error}</Alert>}
       <div className="mt-6 flex flex-wrap justify-end gap-3">
         <Button
@@ -87,7 +113,7 @@ export default function ConfirmDialog({
           type="button"
           variant="danger"
           onClick={() => void confirm()}
-          disabled={isPending}
+          disabled={isPending || isPhraseMissing}
         >
           {isPending ? pendingLabel : confirmLabel}
         </Button>

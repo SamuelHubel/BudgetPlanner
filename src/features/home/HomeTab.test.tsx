@@ -82,6 +82,7 @@ const api: BudgetApiClient = {
   createPassword: async () => {},
   unlock: async () => {},
   lock: async () => {},
+  resetVault: async () => {},
   listCategories: async () => [],
   previewImport: async () => [],
   commitImport: async () => ({ inserted: 0, skippedDuplicates: 0 }),
