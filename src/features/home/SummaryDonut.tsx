@@ -1,5 +1,11 @@
 import { useState } from "react";
 import type { CategoryTotal } from "../../types";
+import {
+  DonutArc,
+  donutGeometry,
+  DonutSvg,
+  NEUTRAL_SEGMENT_COLOR,
+} from "../../shared/Donut";
 import { formatCurrency } from "../../shared/format";
 
 const FALLBACK_COLORS = [
@@ -10,10 +16,7 @@ const FALLBACK_COLORS = [
   "#fb7185",
   "#c084fc",
 ];
-const DONUT_RADIUS = 56;
-const DONUT_VIEWBOX = 144;
-const DONUT_CENTER = DONUT_VIEWBOX / 2;
-const DONUT_CIRCUMFERENCE = 2 * Math.PI * DONUT_RADIUS;
+const GEOMETRY = donutGeometry(144, 56);
 
 type SummaryDonutProps = {
   title: string;
@@ -42,7 +45,7 @@ export default function SummaryDonut({
           {
             id: -1,
             name: "Uncategorized",
-            color: "#94a3b8",
+            color: NEUTRAL_SEGMENT_COLOR,
             amountCents: uncategorizedCents,
           },
         ]),
@@ -94,46 +97,33 @@ export default function SummaryDonut({
           role="group"
           aria-label={`${title} chart totaling ${formatCurrency(total, currency)} across ${chartCategories.length} categories`}
         >
-          <svg
-            viewBox={`0 0 ${DONUT_VIEWBOX} ${DONUT_VIEWBOX}`}
-            aria-hidden="true"
-            focusable="false"
-          >
-            <circle
-              className="fill-none stroke-slate-800"
-              cx={DONUT_CENTER}
-              cy={DONUT_CENTER}
-              r={DONUT_RADIUS}
-              strokeWidth="20"
-            />
+          <DonutSvg geometry={GEOMETRY} strokeWidth={20}>
             {chartCategories.map(({ id, color, amountCents }, index) => {
               const segmentLength =
                 plottedTotal > 0
                   ? (Math.max(0, amountCents) / plottedTotal) *
-                    DONUT_CIRCUMFERENCE
+                    GEOMETRY.circumference
                   : 0;
               const isActive = id === (activeCategory?.id ?? null);
               const segment = (
-                <circle
+                <DonutArc
                   key={id}
+                  geometry={GEOMETRY}
                   className={`transition-all duration-150${activeCategory && !isActive ? " opacity-30" : ""}`}
-                  cx={DONUT_CENTER}
-                  cy={DONUT_CENTER}
-                  r={DONUT_RADIUS}
-                  fill="none"
-                  stroke={
-                    color ?? FALLBACK_COLORS[index % FALLBACK_COLORS.length]
+                  color={
+                    color ??
+                    FALLBACK_COLORS[index % FALLBACK_COLORS.length] ??
+                    NEUTRAL_SEGMENT_COLOR
                   }
                   strokeWidth={isActive ? 26 : 20}
-                  strokeDasharray={`${segmentLength} ${DONUT_CIRCUMFERENCE - segmentLength}`}
-                  strokeDashoffset={-offset}
-                  transform={`rotate(-90 ${DONUT_CENTER} ${DONUT_CENTER})`}
+                  length={segmentLength}
+                  offset={offset}
                 />
               );
               offset += segmentLength;
               return segment;
             })}
-          </svg>
+          </DonutSvg>
           {activeCategory ? (
             <div
               className="pointer-events-none absolute inset-[22%] z-10 flex flex-col items-center justify-center rounded-full border border-slate-700 bg-slate-950/95 px-2 text-center shadow-lg"

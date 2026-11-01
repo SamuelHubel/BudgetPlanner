@@ -111,6 +111,16 @@ fn remove_sqlite_files(path: &Path) -> Result<(), AppError> {
     Ok(())
 }
 
+/// Opens an existing database, proves the key works, and brings it up to date.
+fn connect_with_key(path: &Path, key: &[u8; KEY_LENGTH]) -> Result<Connection, AppError> {
+    let mut connection = Connection::open(path)?;
+    set_database_key(&connection, key)?;
+    verify_database_key(&connection)?;
+    connection.pragma_update(None, "foreign_keys", true)?;
+    run_migrations(&mut connection)?;
+    Ok(connection)
+}
+
 fn open_encrypted_database(data_dir: &Path, password: &str) -> Result<Connection, AppError> {
     let (database_path, salt_path) = paths(data_dir);
     let salt = read_salt(&salt_path)?;
@@ -122,12 +132,7 @@ fn open_encrypted_database(data_dir: &Path, password: &str) -> Result<Connection
     }
 
     let key = derive_key(password, &salt)?;
-    let mut connection = Connection::open(database_path)?;
-    set_database_key(&connection, &key)?;
-    verify_database_key(&connection)?;
-    connection.pragma_update(None, "foreign_keys", true)?;
-    run_migrations(&mut connection)?;
-    Ok(connection)
+    connect_with_key(&database_path, &key)
 }
 
 fn create_encrypted_database(data_dir: &Path, password: &str) -> Result<Connection, AppError> {
@@ -187,12 +192,7 @@ fn create_encrypted_database(data_dir: &Path, password: &str) -> Result<Connecti
         return Err(error);
     }
 
-    let mut connection = Connection::open(&database_path)?;
-    set_database_key(&connection, &key)?;
-    verify_database_key(&connection)?;
-    connection.pragma_update(None, "foreign_keys", true)?;
-    run_migrations(&mut connection)?;
-    Ok(connection)
+    connect_with_key(&database_path, &key)
 }
 
 fn drop_database_connection(state: &AppState) -> Result<(), AppError> {
@@ -204,13 +204,13 @@ fn drop_database_connection(state: &AppState) -> Result<(), AppError> {
     Ok(())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 /// Reports whether a password verifier and encrypted database are initialized.
 pub fn is_initialized(app: AppHandle) -> Result<bool, AppError> {
     is_initialized_in(&app_data_directory(&app)?)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 /// Creates the encrypted database and unlocks it with the first password.
 pub fn create_password(
     app: AppHandle,
@@ -229,7 +229,7 @@ pub fn create_password(
     Ok(())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 /// Opens the encrypted database using the supplied password.
 pub fn unlock(
     app: AppHandle,
@@ -246,7 +246,7 @@ pub fn unlock(
     Ok(())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 /// Closes the database connection and locks financial data.
 pub fn lock(state: State<'_, AppState>) -> Result<(), AppError> {
     drop_database_connection(&state)

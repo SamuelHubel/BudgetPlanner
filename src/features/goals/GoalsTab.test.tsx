@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { BudgetApiClient } from "../../api/budgetApi";
 import type {
@@ -10,6 +10,8 @@ import type {
   GoalProgress,
 } from "../../types";
 import { FinancialSummaryProvider } from "../home/FinancialSummaryContext";
+import { useFinancialSummary } from "../home/useFinancialSummary";
+import ResetDataDialog from "../settings/ResetDataDialog";
 import GoalsTab from "./GoalsTab";
 
 const categories: Category[] = [
@@ -52,7 +54,9 @@ function createApi(
       monthlyBreakdowns: [],
     }),
     getCurrency: async () => "USD",
-    resetFinancialData: async () => {},
+    resetFinancialData: async () => {
+      goals = [];
+    },
     listGoals: vi.fn(async () => goals),
     createGoal: vi.fn(async (input: GoalInput) => {
       const goal = toGoal(nextId++, input);
@@ -108,6 +112,50 @@ async function goalTexts() {
 }
 
 describe("GoalsTab", () => {
+  it("clears deleted goals when financial data is reset from outside the tab", async () => {
+    const user = userEvent.setup();
+    const api = createApi([goal(1, "Save for a bike")]);
+    render(
+      <FinancialSummaryProvider api={api}>
+        <ResetDataDialog api={api} />
+        <GoalsTab api={api} />
+      </FinancialSummaryProvider>,
+    );
+    expect(await goalTexts()).toEqual(["Save for a bike"]);
+
+    await user.click(screen.getByRole("button", { name: /start over/i }));
+    await user.click(
+      screen.getByRole("button", { name: /delete financial data/i }),
+    );
+
+    expect(await screen.findByText(/no goals yet/i)).toBeInTheDocument();
+    expect(screen.queryByText("Save for a bike")).not.toBeInTheDocument();
+  });
+
+  it("keeps the goal list mounted when the summary refreshes", async () => {
+    const api = createApi([goal(1, "Save for a bike")]);
+    let refreshSummary = () => {};
+    function CaptureRefresh() {
+      refreshSummary = useFinancialSummary().refresh;
+      return null;
+    }
+    render(
+      <FinancialSummaryProvider api={api}>
+        <CaptureRefresh />
+        <GoalsTab api={api} />
+      </FinancialSummaryProvider>,
+    );
+    await goalTexts();
+    const list = screen.getByRole("list", { name: "Your goals" });
+
+    await act(async () => {
+      refreshSummary();
+    });
+
+    expect(screen.queryByText("Loading goals…")).not.toBeInTheDocument();
+    expect(screen.getByRole("list", { name: "Your goals" })).toBe(list);
+  });
+
   it("shows an empty state when there are no goals", async () => {
     renderGoals(createApi());
 

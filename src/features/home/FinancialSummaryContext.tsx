@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import type { BudgetApiClient } from "../../api/budgetApi";
-import { toErrorMessage } from "../../lib/errors";
+import { toErrorMessage } from "../../shared/errors";
 import type { FinancialSummary } from "../../types";
 
 /** Financial summary values and refresh operations for dashboard features. */

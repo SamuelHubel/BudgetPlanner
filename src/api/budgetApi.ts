@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
+  AmountFormat,
   Budget,
   BudgetMonth,
   Category,
@@ -29,6 +30,7 @@ export interface BudgetApiClient {
     csvText: string,
     fileName: string,
     dateOrder?: DateOrder,
+    amountFormat?: AmountFormat,
   ): Promise<ImportPreviewRow[]>;
   /** Atomically commits reviewed import rows. */
   commitImport(
@@ -64,11 +66,17 @@ export const budgetApi: BudgetApiClient = {
   unlock: (password) => invoke<void>("unlock", { password }),
   lock: () => invoke<void>("lock"),
   listCategories: () => invoke<Category[]>("list_categories"),
-  previewImport: (csvText, fileName, dateOrder = "auto") =>
+  previewImport: (
+    csvText,
+    fileName,
+    dateOrder = "auto",
+    amountFormat = "auto",
+  ) =>
     invoke<ImportPreviewRow[]>("preview_import", {
       csvText,
       fileName,
       dateOrder,
+      amountFormat,
     }),
   commitImport: (fileName, rows) =>
     invoke<CommitImportResult>("commit_import", { fileName, rows }),

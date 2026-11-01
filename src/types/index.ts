@@ -75,6 +75,9 @@ export type FinancialSummary = {
 /** Supported date order choices for statement imports. */
 export type DateOrder = "auto" | "mdy" | "dmy";
 
+/** How a statement writes amounts such as `1,234`. */
+export type AmountFormat = "auto" | "decimalDot" | "decimalComma";
+
 /** Counts returned after an import commit. */
 export type CommitImportResult = {
   inserted: number;

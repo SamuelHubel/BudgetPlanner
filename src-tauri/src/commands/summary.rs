@@ -102,7 +102,7 @@ pub struct FinancialSummaryDto {
 }
 
 /// Loads the all-time and monthly financial summary.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn get_financial_summary(state: State<'_, AppState>) -> Result<FinancialSummaryDto, AppError> {
     let database = connection(&state)?;
     let connection = database.as_ref().ok_or(AppError::Locked)?;
@@ -247,18 +247,12 @@ fn convert_sources(sources: Vec<FinancialSource>) -> Vec<FinancialSourceDto> {
 
 #[cfg(test)]
 mod tests {
-    use rusqlite::Connection;
-
     use super::load_financial_summary_from;
-    use crate::db::run_migrations;
+    use crate::db::migrated_connection;
 
     #[test]
     fn summarizes_grouped_records_and_serializes_the_ipc_contract() {
-        let mut connection = Connection::open_in_memory().unwrap();
-        connection
-            .pragma_update(None, "foreign_keys", "ON")
-            .unwrap();
-        run_migrations(&mut connection).unwrap();
+        let connection = migrated_connection();
         connection
             .execute(
                 "INSERT INTO transactions (category_id, amount_cents, description, date)
@@ -292,11 +286,7 @@ mod tests {
 
     #[test]
     fn rejects_totals_that_the_webview_cannot_represent_exactly() {
-        let mut connection = Connection::open_in_memory().unwrap();
-        connection
-            .pragma_update(None, "foreign_keys", "ON")
-            .unwrap();
-        run_migrations(&mut connection).unwrap();
+        let connection = migrated_connection();
         connection
             .execute(
                 "INSERT INTO transactions (category_id, amount_cents, date)

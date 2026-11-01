@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseAmountInput } from "./parseAmountInput";
+import { centsToAmountInput, parseAmountInput } from "./parseAmountInput";
 
 describe("parseAmountInput", () => {
   it("treats an empty field as no amount", () => {
@@ -39,5 +39,32 @@ describe("parseAmountInput", () => {
         label: "income",
       }),
     ).toEqual({ ok: false, error: "The income is too large." });
+    expect(parseAmountInput("90071992547409.91", { label: "income" })).toEqual({
+      ok: true,
+      cents: Number.MAX_SAFE_INTEGER,
+    });
+  });
+
+  it("parses fractional amounts without rounding", () => {
+    expect(parseAmountInput("0.07", { label: "income" })).toEqual({
+      ok: true,
+      cents: 7,
+    });
+  });
+
+  it.each(["-5", "3.333", "1,000", "abc", "1.", ".50", "$300"])(
+    "rejects %s",
+    (text) => {
+      expect(parseAmountInput(text, { label: "income" }).ok).toBe(false);
+    },
+  );
+});
+
+describe("centsToAmountInput", () => {
+  it("formats cents for editing without currency symbols", () => {
+    expect(centsToAmountInput(null)).toBe("");
+    expect(centsToAmountInput(30000)).toBe("300");
+    expect(centsToAmountInput(30050)).toBe("300.50");
+    expect(centsToAmountInput(7)).toBe("0.07");
   });
 });

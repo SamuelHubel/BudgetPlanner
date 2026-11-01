@@ -1,8 +1,12 @@
 import { useId, useState, type FormEvent } from "react";
-import { toErrorMessage } from "../../lib/errors";
+import Alert from "../../shared/Alert";
+import { toErrorMessage } from "../../shared/errors";
 import Button from "../../shared/Button";
 import type { Category, GoalInput } from "../../types";
-import { centsToLimitInput, parseLimitInput } from "./parseLimitInput";
+import {
+  centsToAmountInput,
+  parseAmountInput,
+} from "../../shared/parseAmountInput";
 
 /** Maximum goal text length; mirrors `MAX_GOAL_TITLE_CHARS` in the Rust core. */
 export const MAX_GOAL_TITLE_LENGTH = 500;
@@ -42,7 +46,7 @@ export default function GoalForm({
     initialValue.categoryId === null ? "" : String(initialValue.categoryId),
   );
   const [limitText, setLimitText] = useState(
-    centsToLimitInput(initialValue.spendingLimitCents),
+    centsToAmountInput(initialValue.spendingLimitCents),
   );
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -60,7 +64,7 @@ export default function GoalForm({
     // category is chosen; the backend requires both or neither.
     let spendingLimitCents: number | null = null;
     if (isTracking) {
-      const limit = parseLimitInput(limitText);
+      const limit = parseAmountInput(limitText, { label: "monthly limit" });
       if (!limit.ok) {
         setError(limit.error);
         return;
@@ -166,14 +170,7 @@ export default function GoalForm({
         )}
       </div>
 
-      {error && (
-        <p
-          className="rounded-xl border border-rose-800 bg-rose-950/60 px-3 py-2 text-sm text-rose-200"
-          role="alert"
-        >
-          {error}
-        </p>
-      )}
+      {error && <Alert>{error}</Alert>}
 
       <div className="flex flex-wrap justify-end gap-3">
         {onCancel && (

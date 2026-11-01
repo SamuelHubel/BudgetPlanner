@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Alert from "../../shared/Alert";
 import type { BudgetApiClient } from "../../api/budgetApi";
 import { formatCurrency, formatMonth } from "../../shared/format";
 import MonthList from "./MonthList";
@@ -31,14 +32,7 @@ export default function HomeTab({ api }: HomeTabProps) {
           Your income and expenses, organized by category and month.
         </p>
       </div>
-      {error && (
-        <p
-          className="rounded-xl bg-rose-950/60 px-3 py-2 text-sm text-rose-200"
-          role="alert"
-        >
-          Unable to load financial data: {error}
-        </p>
-      )}
+      {error && <Alert>Unable to load financial data: {error}</Alert>}
       {isLoading && (
         <p className="py-3 text-sm text-slate-400" role="status">
           Loading financial data…

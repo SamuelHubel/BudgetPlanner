@@ -3,7 +3,7 @@ use tauri::State;
 
 use crate::{error::AppError, state::AppState};
 
-#[tauri::command]
+#[tauri::command(async)]
 /// Returns the persisted currency code used for financial display.
 pub fn get_currency(state: State<'_, AppState>) -> Result<String, AppError> {
     let database = super::connection(&state)?;

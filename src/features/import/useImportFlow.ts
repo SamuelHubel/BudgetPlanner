@@ -1,17 +1,23 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import type { BudgetApiClient } from "../../api/budgetApi";
 import type {
+  AmountFormat,
   Category,
   DateOrder,
   ImportPreviewRow,
   ImportRow,
 } from "../../types";
-import { toErrorMessage } from "../../lib/errors";
+import { toErrorMessage } from "../../shared/errors";
 import { useFinancialSummary } from "../home/useFinancialSummary";
 
 /** Returns whether a string matches a supported import date order. */
 export function isDateOrder(value: string): value is DateOrder {
   return value === "auto" || value === "mdy" || value === "dmy";
+}
+
+/** Returns whether a string matches a supported amount format. */
+export function isAmountFormat(value: string): value is AmountFormat {
+  return value === "auto" || value === "decimalDot" || value === "decimalComma";
 }
 
 /** Manages CSV selection, preview edits, and import submission state. */
@@ -26,23 +32,48 @@ export function useImportFlow(
   const [csvText, setCsvText] = useState("");
   const [dateOrder, setDateOrder] = useState<DateOrder>("auto");
   const [needsDateOrder, setNeedsDateOrder] = useState(false);
+  const [amountFormat, setAmountFormat] = useState<AmountFormat>("auto");
+  const [needsAmountFormat, setNeedsAmountFormat] = useState(false);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { currency, refresh } = useFinancialSummary();
 
+  /**
+   * Parses the statement with the given choices. A file can need both a date
+   * order and an amount format, and each failure reveals only one, so a prompt
+   * stays up until a preview succeeds.
+   */
   const loadPreview = async (
     contents: string,
     name: string,
     order: DateOrder,
+    format: AmountFormat,
   ) => {
-    const [preview, availableCategories] = await Promise.all([
-      api.previewImport(contents, name, order),
-      api.listCategories(),
-    ]);
-    setTransactions(preview);
-    setCategories(availableCategories);
-    setNeedsDateOrder(false);
+    setError("");
+    setIsLoading(true);
+    try {
+      const [preview, availableCategories] = await Promise.all([
+        api.previewImport(contents, name, order, format),
+        api.listCategories(),
+      ]);
+      setTransactions(preview);
+      setCategories(availableCategories);
+      setNeedsDateOrder(false);
+      setNeedsAmountFormat(false);
+    } catch (caughtError) {
+      const message = toErrorMessage(caughtError, "Unable to read this CSV.");
+      const lowerMessage = message.toLowerCase();
+      setError(message);
+      if (lowerMessage.includes("date order is ambiguous")) {
+        setNeedsDateOrder(true);
+      }
+      if (lowerMessage.includes("ambiguous amount")) {
+        setNeedsAmountFormat(true);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleFile = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -54,20 +85,16 @@ export function useImportFlow(
     setTransactions([]);
     setNeedsDateOrder(false);
     setDateOrder("auto");
-    setIsLoading(true);
+    setNeedsAmountFormat(false);
+    setAmountFormat("auto");
     try {
       const contents = await file.text();
       setCsvText(contents);
       setFileName(file.name);
-      await loadPreview(contents, file.name, "auto");
+      await loadPreview(contents, file.name, "auto", "auto");
     } catch (caughtError) {
-      const message = toErrorMessage(caughtError, "Unable to read this CSV.");
-      setError(message);
-      setNeedsDateOrder(
-        message.toLowerCase().includes("date order is ambiguous"),
-      );
+      setError(toErrorMessage(caughtError, "Unable to read this CSV."));
     } finally {
-      setIsLoading(false);
       input.value = "";
     }
   };
@@ -75,15 +102,13 @@ export function useImportFlow(
   const handleDateOrder = async (order: DateOrder) => {
     setDateOrder(order);
     if (order === "auto" || !csvText || !fileName) return;
-    setError("");
-    setIsLoading(true);
-    try {
-      await loadPreview(csvText, fileName, order);
-    } catch (caughtError) {
-      setError(toErrorMessage(caughtError, "Unable to read this CSV."));
-    } finally {
-      setIsLoading(false);
-    }
+    await loadPreview(csvText, fileName, order, amountFormat);
+  };
+
+  const handleAmountFormat = async (format: AmountFormat) => {
+    setAmountFormat(format);
+    if (format === "auto" || !csvText || !fileName) return;
+    await loadPreview(csvText, fileName, dateOrder, format);
   };
 
   const updateCategory = (index: number, value: string) => {
@@ -121,6 +146,7 @@ export function useImportFlow(
       setFileName("");
       setCsvText("");
       setNeedsDateOrder(false);
+      setNeedsAmountFormat(false);
       refresh();
       onImportCommitted?.();
     } catch (caughtError) {
@@ -136,12 +162,15 @@ export function useImportFlow(
     categories,
     dateOrder,
     needsDateOrder,
+    amountFormat,
+    needsAmountFormat,
     error,
     status,
     isLoading,
     currency,
     handleFile,
     handleDateOrder,
+    handleAmountFormat,
     updateCategory,
     confirmImport,
   };

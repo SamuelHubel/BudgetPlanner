@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Button from "../../shared/Button";
+import ConfirmDialog from "../../shared/ConfirmDialog";
 import type { Category, Goal, GoalInput } from "../../types";
-import DeleteGoalDialog from "./DeleteGoalDialog";
 import GoalForm from "./GoalForm";
 import GoalProgressDonut from "./GoalProgressDonut";
 
@@ -108,10 +108,22 @@ export default function GoalCard({
           currency={currency}
         />
       </div>
-      <DeleteGoalDialog
+      <ConfirmDialog
         isOpen={isDeleteOpen}
-        goalId={goal.id}
-        goalTitle={goal.title}
+        title="Delete this goal?"
+        description={
+          <>
+            &ldquo;
+            <span className="whitespace-pre-wrap break-words">
+              {goal.title}
+            </span>
+            &rdquo; will be permanently removed. Your transactions are not
+            affected.
+          </>
+        }
+        confirmLabel="Delete goal"
+        pendingLabel="Deleting..."
+        errorFallback="Unable to delete the goal."
         onConfirm={() => onDelete(goal.id)}
         onClose={() => setIsDeleteOpen(false)}
       />

@@ -1,6 +1,7 @@
 import TabBar from "../shared/TabBar";
+import Alert from "../shared/Alert";
 import HomeTab from "../features/home/HomeTab";
-import AITab from "./AITab";
+import AITab from "../features/ai/AITab";
 import BudgetTab from "../features/budget/BudgetTab";
 import GoalsTab from "../features/goals/GoalsTab";
 import type { BudgetApiClient } from "../api/budgetApi";
@@ -63,14 +64,7 @@ export default function Dashboard({
           </div>
         </div>
 
-        {lockError && (
-          <p
-            className="mt-4 rounded-xl border border-rose-800 bg-rose-950/60 px-3 py-2 text-sm text-rose-200"
-            role="alert"
-          >
-            {lockError}
-          </p>
-        )}
+        {lockError && <Alert className="mt-4">{lockError}</Alert>}
 
         <div className="mt-8 overflow-hidden rounded-3xl border border-slate-800 bg-slate-950/90">
           <TabBar activeTab={activeTab} onTabChange={onTabChange} />

@@ -1,14 +1,16 @@
+import {
+  DonutArc,
+  donutGeometry,
+  DonutSvg,
+  NEUTRAL_SEGMENT_COLOR,
+} from "../../shared/Donut";
 import { formatCurrency } from "../../shared/format";
 import { donutSegments, type AllocationSummary } from "./budgetMath";
 
-const RADIUS = 56;
-const VIEWBOX = 144;
-const CENTER = VIEWBOX / 2;
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+const GEOMETRY = donutGeometry(144, 56);
 /** Surface gap between arcs, so neighbors stay distinct without color alone. */
 const SEGMENT_GAP = 2;
 const MIN_SEGMENT_LENGTH = 1;
-const FALLBACK_COLOR = "#94a3b8";
 
 /** A category's allocation as drawn on the donut. */
 export type DonutRow = {
@@ -42,7 +44,7 @@ export default function BudgetDonut({
   const segments = donutSegments(
     rows.map(({ id, color, cents }) => ({
       id,
-      color: color ?? FALLBACK_COLOR,
+      color: color ?? NEUTRAL_SEGMENT_COLOR,
       cents,
     })),
     incomeCents,
@@ -57,50 +59,35 @@ export default function BudgetDonut({
         role="img"
         aria-label={`${summary.allocatedPercent}% of income allocated`}
       >
-        <svg
-          viewBox={`0 0 ${VIEWBOX} ${VIEWBOX}`}
-          aria-hidden="true"
-          focusable="false"
-        >
-          <circle
-            className="fill-none stroke-slate-800"
-            cx={CENTER}
-            cy={CENTER}
-            r={RADIUS}
-            strokeWidth="20"
-          />
+        <DonutSvg geometry={GEOMETRY} strokeWidth={20}>
           {segments.map(({ id, color, start, fraction }) => {
             const length = Math.max(
-              fraction * CIRCUMFERENCE - SEGMENT_GAP,
+              fraction * GEOMETRY.circumference - SEGMENT_GAP,
               MIN_SEGMENT_LENGTH,
             );
             const isDimmed = activeRow !== undefined && id !== activeRow.id;
             return (
-              <circle
+              <DonutArc
                 key={id}
+                geometry={GEOMETRY}
                 className={`transition-all duration-150 motion-reduce:transition-none${isDimmed ? " opacity-30" : ""}`}
-                cx={CENTER}
-                cy={CENTER}
-                r={RADIUS}
-                fill="none"
-                stroke={color}
+                color={color}
                 strokeWidth={id === activeRow?.id ? 24 : 20}
-                strokeDasharray={`${length} ${CIRCUMFERENCE - length}`}
-                strokeDashoffset={-start * CIRCUMFERENCE}
-                transform={`rotate(-90 ${CENTER} ${CENTER})`}
+                length={length}
+                offset={start * GEOMETRY.circumference}
               />
             );
           })}
           {isOver && (
             <circle
               className="fill-none stroke-rose-400"
-              cx={CENTER}
-              cy={CENTER}
+              cx={GEOMETRY.center}
+              cy={GEOMETRY.center}
               r={69}
               strokeWidth="2"
             />
           )}
-        </svg>
+        </DonutSvg>
         <div
           className="absolute inset-[24%] flex flex-col items-center justify-center"
           aria-hidden="true"

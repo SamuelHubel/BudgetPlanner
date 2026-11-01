@@ -10,7 +10,7 @@ use crate::{
         categorize::categorize_transactions,
         csv_import::{parse_bank_csv, CsvImportOptions, MAX_TRANSACTION_ROWS},
         hash::dedupe_hash,
-        DateOrder, KeywordCategory,
+        AmountLocaleHint, DateOrder, KeywordCategory,
     },
     error::AppError,
     state::AppState,
@@ -62,16 +62,23 @@ pub struct CommitImportResult {
 }
 
 /// Parses and categorizes a CSV statement for frontend review.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn preview_import(
     state: State<'_, AppState>,
     csv_text: String,
     file_name: String,
     date_order: Option<String>,
+    amount_format: Option<String>,
 ) -> Result<Vec<ImportPreviewRow>, AppError> {
     let database = connection(&state)?;
     let connection = database.as_ref().ok_or(AppError::Locked)?;
-    preview_import_from(connection, &csv_text, &file_name, date_order.as_deref())
+    preview_import_from(
+        connection,
+        &csv_text,
+        &file_name,
+        date_order.as_deref(),
+        amount_format.as_deref(),
+    )
 }
 
 fn preview_import_from(
@@ -79,15 +86,17 @@ fn preview_import_from(
     csv_text: &str,
     file_name: &str,
     date_order: Option<&str>,
+    amount_format: Option<&str>,
 ) -> Result<Vec<ImportPreviewRow>, AppError> {
     validate_file_name(file_name)?;
     let date_order = parse_date_order(date_order)?;
+    let amount_locale = parse_amount_format(amount_format)?;
     let categories = load_domain_categories(connection)?;
     let rules = load_keyword_categories(connection)?;
     let parsed = parse_bank_csv(
         csv_text,
         CsvImportOptions {
-            amount_locale: None,
+            amount_locale,
             date_order,
         },
     )?;
@@ -126,7 +135,7 @@ fn preview_import_from(
 }
 
 /// Atomically saves the reviewed rows from an import batch.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn commit_import(
     state: State<'_, AppState>,
     file_name: String,
@@ -167,12 +176,13 @@ fn commit_import_in_connection(
     let mut occurrences = HashMap::<(String, i64, String), u32>::new();
     let mut inserted = 0;
     for row in rows {
-        let date = NaiveDate::parse_from_str(&row.date, "%Y-%m-%d")
-            .map_err(|_| AppError::InvalidInput("transaction date must be an ISO date".into()))?;
-        let date = date.format("%Y-%m-%d").to_string();
-        let occurrence =
-            next_occurrence(&mut occurrences, &date, row.amount_cents, &row.description);
-        let hash = dedupe_hash(&date, row.amount_cents, &row.description, occurrence);
+        let occurrence = next_occurrence(
+            &mut occurrences,
+            &row.date,
+            row.amount_cents,
+            &row.description,
+        );
+        let hash = dedupe_hash(&row.date, row.amount_cents, &row.description, occurrence);
         inserted += transaction.execute(
             "INSERT OR IGNORE INTO transactions
              (category_id, amount_cents, description, date, source, import_batch_id, dedupe_hash)
@@ -181,7 +191,7 @@ fn commit_import_in_connection(
                 row.category_id,
                 row.amount_cents,
                 row.description.trim(),
-                date,
+                &row.date,
                 batch_id,
                 hash,
             ),
@@ -216,6 +226,17 @@ fn parse_date_order(value: Option<&str>) -> Result<DateOrder, AppError> {
         Some("dmy") => Ok(DateOrder::Dmy),
         Some(_) => Err(AppError::InvalidInput(
             "date order must be auto, mdy, or dmy".to_owned(),
+        )),
+    }
+}
+
+fn parse_amount_format(value: Option<&str>) -> Result<Option<AmountLocaleHint>, AppError> {
+    match value {
+        None | Some("auto") => Ok(None),
+        Some("decimalDot") => Ok(Some(AmountLocaleHint::DecimalDot)),
+        Some("decimalComma") => Ok(Some(AmountLocaleHint::DecimalComma)),
+        Some(_) => Err(AppError::InvalidInput(
+            "amount format must be auto, decimalDot, or decimalComma".to_owned(),
         )),
     }
 }
@@ -293,19 +314,8 @@ fn next_occurrence(
 
 #[cfg(test)]
 mod tests {
-    use rusqlite::Connection;
-
     use super::*;
-    use crate::db::run_migrations;
-
-    fn test_connection() -> Connection {
-        let mut connection = Connection::open_in_memory().unwrap();
-        connection
-            .pragma_update(None, "foreign_keys", "ON")
-            .unwrap();
-        run_migrations(&mut connection).unwrap();
-        connection
-    }
+    use crate::db::migrated_connection as test_connection;
 
     #[test]
     fn validates_file_names_and_date_order() {
@@ -379,7 +389,8 @@ mod tests {
     fn preview_detects_a_committed_row_using_the_same_dedupe_hash() {
         let mut connection = test_connection();
         let csv = "Date,Description,Amount\n2026-01-01,Coffee,-5.00";
-        let first_preview = preview_import_from(&connection, csv, "statement.csv", None).unwrap();
+        let first_preview =
+            preview_import_from(&connection, csv, "statement.csv", None, None).unwrap();
         assert!(!first_preview[0].is_duplicate);
         let rows = first_preview
             .iter()
@@ -392,8 +403,30 @@ mod tests {
             .collect::<Vec<_>>();
         commit_import_in_connection(&mut connection, "statement.csv", &rows).unwrap();
 
-        let second_preview = preview_import_from(&connection, csv, "statement.csv", None).unwrap();
+        let second_preview =
+            preview_import_from(&connection, csv, "statement.csv", None, None).unwrap();
         assert!(second_preview[0].is_duplicate);
+    }
+
+    #[test]
+    fn ambiguous_amounts_are_resolved_by_the_chosen_format() {
+        let connection = test_connection();
+        let csv = "Date,Description,Amount\n2026-01-15,Rent,\"1,234\"\n";
+
+        let error = preview_import_from(&connection, csv, "statement.csv", None, None).unwrap_err();
+        assert!(error.to_string().contains("ambiguous amount"));
+
+        let preview = |format| {
+            preview_import_from(&connection, csv, "statement.csv", None, Some(format)).unwrap()
+        };
+        assert_eq!(preview("decimalDot")[0].amount_cents, 123_400);
+        assert_eq!(preview("decimalComma")[0].amount_cents, 123);
+    }
+
+    #[test]
+    fn rejects_an_unknown_amount_format() {
+        assert!(parse_amount_format(Some("unexpected")).is_err());
+        assert!(matches!(parse_amount_format(Some("auto")), Ok(None)));
     }
 
     #[test]
@@ -401,7 +434,7 @@ mod tests {
         let connection = test_connection();
         let csv = "Date,Description,Amount\n2026-01-01,Expensive,90071992547409.92";
 
-        let error = preview_import_from(&connection, csv, "statement.csv", None).unwrap_err();
+        let error = preview_import_from(&connection, csv, "statement.csv", None, None).unwrap_err();
 
         assert!(error.to_string().contains("safe integer range"));
     }

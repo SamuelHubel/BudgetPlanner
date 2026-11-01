@@ -1,8 +1,11 @@
 import { useId, useState, type FormEvent } from "react";
+import Alert from "../../shared/Alert";
 import Button from "../../shared/Button";
 import { formatMonth } from "../../shared/format";
-import { parseAmountInput } from "../../shared/parseAmountInput";
-import { centsToLimitInput } from "../goals/parseLimitInput";
+import {
+  centsToAmountInput,
+  parseAmountInput,
+} from "../../shared/parseAmountInput";
 
 type IncomeFormProps = {
   month: string;
@@ -25,7 +28,7 @@ export default function IncomeForm({
   onCancel,
 }: IncomeFormProps) {
   const fieldId = useId();
-  const [text, setText] = useState(centsToLimitInput(initialCents));
+  const [text, setText] = useState(centsToAmountInput(initialCents));
   const [error, setError] = useState("");
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -72,14 +75,7 @@ export default function IncomeForm({
         </p>
       </div>
 
-      {error && (
-        <p
-          className="rounded-xl border border-rose-800 bg-rose-950/60 px-3 py-2 text-sm text-rose-200"
-          role="alert"
-        >
-          {error}
-        </p>
-      )}
+      {error && <Alert>{error}</Alert>}
 
       <div className="flex flex-wrap justify-end gap-3">
         {onCancel && (

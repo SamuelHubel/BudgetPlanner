@@ -24,7 +24,7 @@ pub struct CategoryDto {
 }
 
 /// Lists the categories available for transaction assignment.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn list_categories(state: State<'_, AppState>) -> Result<Vec<CategoryDto>, AppError> {
     let database = super::connection(&state)?;
     let connection = database.as_ref().ok_or(AppError::Locked)?;

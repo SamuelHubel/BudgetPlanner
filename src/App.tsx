@@ -3,7 +3,7 @@ import "./index.css";
 import UnlockScreen from "./features/lock/UnlockScreen";
 import Dashboard from "./components/Dashboard";
 import { budgetApi } from "./api/budgetApi";
-import { toErrorMessage } from "./lib/errors";
+import { toErrorMessage } from "./shared/errors";
 import type { TabName } from "./types";
 
 const INACTIVITY_LOCK_MS = 5 * 60 * 1000;

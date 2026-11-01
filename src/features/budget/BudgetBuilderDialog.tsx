@@ -1,16 +1,19 @@
 import { useId, useState } from "react";
-import { toErrorMessage } from "../../lib/errors";
+import Alert from "../../shared/Alert";
+import { toErrorMessage } from "../../shared/errors";
 import Button from "../../shared/Button";
 import Dialog from "../../shared/Dialog";
 import { formatCurrency, formatMonth } from "../../shared/format";
-import { parseAmountInput } from "../../shared/parseAmountInput";
+import {
+  centsToAmountInput,
+  parseAmountInput,
+} from "../../shared/parseAmountInput";
 import type {
   Budget,
   BudgetAllocation,
   BudgetInputMode,
   Category,
 } from "../../types";
-import { centsToLimitInput } from "../goals/parseLimitInput";
 import AllocationRow from "./AllocationRow";
 import BudgetDonut from "./BudgetDonut";
 import {
@@ -64,7 +67,7 @@ export default function BudgetBuilderDialog({
   const [amountTexts, setAmountTexts] = useState<Record<number, string>>(() =>
     mapCategories(categories, ({ id }) => {
       const cents = initialCents[id];
-      return cents ? centsToLimitInput(cents) : "";
+      return cents ? centsToAmountInput(cents) : "";
     }),
   );
   const [activeId, setActiveId] = useState<number | null>(null);
@@ -100,7 +103,7 @@ export default function BudgetBuilderDialog({
     if (nextMode === "amount") {
       setAmountTexts(
         mapCategories(rows, ({ cents }) =>
-          cents ? centsToLimitInput(cents) : "",
+          cents ? centsToAmountInput(cents) : "",
         ),
       );
     } else {
@@ -229,14 +232,7 @@ export default function BudgetBuilderDialog({
 
       <div className="mt-4 space-y-2">
         <OverAllocationWarning summary={summary} currency={currency} />
-        {error && (
-          <p
-            className="rounded-xl border border-rose-800 bg-rose-950/60 px-3 py-2 text-sm text-rose-200"
-            role="alert"
-          >
-            {error}
-          </p>
-        )}
+        {error && <Alert>{error}</Alert>}
       </div>
 
       <div className="mt-4 flex flex-wrap justify-end gap-3">

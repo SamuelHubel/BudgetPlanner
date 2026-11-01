@@ -1,4 +1,5 @@
 import type { BudgetApiClient } from "../../api/budgetApi";
+import Alert from "../../shared/Alert";
 import { useFinancialSummary } from "../home/useFinancialSummary";
 import GoalCard from "./GoalCard";
 import GoalForm from "./GoalForm";
@@ -44,14 +45,7 @@ export default function GoalsTab({ api }: GoalsTabProps) {
         />
       </section>
 
-      {error && (
-        <p
-          className="rounded-xl bg-rose-950/60 px-3 py-2 text-sm text-rose-200"
-          role="alert"
-        >
-          Unable to load goals: {error}
-        </p>
-      )}
+      {error && <Alert>Unable to load goals: {error}</Alert>}
       {isLoading && (
         <p className="py-3 text-sm text-slate-400" role="status">
           Loading goals…

@@ -17,7 +17,7 @@ pub mod summary;
 
 use std::sync::MutexGuard;
 
-use rusqlite::Connection;
+use rusqlite::{Connection, OptionalExtension};
 use tauri::State;
 
 use crate::{error::AppError, state::AppState};
@@ -37,4 +37,25 @@ fn validate_safe_cents(amount_cents: i64) -> Result<(), AppError> {
         ));
     }
     Ok(())
+}
+
+/// Checks that a category exists and tracks expenses, returning
+/// `wrong_type_message` when it tracks income instead.
+fn ensure_expense_category(
+    connection: &Connection,
+    category_id: i64,
+    wrong_type_message: &str,
+) -> Result<(), AppError> {
+    let category_type: Option<String> = connection
+        .query_row(
+            "SELECT type FROM categories WHERE id = ?1",
+            [category_id],
+            |row| row.get(0),
+        )
+        .optional()?;
+    match category_type.as_deref() {
+        Some("expense") => Ok(()),
+        Some(_) => Err(AppError::InvalidInput(wrong_type_message.to_owned())),
+        None => Err(AppError::InvalidInput("category not found".to_owned())),
+    }
 }

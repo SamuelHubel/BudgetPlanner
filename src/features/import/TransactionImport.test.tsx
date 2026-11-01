@@ -140,6 +140,68 @@ describe("TransactionImport", () => {
       "Date,Description,Amount\n01/02/2026,Coffee,-5.00",
       "statement.csv",
       "mdy",
+      "auto",
+    );
+  });
+
+  it("lets the user resolve an ambiguous amount format", async () => {
+    const user = userEvent.setup();
+    const previewImport = vi
+      .fn()
+      .mockRejectedValueOnce('row 2: ambiguous amount: "1,234"')
+      .mockResolvedValueOnce(preview);
+    const api = createApi(previewImport);
+    render(
+      <FinancialSummaryProvider api={api}>
+        <TransactionImport api={api} />
+      </FinancialSummaryProvider>,
+    );
+
+    await user.upload(screen.getByLabelText(/choose a csv file/i), csvFile());
+    await user.selectOptions(
+      await screen.findByRole("combobox", { name: "Statement amount format" }),
+      "decimalComma",
+    );
+
+    expect(await screen.findByText("Already imported")).toBeInTheDocument();
+    expect(previewImport).toHaveBeenLastCalledWith(
+      "Date,Description,Amount\n01/02/2026,Coffee,-5.00",
+      "statement.csv",
+      "auto",
+      "decimalComma",
+    );
+  });
+
+  it("keeps both choices when a statement needs a date order and an amount format", async () => {
+    const user = userEvent.setup();
+    const previewImport = vi
+      .fn()
+      .mockRejectedValueOnce("date order is ambiguous")
+      .mockRejectedValueOnce('row 2: ambiguous amount: "1,234"')
+      .mockResolvedValueOnce(preview);
+    const api = createApi(previewImport);
+    render(
+      <FinancialSummaryProvider api={api}>
+        <TransactionImport api={api} />
+      </FinancialSummaryProvider>,
+    );
+
+    await user.upload(screen.getByLabelText(/choose a csv file/i), csvFile());
+    await user.selectOptions(
+      await screen.findByRole("combobox", { name: "Statement date order" }),
+      "dmy",
+    );
+    await user.selectOptions(
+      await screen.findByRole("combobox", { name: "Statement amount format" }),
+      "decimalDot",
+    );
+
+    expect(await screen.findByText("Already imported")).toBeInTheDocument();
+    expect(previewImport).toHaveBeenLastCalledWith(
+      "Date,Description,Amount\n01/02/2026,Coffee,-5.00",
+      "statement.csv",
+      "dmy",
+      "decimalDot",
     );
   });
 });

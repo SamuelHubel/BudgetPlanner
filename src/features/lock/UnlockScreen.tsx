@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import Alert from "../../shared/Alert";
 import Button from "../../shared/Button";
 
 type UnlockScreenProps = {
@@ -49,16 +50,8 @@ export default function UnlockScreen({
           ? "Create a password to encrypt your budget data."
           : "Enter your password to continue."}
       </p>
-      {error && (
-        <p className="mt-4 text-sm text-red-300" role="alert">
-          {error}
-        </p>
-      )}
-      {formError && (
-        <p className="mt-4 text-sm text-red-300" role="alert">
-          {formError}
-        </p>
-      )}
+      {error && <Alert className="mt-4">{error}</Alert>}
+      {formError && <Alert className="mt-4">{formError}</Alert>}
       {isInitialized === null ? (
         <p role="status">
           {error
