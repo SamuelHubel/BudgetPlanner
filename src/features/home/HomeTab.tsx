@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Alert from "../../shared/Alert";
 import type { BudgetApiClient } from "../../api/budgetApi";
+import { toErrorMessage } from "../../shared/errors";
 import { formatCurrency, formatMonth } from "../../shared/format";
 import MonthList, { ALL_TIME } from "./MonthList";
 import MonthlyBarChart from "./MonthlyBarChart";
@@ -15,8 +16,28 @@ type HomeTabProps = {
 
 /** Loads and displays the selected period's financial overview. */
 export default function HomeTab({ api }: HomeTabProps) {
-  const { summary, currency, error, isLoading } = useFinancialSummary();
+  const {
+    summary,
+    currency,
+    error,
+    isLoading,
+    categorySettings,
+    updateCategorySettings,
+  } = useFinancialSummary();
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+  const [settingsError, setSettingsError] = useState("");
+  const showSubcategories = categorySettings?.showSubcategoryCharts ?? false;
+
+  const toggleSubcategoryCharts = async (showSubcategoryCharts: boolean) => {
+    setSettingsError("");
+    try {
+      await updateCategorySettings({ showSubcategoryCharts });
+    } catch (caughtError) {
+      setSettingsError(
+        toErrorMessage(caughtError, "Unable to save this setting."),
+      );
+    }
+  };
   const isAllTime = selectedMonth === ALL_TIME;
   const selectedMonthBreakdown = isAllTime
     ? null
@@ -59,18 +80,33 @@ export default function HomeTab({ api }: HomeTabProps) {
                 : "all time"}
             </p>
           )}
+          <label className="flex items-center gap-2 text-sm text-slate-300">
+            <input
+              type="checkbox"
+              className="h-4 w-4 accent-cyan-500"
+              checked={showSubcategories}
+              disabled={!categorySettings}
+              onChange={(event) =>
+                void toggleSubcategoryCharts(event.currentTarget.checked)
+              }
+            />
+            Show subcategory charts
+          </label>
+          {settingsError && <Alert>{settingsError}</Alert>}
           <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-2">
             <SummaryDonut
               title="Income"
               categories={displayedBreakdown.income}
               uncategorizedCents={displayedBreakdown.uncategorizedIncomeCents}
               currency={currency}
+              showSubcategories={showSubcategories}
             />
             <SummaryDonut
               title="Expenses"
               categories={displayedBreakdown.expenses}
               uncategorizedCents={displayedBreakdown.uncategorizedExpensesCents}
               currency={currency}
+              showSubcategories={showSubcategories}
             />
           </div>
           <section

@@ -154,6 +154,17 @@ pub struct Category {
     pub category_type: CategoryType,
 }
 
+/// A second-level category under one main category.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Subcategory {
+    /// Database identifier for the subcategory.
+    pub id: i64,
+    /// Database identifier of the parent main category.
+    pub category_id: i64,
+    /// User-facing subcategory name.
+    pub name: String,
+}
+
 /// A parsed transaction ready for categorization and import preview.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ImportedTransaction {
@@ -167,6 +178,8 @@ pub struct ImportedTransaction {
     pub category_name: Option<String>,
     /// Matched database category identifier, if any.
     pub category_id: Option<i64>,
+    /// Matched database subcategory identifier, if any.
+    pub subcategory_id: Option<i64>,
 }
 
 /// A keyword-to-category rule.
@@ -176,6 +189,8 @@ pub struct KeywordCategory {
     pub keyword: String,
     /// Database identifier of the matching category.
     pub category_id: i64,
+    /// Database identifier of the matching subcategory, if the rule has one.
+    pub subcategory_id: Option<i64>,
 }
 
 /// A transaction input to financial summary calculations.
@@ -189,4 +204,6 @@ pub struct FinancialTransaction {
     pub description: Option<String>,
     /// Database category identifier, or `None` when uncategorized.
     pub category_id: Option<i64>,
+    /// Database subcategory identifier, or `None` for general activity.
+    pub subcategory_id: Option<i64>,
 }

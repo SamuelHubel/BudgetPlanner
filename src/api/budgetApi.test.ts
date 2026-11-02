@@ -21,6 +21,12 @@ describe("budgetApi IPC contract", () => {
     await budgetApi.lock();
     await budgetApi.resetVault();
     await budgetApi.listCategories();
+    await budgetApi.listSubcategories();
+    await budgetApi.getCategorySettings();
+    await budgetApi.updateCategorySettings({
+      useSubcategoriesOnImport: false,
+      showSubcategoryCharts: true,
+    });
     await budgetApi.previewImport("csv", "bank.csv", "mdy", "decimalComma");
     await budgetApi.commitImport("bank.csv", [
       {
@@ -28,6 +34,7 @@ describe("budgetApi IPC contract", () => {
         amountCents: -500,
         description: "Coffee",
         categoryId: null,
+        subcategoryId: null,
       },
     ]);
     await budgetApi.getFinancialSummary();
@@ -61,6 +68,17 @@ describe("budgetApi IPC contract", () => {
       ["lock"],
       ["reset_vault"],
       ["list_categories"],
+      ["list_subcategories"],
+      ["get_category_settings"],
+      [
+        "update_category_settings",
+        {
+          settings: {
+            useSubcategoriesOnImport: false,
+            showSubcategoryCharts: true,
+          },
+        },
+      ],
       [
         "preview_import",
         {
@@ -80,6 +98,7 @@ describe("budgetApi IPC contract", () => {
               amountCents: -500,
               description: "Coffee",
               categoryId: null,
+              subcategoryId: null,
             },
           ],
         },

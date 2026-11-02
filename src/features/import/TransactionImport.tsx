@@ -96,11 +96,35 @@ export default function TransactionImport({ api }: TransactionImportProps) {
       )}
       {flow.transactions.length > 0 && (
         <>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+            <label className="flex items-center gap-2 text-slate-300">
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-cyan-500"
+                checked={flow.useSubcategories}
+                disabled={!flow.canToggleSubcategories}
+                onChange={(event) =>
+                  void flow.toggleSubcategories(event.currentTarget.checked)
+                }
+              />
+              Use subcategories
+            </label>
+            {flow.needsCategoryCount > 0 && (
+              <p className="text-amber-300">
+                {flow.needsCategoryCount === 1
+                  ? "1 transaction needs a category"
+                  : `${flow.needsCategoryCount} transactions need a category`}
+              </p>
+            )}
+          </div>
           <ImportPreviewTable
             transactions={flow.transactions}
             categories={flow.categories}
+            subcategories={flow.subcategories}
+            useSubcategories={flow.useSubcategories}
             currency={flow.currency}
             onCategoryChange={flow.updateCategory}
+            onSubcategoryChange={flow.updateSubcategory}
           />
           <Button
             type="button"

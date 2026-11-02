@@ -6,6 +6,7 @@ import type {
   DateOrder,
   ImportPreviewRow,
   ImportRow,
+  Subcategory,
 } from "../../types";
 import { errorCode, toErrorMessage } from "../../shared/errors";
 import { useFinancialSummary } from "../home/useFinancialSummary";
@@ -25,6 +26,7 @@ export function useImportFlow(api: BudgetApiClient) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [transactions, setTransactions] = useState<ImportPreviewRow[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [fileName, setFileName] = useState("");
   const [csvText, setCsvText] = useState("");
   const [dateOrder, setDateOrder] = useState<DateOrder>("auto");
@@ -34,7 +36,12 @@ export function useImportFlow(api: BudgetApiClient) {
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { currency, refresh } = useFinancialSummary();
+  const { currency, refresh, categorySettings, updateCategorySettings } =
+    useFinancialSummary();
+  const useSubcategories = categorySettings?.useSubcategoriesOnImport ?? true;
+  const needsCategoryCount = transactions.filter(
+    ({ categoryId, isDuplicate }) => categoryId === null && !isDuplicate,
+  ).length;
 
   /**
    * Parses the statement with the given choices. A file can need both a date
@@ -50,12 +57,15 @@ export function useImportFlow(api: BudgetApiClient) {
     setError("");
     setIsLoading(true);
     try {
-      const [preview, availableCategories] = await Promise.all([
-        api.previewImport(contents, name, order, format),
-        api.listCategories(),
-      ]);
+      const [preview, availableCategories, availableSubcategories] =
+        await Promise.all([
+          api.previewImport(contents, name, order, format),
+          api.listCategories(),
+          api.listSubcategories(),
+        ]);
       setTransactions(preview);
       setCategories(availableCategories);
+      setSubcategories(availableSubcategories);
       setNeedsDateOrder(false);
       setNeedsAmountFormat(false);
     } catch (caughtError) {
@@ -108,10 +118,30 @@ export function useImportFlow(api: BudgetApiClient) {
     setTransactions((current) =>
       current.map((transaction, transactionIndex) =>
         transactionIndex === index
-          ? { ...transaction, categoryId }
+          ? { ...transaction, categoryId, subcategoryId: null }
           : transaction,
       ),
     );
+  };
+
+  const updateSubcategory = (index: number, value: string) => {
+    const subcategoryId = value ? Number(value) : null;
+    setTransactions((current) =>
+      current.map((transaction, transactionIndex) =>
+        transactionIndex === index
+          ? { ...transaction, subcategoryId }
+          : transaction,
+      ),
+    );
+  };
+
+  const toggleSubcategories = async (useSubcategoriesOnImport: boolean) => {
+    setError("");
+    try {
+      await updateCategorySettings({ useSubcategoriesOnImport });
+    } catch (caughtError) {
+      setError(toErrorMessage(caughtError, "Unable to save this setting."));
+    }
   };
 
   const confirmImport = async () => {
@@ -120,11 +150,12 @@ export function useImportFlow(api: BudgetApiClient) {
     setIsLoading(true);
     try {
       const rows: ImportRow[] = transactions.map(
-        ({ date, amountCents, description, categoryId }) => ({
+        ({ date, amountCents, description, categoryId, subcategoryId }) => ({
           date,
           amountCents,
           description,
           categoryId,
+          subcategoryId: useSubcategories ? subcategoryId : null,
         }),
       );
       const result = await api.commitImport(fileName, rows);
@@ -151,6 +182,10 @@ export function useImportFlow(api: BudgetApiClient) {
     inputRef,
     transactions,
     categories,
+    subcategories,
+    useSubcategories,
+    needsCategoryCount,
+    canToggleSubcategories: categorySettings !== null,
     dateOrder,
     needsDateOrder,
     amountFormat,
@@ -163,6 +198,8 @@ export function useImportFlow(api: BudgetApiClient) {
     handleDateOrder,
     handleAmountFormat,
     updateCategory,
+    updateSubcategory,
+    toggleSubcategories,
     confirmImport,
   };
 }

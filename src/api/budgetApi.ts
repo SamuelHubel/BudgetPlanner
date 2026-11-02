@@ -4,6 +4,7 @@ import type {
   Budget,
   BudgetMonth,
   Category,
+  CategorySettings,
   CommitImportResult,
   DateOrder,
   FinancialSummary,
@@ -11,6 +12,7 @@ import type {
   GoalInput,
   ImportPreviewRow,
   ImportRow,
+  Subcategory,
 } from "../types";
 
 /** Operations available to frontend features through the Tauri backend. */
@@ -27,6 +29,12 @@ export interface BudgetApiClient {
   resetVault(): Promise<void>;
   /** Lists transaction categories available for imports. */
   listCategories(): Promise<Category[]>;
+  /** Lists subcategories available for imports. */
+  listSubcategories(): Promise<Subcategory[]>;
+  /** Reads the remembered subcategory choices. */
+  getCategorySettings(): Promise<CategorySettings>;
+  /** Saves the subcategory choices and returns what was stored. */
+  updateCategorySettings(settings: CategorySettings): Promise<CategorySettings>;
   /** Parses a CSV statement into preview rows without committing them. */
   previewImport(
     csvText: string,
@@ -69,6 +77,10 @@ export const budgetApi: BudgetApiClient = {
   lock: () => invoke<void>("lock"),
   resetVault: () => invoke<void>("reset_vault"),
   listCategories: () => invoke<Category[]>("list_categories"),
+  listSubcategories: () => invoke<Subcategory[]>("list_subcategories"),
+  getCategorySettings: () => invoke<CategorySettings>("get_category_settings"),
+  updateCategorySettings: (settings) =>
+    invoke<CategorySettings>("update_category_settings", { settings }),
   previewImport: (
     csvText,
     fileName,

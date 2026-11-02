@@ -41,6 +41,7 @@ pub fn run() {
             commands::budget::save_budget,
             commands::budget::delete_budget,
             commands::categories::list_categories,
+            commands::categories::list_subcategories,
             commands::goals::list_goals,
             commands::goals::create_goal,
             commands::goals::update_goal,
@@ -49,6 +50,8 @@ pub fn run() {
             commands::import::commit_import,
             commands::summary::get_financial_summary,
             commands::settings::get_currency,
+            commands::settings::get_category_settings,
+            commands::settings::update_category_settings,
             commands::maintenance::reset_financial_data,
         ])
         .run(tauri::generate_context!())

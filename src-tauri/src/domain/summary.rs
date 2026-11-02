@@ -1,14 +1,30 @@
 use std::collections::HashMap;
 
-use super::{Category, CategoryType, FinancialTransaction, ImportError};
+use super::{Category, CategoryType, FinancialTransaction, ImportError, Subcategory};
 
 const TOP_SOURCES_LIMIT: usize = 5;
+
+/// Label for activity in a main category with no subcategory.
+pub const GENERAL_SUBCATEGORY_NAME: &str = "General";
 
 /// A total amount for one category.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CategoryTotal {
     /// Category represented by this total.
     pub category: Category,
+    /// Signed amount in integer cents.
+    pub amount_cents: i64,
+    /// Parts of the total, largest first. These add up to `amount_cents`.
+    pub subcategories: Vec<SubcategoryTotal>,
+}
+
+/// A share of a category total.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SubcategoryTotal {
+    /// Subcategory identifier, or `None` for the General share.
+    pub subcategory_id: Option<i64>,
+    /// User-facing subcategory name.
+    pub name: String,
     /// Signed amount in integer cents.
     pub amount_cents: i64,
 }
@@ -79,11 +95,16 @@ pub struct FinancialSummary {
 /// Aggregates transactions into all-time and monthly financial summaries.
 pub fn create_financial_summary(
     categories: &[Category],
+    subcategories: &[Subcategory],
     transactions: &[FinancialTransaction],
 ) -> Result<FinancialSummary, ImportError> {
     let category_by_id = categories
         .iter()
         .map(|category| (category.id, category))
+        .collect::<HashMap<_, _>>();
+    let subcategory_by_id = subcategories
+        .iter()
+        .map(|subcategory| (subcategory.id, subcategory))
         .collect::<HashMap<_, _>>();
     let mut by_month = std::collections::BTreeMap::<String, Vec<FinancialTransaction>>::new();
 
@@ -92,11 +113,21 @@ pub fn create_financial_summary(
         by_month.entry(month).or_default().push(transaction.clone());
     }
 
-    let breakdown = create_breakdown(categories, &category_by_id, transactions)?;
+    let breakdown = create_breakdown(
+        categories,
+        &category_by_id,
+        &subcategory_by_id,
+        transactions,
+    )?;
     let mut monthly_totals = Vec::with_capacity(by_month.len());
     let mut monthly_breakdowns = Vec::with_capacity(by_month.len());
     for (month, month_transactions) in by_month {
-        let month_breakdown = create_breakdown(categories, &category_by_id, &month_transactions)?;
+        let month_breakdown = create_breakdown(
+            categories,
+            &category_by_id,
+            &subcategory_by_id,
+            &month_transactions,
+        )?;
         let mut totals = MonthlyTotal {
             month: month.clone(),
             income_cents: month_breakdown.uncategorized_income_cents,
@@ -125,9 +156,11 @@ pub fn create_financial_summary(
 fn create_breakdown(
     categories: &[Category],
     category_by_id: &HashMap<i64, &Category>,
+    subcategory_by_id: &HashMap<i64, &Subcategory>,
     transactions: &[FinancialTransaction],
 ) -> Result<FinancialBreakdown, ImportError> {
     let mut category_totals = HashMap::<i64, i64>::new();
+    let mut subcategory_totals = HashMap::<(i64, Option<i64>), i64>::new();
     let mut income_sources = HashMap::<(i64, String), FinancialSource>::new();
     let mut expense_sources = HashMap::<(i64, String), FinancialSource>::new();
     let mut uncategorized_cents = 0_i64;
@@ -166,6 +199,13 @@ fn create_breakdown(
         }
         let total = category_totals.entry(category.id).or_default();
         *total = checked_sum(*total, contribution)?;
+        let subcategory_id = transaction
+            .subcategory_id
+            .filter(|id| subcategory_by_id.contains_key(id));
+        let subcategory_total = subcategory_totals
+            .entry((category.id, subcategory_id))
+            .or_default();
+        *subcategory_total = checked_sum(*subcategory_total, contribution)?;
 
         let Some(description) = transaction
             .description
@@ -205,6 +245,11 @@ fn create_breakdown(
                     .map(|amount_cents| CategoryTotal {
                         category: category.clone(),
                         amount_cents: *amount_cents,
+                        subcategories: subcategory_shares(
+                            category.id,
+                            &subcategory_totals,
+                            subcategory_by_id,
+                        ),
                     })
             })
             .collect::<Vec<_>>()
@@ -219,6 +264,32 @@ fn create_breakdown(
         uncategorized_income_cents,
         uncategorized_expenses_cents,
     })
+}
+
+fn subcategory_shares(
+    category_id: i64,
+    totals: &HashMap<(i64, Option<i64>), i64>,
+    subcategory_by_id: &HashMap<i64, &Subcategory>,
+) -> Vec<SubcategoryTotal> {
+    let mut shares = totals
+        .iter()
+        .filter(|((category, _), amount_cents)| *category == category_id && **amount_cents != 0)
+        .map(|((_, subcategory_id), amount_cents)| SubcategoryTotal {
+            subcategory_id: *subcategory_id,
+            name: subcategory_id
+                .and_then(|id| subcategory_by_id.get(&id))
+                .map_or(GENERAL_SUBCATEGORY_NAME, |subcategory| &subcategory.name)
+                .to_owned(),
+            amount_cents: *amount_cents,
+        })
+        .collect::<Vec<_>>();
+    shares.sort_by(|first, second| {
+        second
+            .amount_cents
+            .cmp(&first.amount_cents)
+            .then_with(|| first.name.cmp(&second.name))
+    });
+    shares
 }
 
 fn largest_sources(sources: HashMap<(i64, String), FinancialSource>) -> Vec<FinancialSource> {
@@ -276,13 +347,63 @@ mod tests {
             amount_cents,
             description: Some(description.to_owned()),
             category_id,
+            subcategory_id: None,
         }
+    }
+
+    #[test]
+    fn splits_a_category_total_into_subcategories_and_general() {
+        let subcategories = [
+            Subcategory {
+                id: 20,
+                category_id: 2,
+                name: "Produce".into(),
+            },
+            Subcategory {
+                id: 21,
+                category_id: 2,
+                name: "Bakery".into(),
+            },
+        ];
+        let tagged = |subcategory_id, amount_cents, description| FinancialTransaction {
+            subcategory_id: Some(subcategory_id),
+            ..transaction("2026-01-01", Some(2), amount_cents, description)
+        };
+
+        let summary = create_financial_summary(
+            &categories(),
+            &subcategories,
+            &[
+                tagged(20, -3_000, "Farm stand"),
+                tagged(20, 500, "Farm refund"),
+                tagged(21, -4_000, "Loaf"),
+                transaction("2026-01-02", Some(2), -1_000, "Old import"),
+                tagged(99, -200, "Removed subcategory"),
+            ],
+        )
+        .unwrap();
+
+        let total = &summary.breakdown.expenses[0];
+        assert_eq!(total.amount_cents, 7_700);
+        assert_eq!(
+            total
+                .subcategories
+                .iter()
+                .map(|share| (share.subcategory_id, &*share.name, share.amount_cents))
+                .collect::<Vec<_>>(),
+            [
+                (Some(21), "Bakery", 4_000),
+                (Some(20), "Produce", 2_500),
+                (None, GENERAL_SUBCATEGORY_NAME, 1_200),
+            ]
+        );
     }
 
     #[test]
     fn aggregates_signed_income_expenses_refunds_and_sources() {
         let summary = create_financial_summary(
             &categories(),
+            &[],
             &[
                 transaction("2026-01-01", Some(1), 250_000, "Acme Payroll"),
                 transaction("2026-01-02", Some(1), 250_000, "ACME PAYROLL"),
@@ -323,6 +444,7 @@ mod tests {
     fn retains_uncategorized_totals_and_months_without_dropping_transactions() {
         let summary = create_financial_summary(
             &categories(),
+            &[],
             &[
                 transaction("2026-02-01", None, -2_000, "Unknown purchase"),
                 transaction("2026-03-01", Some(99), -1_000, "Deleted category"),
@@ -354,6 +476,7 @@ mod tests {
     fn splits_uncategorized_income_and_expense_for_chart_breakdowns() {
         let summary = create_financial_summary(
             &categories(),
+            &[],
             &[
                 transaction("2026-02-01", None, 500, "Unknown income"),
                 transaction("2026-02-01", None, -1_500, "Unknown expense"),
@@ -370,6 +493,7 @@ mod tests {
     fn monthly_totals_add_uncategorized_activity_to_categorized_totals() {
         let summary = create_financial_summary(
             &categories(),
+            &[],
             &[
                 transaction("2026-02-01", Some(1), 100_000, "Payroll"),
                 transaction("2026-02-02", None, 500, "Unknown income"),
@@ -393,6 +517,7 @@ mod tests {
     fn rejects_overflow_in_summaries() {
         let error = create_financial_summary(
             &categories(),
+            &[],
             &[
                 transaction("2026-01-01", Some(1), i64::MAX, "First"),
                 transaction("2026-01-02", Some(1), 1, "Second"),

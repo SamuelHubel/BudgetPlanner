@@ -1,11 +1,15 @@
 use std::collections::HashMap;
 
 use chrono::{NaiveDate, Utc};
+use rusqlite::OptionalExtension;
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
 use crate::{
-    commands::{categories::load_domain_categories, connection},
+    commands::{
+        categories::{load_domain_categories, load_domain_subcategories},
+        connection,
+    },
     domain::{
         categorize::categorize_transactions,
         csv_import::{parse_bank_csv, CsvImportOptions, MAX_TRANSACTION_ROWS},
@@ -31,6 +35,8 @@ pub struct ImportPreviewRow {
     pub description: String,
     /// Matched or selected category identifier.
     pub category_id: Option<i64>,
+    /// Matched or selected subcategory identifier.
+    pub subcategory_id: Option<i64>,
     /// Category label supplied in the source statement, if any.
     pub statement_category_name: Option<String>,
     /// Whether an equivalent transaction already exists.
@@ -49,6 +55,8 @@ pub struct ImportRow {
     pub description: String,
     /// Selected category identifier, or `None` for uncategorized.
     pub category_id: Option<i64>,
+    /// Selected subcategory identifier, or `None` for the main category only.
+    pub subcategory_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -92,6 +100,7 @@ fn preview_import_from(
     let date_order = parse_date_order(date_order)?;
     let amount_locale = parse_amount_format(amount_format)?;
     let categories = load_domain_categories(connection)?;
+    let subcategories = load_domain_subcategories(connection)?;
     let rules = load_keyword_categories(connection)?;
     let parsed = parse_bank_csv(
         csv_text,
@@ -100,7 +109,7 @@ fn preview_import_from(
             date_order,
         },
     )?;
-    let categorized = categorize_transactions(&parsed, &categories, &rules)?;
+    let categorized = categorize_transactions(&parsed, &categories, &subcategories, &rules)?;
     let mut occurrences = HashMap::<(String, i64, String), u32>::new();
     let mut existing_hash =
         connection.prepare("SELECT 1 FROM transactions WHERE dedupe_hash = ?1 LIMIT 1")?;
@@ -127,6 +136,7 @@ fn preview_import_from(
                 amount_cents: transaction.amount_cents,
                 description: transaction.description,
                 category_id: transaction.category_id,
+                subcategory_id: transaction.subcategory_id,
                 statement_category_name: transaction.category_name,
                 is_duplicate,
             })
@@ -185,10 +195,12 @@ fn commit_import_in_connection(
         let hash = dedupe_hash(&row.date, row.amount_cents, &row.description, occurrence);
         inserted += transaction.execute(
             "INSERT OR IGNORE INTO transactions
-             (category_id, amount_cents, description, date, source, import_batch_id, dedupe_hash)
-             VALUES (?1, ?2, ?3, ?4, 'imported', ?5, ?6)",
+             (category_id, subcategory_id, amount_cents, description, date, source,
+              import_batch_id, dedupe_hash)
+             VALUES (?1, ?2, ?3, ?4, ?5, 'imported', ?6, ?7)",
             (
                 row.category_id,
+                row.subcategory_id,
                 row.amount_cents,
                 row.description.trim(),
                 &row.date,
@@ -252,13 +264,15 @@ fn parse_amount_format(value: Option<&str>) -> Result<Option<AmountLocaleHint>, 
 fn load_keyword_categories(
     connection: &rusqlite::Connection,
 ) -> Result<Vec<KeywordCategory>, AppError> {
-    let mut statement =
-        connection.prepare("SELECT keyword, category_id FROM keyword_category_map ORDER BY id")?;
+    let mut statement = connection.prepare(
+        "SELECT keyword, category_id, subcategory_id FROM keyword_category_map ORDER BY id",
+    )?;
     let categories = statement
         .query_map([], |row| {
             Ok(KeywordCategory {
                 keyword: row.get(0)?,
                 category_id: row.get(1)?,
+                subcategory_id: row.get(2)?,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;
@@ -268,6 +282,8 @@ fn load_keyword_categories(
 fn validate_rows(connection: &rusqlite::Connection, rows: &[ImportRow]) -> Result<(), AppError> {
     let mut category_exists =
         connection.prepare("SELECT 1 FROM categories WHERE id = ?1 LIMIT 1")?;
+    let mut subcategory_parent =
+        connection.prepare("SELECT category_id FROM subcategories WHERE id = ?1")?;
     for row in rows {
         super::validate_safe_cents(row.amount_cents)?;
         let date = NaiveDate::parse_from_str(&row.date, "%Y-%m-%d")
@@ -292,6 +308,16 @@ fn validate_rows(connection: &rusqlite::Connection, rows: &[ImportRow]) -> Resul
             if !category_exists.exists([category_id])? {
                 return Err(AppError::InvalidInput(format!(
                     "category {category_id} does not exist"
+                )));
+            }
+        }
+        if let Some(subcategory_id) = row.subcategory_id {
+            let parent = subcategory_parent
+                .query_row([subcategory_id], |parent| parent.get::<_, i64>(0))
+                .optional()?;
+            if parent.is_none() || parent != row.category_id {
+                return Err(AppError::InvalidInput(format!(
+                    "subcategory {subcategory_id} does not belong to the selected category"
                 )));
             }
         }
@@ -344,6 +370,7 @@ mod tests {
             amount_cents: -500,
             description: "Coffee".into(),
             category_id: Some(i64::MAX),
+            subcategory_id: None,
         }];
         assert!(validate_rows(&connection, &invalid_category).is_err());
         let unsafe_amount = [ImportRow {
@@ -351,6 +378,7 @@ mod tests {
             amount_cents: 9_007_199_254_740_992,
             description: "Coffee".into(),
             category_id: None,
+            subcategory_id: None,
         }];
         assert!(validate_rows(&connection, &unsafe_amount).is_err());
         let invalid_date = [ImportRow {
@@ -358,8 +386,74 @@ mod tests {
             amount_cents: -500,
             description: "Coffee".into(),
             category_id: None,
+            subcategory_id: None,
         }];
         assert!(validate_rows(&connection, &invalid_date).is_err());
+    }
+
+    fn seeded_subcategory(connection: &rusqlite::Connection, name: &str) -> (i64, i64) {
+        connection
+            .query_row(
+                "SELECT category_id, id FROM subcategories WHERE name = ?1",
+                [name],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .unwrap()
+    }
+
+    #[test]
+    fn rejects_a_subcategory_outside_the_row_category() {
+        let connection = test_connection();
+        let (_, coffee) = seeded_subcategory(&connection, "Coffee");
+        let (gas_category, _) = seeded_subcategory(&connection, "Gas");
+        let row = |category_id| ImportRow {
+            date: "2026-01-01".into(),
+            amount_cents: -500,
+            description: "Coffee".into(),
+            category_id,
+            subcategory_id: Some(coffee),
+        };
+
+        assert!(validate_rows(&connection, &[row(Some(gas_category))]).is_err());
+        assert!(validate_rows(&connection, &[row(None)]).is_err());
+    }
+
+    #[test]
+    fn the_seeded_library_categorizes_a_preview_and_commit_stores_the_subcategory() {
+        let mut connection = test_connection();
+        let (dining, coffee) = seeded_subcategory(&connection, "Coffee");
+        let csv = "Date,Description,Amount\n2026-01-01,STARBUCKS #123,-5.00";
+
+        let preview = preview_import_from(&connection, csv, "statement.csv", None, None).unwrap();
+        assert_eq!(preview[0].category_id, Some(dining));
+        assert_eq!(preview[0].subcategory_id, Some(coffee));
+
+        let rows = [ImportRow {
+            date: preview[0].date.clone(),
+            amount_cents: preview[0].amount_cents,
+            description: preview[0].description.clone(),
+            category_id: preview[0].category_id,
+            subcategory_id: preview[0].subcategory_id,
+        }];
+        commit_import_in_connection(&mut connection, "statement.csv", &rows).unwrap();
+
+        let stored: Option<i64> = connection
+            .query_row("SELECT subcategory_id FROM transactions", [], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        assert_eq!(stored, Some(coffee));
+    }
+
+    #[test]
+    fn longest_keyword_routes_rental_cars_away_from_housing() {
+        let connection = test_connection();
+        let (_, car_rental) = seeded_subcategory(&connection, "Car Rental");
+        let csv = "Date,Description,Amount\n2026-01-01,ACME RENT A CAR,-90.00";
+
+        let preview = preview_import_from(&connection, csv, "statement.csv", None, None).unwrap();
+
+        assert_eq!(preview[0].subcategory_id, Some(car_rental));
     }
 
     #[test]
@@ -371,6 +465,7 @@ mod tests {
             amount_cents: -500,
             description: "Coffee".into(),
             category_id: Some(categories[0].id),
+            subcategory_id: None,
         }];
 
         let first = commit_import_in_connection(&mut connection, "statement.csv", &rows).unwrap();
@@ -407,6 +502,7 @@ mod tests {
                 amount_cents: row.amount_cents,
                 description: row.description.clone(),
                 category_id: row.category_id,
+                subcategory_id: row.subcategory_id,
             })
             .collect::<Vec<_>>();
         commit_import_in_connection(&mut connection, "statement.csv", &rows).unwrap();
@@ -467,12 +563,14 @@ mod tests {
                 amount_cents: -500,
                 description: "Okay".into(),
                 category_id: None,
+                subcategory_id: None,
             },
             ImportRow {
                 date: "2026-01-02".into(),
                 amount_cents: -100,
                 description: "Fail".into(),
                 category_id: None,
+                subcategory_id: None,
             },
         ];
 
@@ -501,6 +599,7 @@ mod tests {
             amount_cents: -500,
             description: "Coffee".into(),
             category_id: Some(2),
+            subcategory_id: Some(7),
             statement_category_name: Some("Dining Out".into()),
             is_duplicate: true,
         })
@@ -513,6 +612,7 @@ mod tests {
 
         assert_eq!(preview["amountCents"], -500);
         assert_eq!(preview["categoryId"], 2);
+        assert_eq!(preview["subcategoryId"], 7);
         assert_eq!(preview["statementCategoryName"], "Dining Out");
         assert!(preview["isDuplicate"].as_bool().unwrap());
         assert_eq!(commit["skippedDuplicates"], 2);

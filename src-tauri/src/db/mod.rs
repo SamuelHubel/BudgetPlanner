@@ -14,6 +14,8 @@ const MIGRATIONS: &[(i64, &str)] = &[
         include_str!("../../migrations/0004_currency_setting.sql"),
     ),
     (5, include_str!("../../migrations/0005_budgets.sql")),
+    (6, include_str!("../../migrations/0006_subcategories.sql")),
+    (7, include_str!("../../migrations/0007_keyword_library.sql")),
 ];
 
 /// Applies any pending numbered database migrations.
@@ -70,7 +72,7 @@ pub(crate) fn migrated_connection() -> Connection {
 mod tests {
     use rusqlite::Connection;
 
-    use super::run_migrations;
+    use super::{migrated_connection, run_migrations, MIGRATIONS};
 
     #[test]
     fn runs_migrations_in_order_and_is_idempotent() {
@@ -110,9 +112,9 @@ mod tests {
             .unwrap()
             .collect::<Result<Vec<_>, _>>()
             .unwrap();
-        assert_eq!(version, 5);
-        assert_eq!(category_count, 11);
-        assert!(rule_count > 0);
+        assert_eq!(version, 7);
+        assert_eq!(category_count, 18);
+        assert!(rule_count > 300);
         assert!(!has_app_lock);
         for expected in [
             "categories",
@@ -124,6 +126,7 @@ mod tests {
             "settings",
             "budgets",
             "budget_allocations",
+            "subcategories",
         ] {
             assert!(tables.iter().any(|table| table == expected));
         }
@@ -135,6 +138,163 @@ mod tests {
             )
             .unwrap();
         assert_eq!(currency, "USD");
+    }
+
+    fn subcategory_id(connection: &Connection, category: &str, name: &str) -> i64 {
+        connection
+            .query_row(
+                "SELECT s.id FROM subcategories s
+                 JOIN categories c ON c.id = s.category_id
+                 WHERE c.name = ?1 AND s.name = ?2",
+                [category, name],
+                |row| row.get(0),
+            )
+            .unwrap()
+    }
+
+    fn category_id(connection: &Connection, name: &str) -> i64 {
+        connection
+            .query_row("SELECT id FROM categories WHERE name = ?1", [name], |row| {
+                row.get(0)
+            })
+            .unwrap()
+    }
+
+    #[test]
+    fn upgrading_a_version_5_database_keeps_transactions_on_their_main_category() {
+        let mut connection = Connection::open_in_memory().unwrap();
+        connection
+            .pragma_update(None, "foreign_keys", "ON")
+            .unwrap();
+        for (version, sql) in MIGRATIONS.iter().filter(|(version, _)| *version <= 5) {
+            connection.execute_batch(sql).unwrap();
+            connection
+                .pragma_update(None, "user_version", version)
+                .unwrap();
+        }
+        connection
+            .execute(
+                "INSERT INTO transactions (category_id, amount_cents, date)
+                 SELECT id, -500, '2026-01-01' FROM categories WHERE name = 'Groceries'",
+                [],
+            )
+            .unwrap();
+
+        run_migrations(&mut connection).unwrap();
+
+        let (category, subcategory): (i64, Option<i64>) = connection
+            .query_row(
+                "SELECT category_id, subcategory_id FROM transactions",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(category, category_id(&connection, "Groceries"));
+        assert_eq!(subcategory, None);
+    }
+
+    #[test]
+    fn seeded_rules_point_at_subcategories_of_their_own_category() {
+        let connection = migrated_connection();
+
+        let mismatched: i64 = connection
+            .query_row(
+                "SELECT COUNT(*) FROM keyword_category_map k
+                 JOIN subcategories s ON s.id = k.subcategory_id
+                 WHERE s.category_id <> k.category_id",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        let (category, subcategory): (i64, Option<i64>) = connection
+            .query_row(
+                "SELECT category_id, subcategory_id FROM keyword_category_map
+                 WHERE keyword = 'starbucks'",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(mismatched, 0);
+        assert_eq!(category, category_id(&connection, "Dining Out"));
+        assert_eq!(
+            subcategory,
+            Some(subcategory_id(&connection, "Dining Out", "Coffee"))
+        );
+    }
+
+    #[test]
+    fn every_main_category_except_other_has_subcategories() {
+        let connection = migrated_connection();
+
+        let missing = connection
+            .prepare(
+                "SELECT name FROM categories c
+                 WHERE NOT EXISTS (SELECT 1 FROM subcategories s WHERE s.category_id = c.id)",
+            )
+            .unwrap()
+            .query_map([], |row| row.get::<_, String>(0))
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+
+        assert_eq!(missing, ["Other"]);
+    }
+
+    #[test]
+    fn rejects_a_subcategory_from_another_category() {
+        let connection = migrated_connection();
+        let coffee = subcategory_id(&connection, "Dining Out", "Coffee");
+        let housing = category_id(&connection, "Housing");
+
+        let insert = connection.execute(
+            "INSERT INTO transactions (category_id, subcategory_id, amount_cents, date)
+             VALUES (?1, ?2, -100, '2026-01-01')",
+            [housing, coffee],
+        );
+        connection
+            .execute(
+                "INSERT INTO transactions (category_id, amount_cents, date)
+                 VALUES (?1, -100, '2026-01-01')",
+                [housing],
+            )
+            .unwrap();
+        let update = connection.execute("UPDATE transactions SET subcategory_id = ?1", [coffee]);
+        let rule = connection.execute(
+            "INSERT INTO keyword_category_map (keyword, category_id, subcategory_id)
+             VALUES ('mismatched rule', ?1, ?2)",
+            [housing, coffee],
+        );
+
+        assert!(insert.is_err());
+        assert!(update.is_err());
+        assert!(rule.is_err());
+    }
+
+    #[test]
+    fn deleting_a_category_clears_both_ids_on_its_transactions() {
+        let connection = migrated_connection();
+        let dining = category_id(&connection, "Dining Out");
+        let coffee = subcategory_id(&connection, "Dining Out", "Coffee");
+        connection
+            .execute(
+                "INSERT INTO transactions (category_id, subcategory_id, amount_cents, date)
+                 VALUES (?1, ?2, -100, '2026-01-01')",
+                [dining, coffee],
+            )
+            .unwrap();
+
+        connection
+            .execute("DELETE FROM categories WHERE id = ?1", [dining])
+            .unwrap();
+
+        let ids: (Option<i64>, Option<i64>) = connection
+            .query_row(
+                "SELECT category_id, subcategory_id FROM transactions",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(ids, (None, None));
     }
 
     #[test]

@@ -238,6 +238,7 @@ fn parse_record(
             .filter(|value| !value.is_empty())
             .map(str::to_owned),
         category_id: None,
+        subcategory_id: None,
     })
 }
 

@@ -8,7 +8,7 @@ import {
 } from "react";
 import type { BudgetApiClient } from "../../api/budgetApi";
 import { toErrorMessage } from "../../shared/errors";
-import type { FinancialSummary } from "../../types";
+import type { CategorySettings, FinancialSummary } from "../../types";
 
 /** Financial summary values and refresh operations for dashboard features. */
 export type FinancialSummaryState = {
@@ -17,6 +17,10 @@ export type FinancialSummaryState = {
   error: string;
   isLoading: boolean;
   refresh: () => void;
+  /** Remembered subcategory choices, or `null` until first loaded. */
+  categorySettings: CategorySettings | null;
+  /** Saves changed choices, restoring the previous ones and rethrowing on failure. */
+  updateCategorySettings: (changes: Partial<CategorySettings>) => Promise<void>;
 };
 
 /** Context carrying financial summary state to nested dashboard features. */
@@ -36,6 +40,8 @@ export function FinancialSummaryProvider({
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [requestVersion, setRequestVersion] = useState(0);
+  const [categorySettings, setCategorySettings] =
+    useState<CategorySettings | null>(null);
 
   const refresh = useCallback(() => {
     setRequestVersion((version) => version + 1);
@@ -45,11 +51,16 @@ export function FinancialSummaryProvider({
     let isCurrent = true;
     setIsLoading(true);
     setError("");
-    void Promise.all([api.getFinancialSummary(), api.getCurrency()])
-      .then(([nextSummary, nextCurrency]) => {
+    void Promise.all([
+      api.getFinancialSummary(),
+      api.getCurrency(),
+      api.getCategorySettings(),
+    ])
+      .then(([nextSummary, nextCurrency, nextSettings]) => {
         if (!isCurrent) return;
         setSummary(nextSummary);
         setCurrency(nextCurrency);
+        setCategorySettings(nextSettings);
       })
       .catch((caughtError: unknown) => {
         if (isCurrent) {
@@ -67,9 +78,40 @@ export function FinancialSummaryProvider({
     };
   }, [api, requestVersion]);
 
+  const updateCategorySettings = useCallback(
+    async (changes: Partial<CategorySettings>) => {
+      if (!categorySettings) return;
+      const next = { ...categorySettings, ...changes };
+      setCategorySettings(next);
+      try {
+        setCategorySettings(await api.updateCategorySettings(next));
+      } catch (caughtError) {
+        setCategorySettings(categorySettings);
+        throw caughtError;
+      }
+    },
+    [api, categorySettings],
+  );
+
   const value = useMemo(
-    () => ({ summary, currency, error, isLoading, refresh }),
-    [summary, currency, error, isLoading, refresh],
+    () => ({
+      summary,
+      currency,
+      error,
+      isLoading,
+      refresh,
+      categorySettings,
+      updateCategorySettings,
+    }),
+    [
+      summary,
+      currency,
+      error,
+      isLoading,
+      refresh,
+      categorySettings,
+      updateCategorySettings,
+    ],
   );
   return (
     <FinancialSummaryContext.Provider value={value}>
