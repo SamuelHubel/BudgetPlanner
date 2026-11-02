@@ -54,6 +54,12 @@ function createApi(
       monthlyTotals: [],
       monthlyBreakdowns: [],
     }),
+    listSubcategories: async () => [],
+    getCategorySettings: async () => ({
+      useSubcategoriesOnImport: true,
+      showSubcategoryCharts: true,
+    }),
+    updateCategorySettings: async (settings) => settings,
     getCurrency: async () => "USD",
     resetFinancialData: async () => {
       goals = [];

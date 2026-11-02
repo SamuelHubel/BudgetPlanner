@@ -12,12 +12,30 @@ export type Category = {
   color: string | null;
 };
 
+/** A second-level category under one main category. */
+export type Subcategory = {
+  id: number;
+  categoryId: number;
+  name: string;
+  color: string | null;
+};
+
+/** Remembered choices for how subcategories are assigned and displayed. */
+export type CategorySettings = {
+  /** Whether the import screen assigns subcategories. */
+  useSubcategoriesOnImport: boolean;
+  /** Whether selecting a main category opens its subcategory donut. */
+  showSubcategoryCharts: boolean;
+};
+
 /** A transaction row sent to the import commit API. */
 export type ImportRow = {
   date: string;
   amountCents: number;
   description: string;
   categoryId: number | null;
+  /** Subcategory of `categoryId`, or `null` for the main category only. */
+  subcategoryId: number | null;
 };
 
 /** A parsed import row with preview-only metadata. */
@@ -34,10 +52,21 @@ export type FinancialSource = {
   amountCents: number;
 };
 
+/** One share of a category total. */
+export type SubcategoryTotal = {
+  /** Subcategory identifier, or `null` for the General share. */
+  subcategoryId: number | null;
+  name: string;
+  color: string | null;
+  amountCents: number;
+};
+
 /** A category amount in a financial breakdown. */
 export type CategoryTotal = {
   category: Category;
   amountCents: number;
+  /** Parts of the total, largest first. */
+  subcategories: SubcategoryTotal[];
 };
 
 /** Aggregate amounts for categorized and uncategorized activity. */

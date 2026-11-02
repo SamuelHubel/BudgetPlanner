@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { BudgetApiClient } from "../../api/budgetApi";
+import type { CategorySettings } from "../../types";
 
 import HomeTab from "./HomeTab";
 import { FinancialSummaryProvider } from "./FinancialSummaryContext";
@@ -28,10 +29,10 @@ const housing = {
 const emptySources = { largestIncomeSources: [], largestExpenses: [] };
 const summary = {
   breakdown: {
-    income: [{ category: salary, amountCents: 250000 }],
+    income: [{ category: salary, amountCents: 250000, subcategories: [] }],
     expenses: [
-      { category: groceries, amountCents: 7500 },
-      { category: housing, amountCents: 90000 },
+      { category: groceries, amountCents: 7500, subcategories: [] },
+      { category: housing, amountCents: 90000, subcategories: [] },
     ],
     ...emptySources,
     uncategorizedCents: 0,
@@ -54,8 +55,10 @@ const summary = {
     {
       month: "2026-01",
       breakdown: {
-        income: [{ category: salary, amountCents: 250000 }],
-        expenses: [{ category: groceries, amountCents: 7500 }],
+        income: [{ category: salary, amountCents: 250000, subcategories: [] }],
+        expenses: [
+          { category: groceries, amountCents: 7500, subcategories: [] },
+        ],
         ...emptySources,
         uncategorizedCents: 0,
         uncategorizedIncomeCents: 0,
@@ -66,7 +69,9 @@ const summary = {
       month: "2026-02",
       breakdown: {
         income: [],
-        expenses: [{ category: housing, amountCents: 90000 }],
+        expenses: [
+          { category: housing, amountCents: 90000, subcategories: [] },
+        ],
         ...emptySources,
         uncategorizedCents: 0,
         uncategorizedIncomeCents: 0,
@@ -85,6 +90,12 @@ const api: BudgetApiClient = {
   previewImport: async () => [],
   commitImport: async () => ({ inserted: 0, skippedDuplicates: 0 }),
   getFinancialSummary: vi.fn(async () => summary),
+  listSubcategories: async () => [],
+  getCategorySettings: async () => ({
+    useSubcategoriesOnImport: true,
+    showSubcategoryCharts: true,
+  }),
+  updateCategorySettings: async (settings) => settings,
   getCurrency: vi.fn(async () => "USD"),
   resetFinancialData: async () => {},
   listGoals: async () => [],
@@ -128,14 +139,14 @@ describe("financial summary state", () => {
       ...summary,
       breakdown: {
         ...summary.breakdown,
-        income: [{ category: salary, amountCents: 100 }],
+        income: [{ category: salary, amountCents: 100, subcategories: [] }],
       },
     };
     const refreshedSummary = {
       ...summary,
       breakdown: {
         ...summary.breakdown,
-        income: [{ category: salary, amountCents: 200 }],
+        income: [{ category: salary, amountCents: 200, subcategories: [] }],
       },
     };
     const refreshApi: BudgetApiClient = {
@@ -155,6 +166,189 @@ describe("financial summary state", () => {
     expect(await screen.findByText("100")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Refresh summary" }));
     expect(await screen.findByText("200")).toBeInTheDocument();
+  });
+});
+
+describe("HomeTab subcategory drill-down", () => {
+  const dining = {
+    id: 4,
+    name: "Dining Out",
+    type: "expense" as const,
+    color: "#f97316",
+  };
+  const diningTotal = {
+    category: dining,
+    amountCents: 4000,
+    subcategories: [
+      {
+        subcategoryId: 40,
+        name: "Coffee",
+        color: null,
+        amountCents: 3000,
+      },
+      {
+        subcategoryId: null,
+        name: "General",
+        color: null,
+        amountCents: 1000,
+      },
+    ],
+  };
+  const groceriesGeneralOnly = {
+    category: groceries,
+    amountCents: 7500,
+    subcategories: [
+      {
+        subcategoryId: null,
+        name: "General",
+        color: null,
+        amountCents: 7500,
+      },
+    ],
+  };
+  const empty = {
+    income: [],
+    ...emptySources,
+    uncategorizedCents: 0,
+    uncategorizedIncomeCents: 0,
+    uncategorizedExpensesCents: 0,
+  };
+  const drillSummary = {
+    breakdown: { ...empty, expenses: [diningTotal, groceriesGeneralOnly] },
+    monthlyTotals: [],
+    monthlyBreakdowns: [
+      {
+        month: "2026-01",
+        breakdown: {
+          ...empty,
+          expenses: [diningTotal, groceriesGeneralOnly],
+        },
+      },
+      {
+        month: "2026-02",
+        breakdown: { ...empty, expenses: [groceriesGeneralOnly] },
+      },
+    ],
+  };
+
+  function renderHome(overrides: Partial<BudgetApiClient> = {}) {
+    const drillApi: BudgetApiClient = {
+      ...api,
+      getFinancialSummary: async () => drillSummary,
+      ...overrides,
+    };
+    render(
+      <FinancialSummaryProvider api={drillApi}>
+        <HomeTab api={drillApi} />
+      </FinancialSummaryProvider>,
+    );
+  }
+
+  async function openDiningOut(user: ReturnType<typeof userEvent.setup>) {
+    await screen.findByRole("heading", { name: "Expenses" });
+    await user.click(screen.getByRole("button", { name: "January 2026" }));
+    await user.click(screen.getByRole("button", { name: /^Dining Out:/ }));
+  }
+
+  it("swaps the donut to subcategories and back", async () => {
+    const user = userEvent.setup();
+    renderHome();
+
+    await openDiningOut(user);
+
+    expect(
+      screen.getByRole("heading", { name: "Dining Out" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /^Coffee:/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /^General:/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /^Groceries:/ }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Back to Expenses" }));
+
+    expect(
+      screen.getByRole("heading", { name: "Expenses" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /^Groceries:/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps the highlight behavior for a category with only General activity", async () => {
+    const user = userEvent.setup();
+    renderHome();
+    await screen.findByRole("heading", { name: "Expenses" });
+
+    const groceriesButton = screen.getByRole("button", {
+      name: /^Groceries:/,
+    });
+    await user.click(groceriesButton);
+
+    expect(groceriesButton).toHaveAttribute("aria-pressed", "true");
+    expect(
+      screen.queryByRole("button", { name: /^Back to/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("returns to the main donut when the month has no such category", async () => {
+    const user = userEvent.setup();
+    renderHome();
+    await openDiningOut(user);
+
+    await user.click(screen.getByRole("button", { name: "February 2026" }));
+
+    expect(
+      screen.getByRole("heading", { name: "Expenses" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /^Back to/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("persists the switch and stops drilling in when it is off", async () => {
+    const user = userEvent.setup();
+    const updateCategorySettings = vi.fn(
+      async (settings: CategorySettings) => settings,
+    );
+    renderHome({ updateCategorySettings });
+    await screen.findByRole("heading", { name: "Expenses" });
+    await user.click(screen.getByRole("button", { name: "January 2026" }));
+
+    await user.click(
+      screen.getByRole("checkbox", { name: "Show subcategory charts" }),
+    );
+    await user.click(screen.getByRole("button", { name: /^Dining Out:/ }));
+
+    expect(updateCategorySettings).toHaveBeenCalledWith({
+      useSubcategoriesOnImport: true,
+      showSubcategoryCharts: false,
+    });
+    expect(
+      screen.getByRole("heading", { name: "Expenses" }),
+    ).toBeInTheDocument();
+  });
+
+  it("restores the switch and reports the failure when saving it fails", async () => {
+    const user = userEvent.setup();
+    renderHome({
+      updateCategorySettings: async () => {
+        throw new Error("disk full");
+      },
+    });
+    await screen.findByRole("heading", { name: "Expenses" });
+    const toggle = screen.getByRole("checkbox", {
+      name: "Show subcategory charts",
+    });
+
+    await user.click(toggle);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("disk full");
+    expect(toggle).toBeChecked();
   });
 });
 

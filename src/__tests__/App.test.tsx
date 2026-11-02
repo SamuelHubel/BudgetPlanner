@@ -7,7 +7,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { Budget } from "../types";
+import type { Budget, CategorySettings } from "../types";
 import {
   invalidTestPassword,
   mismatchedTestPassword,
@@ -37,6 +37,14 @@ const { api } = vi.hoisted(() => ({
       monthlyTotals: [],
       monthlyBreakdowns: [],
     })),
+    listSubcategories: async () => [],
+    getCategorySettings: async () => ({
+      useSubcategoriesOnImport: true,
+      showSubcategoryCharts: true,
+    }),
+    updateCategorySettings: vi.fn(
+      async (settings: CategorySettings) => settings,
+    ),
     getCurrency: vi.fn(async () => "USD"),
     resetFinancialData: vi.fn(async () => {}),
     listGoals: vi.fn(async () => []),
