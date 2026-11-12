@@ -70,11 +70,12 @@ pub fn parse_amount_to_cents(
             if !three_fraction_digits {
                 Some(*separator)
             } else {
+                // "1.234" or "1,234" may be a decimal or a thousands group; a
+                // leading "0" cannot start a thousands group.
                 match locale_hint {
-                    None if *separator == '.' => Some(*separator),
-                    None if *separator == ','
-                        && *index > 0
+                    None if *index > 0
                         && *index <= 3
+                        && !value.starts_with('0')
                         && value[..*index]
                             .chars()
                             .all(|character| character.is_ascii_digit()) =>
@@ -200,8 +201,9 @@ mod tests {
     fn parses_common_currency_and_rounding_forms() {
         assert_eq!(parse_amount_to_cents("$1,234.56", None), Ok(123_456));
         assert_eq!(parse_amount_to_cents("(€12.34)", None), Ok(-1_234));
-        assert_eq!(parse_amount_to_cents("£1.005", None), Ok(101));
-        assert_eq!(parse_amount_to_cents("-1.005", None), Ok(-101));
+        let dot = Some(AmountLocaleHint::DecimalDot);
+        assert_eq!(parse_amount_to_cents("£1.005", dot), Ok(101));
+        assert_eq!(parse_amount_to_cents("-1.005", dot), Ok(-101));
         assert_eq!(parse_amount_to_cents("-$57.28", None), Ok(-5_728));
         assert_eq!(parse_amount_to_cents("0.004", None), Ok(0));
     }
@@ -239,6 +241,12 @@ mod tests {
             parse_amount_to_cents("1,234", None),
             Err(ImportError::AmbiguousAmount(_))
         ));
+        // A dot is as ambiguous as a comma: "2.500" is 2,500 in comma-decimal files.
+        assert!(matches!(
+            parse_amount_to_cents("2.500", None),
+            Err(ImportError::AmbiguousAmount(_))
+        ));
+        assert_eq!(parse_amount_to_cents("0,500", None), Ok(50));
     }
 
     #[test]
