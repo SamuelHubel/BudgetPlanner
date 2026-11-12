@@ -525,6 +525,19 @@ mod tests {
     }
 
     #[test]
+    fn compact_and_two_digit_year_dates_preview_in_this_century() {
+        let connection = test_connection();
+        for csv in [
+            "Date,Description,Amount\n20260105,Coffee,-5.00",
+            "Date,Description,Amount\n01/05/26,Coffee,-5.00\n01/13/26,Tea,-3.00",
+        ] {
+            let preview =
+                preview_import_from(&connection, csv, "statement.csv", None, None).unwrap();
+            assert_eq!(preview[0].date, "2026-01-05", "{csv}");
+        }
+    }
+
+    #[test]
     fn rejects_an_unknown_amount_format() {
         assert!(parse_amount_format(Some("unexpected")).is_err());
         assert!(matches!(parse_amount_format(Some("auto")), Ok(None)));

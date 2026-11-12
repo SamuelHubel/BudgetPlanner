@@ -1,4 +1,4 @@
-use chrono::NaiveDate;
+use chrono::{Datelike, NaiveDate};
 
 use super::{DateOrder, ImportError};
 
@@ -46,6 +46,15 @@ pub fn detect_date_order<'a>(
 /// Parses a supported date string using the requested order.
 pub fn parse_date(value: &str, order: DateOrder) -> Result<NaiveDate, ImportError> {
     let value = value.trim();
+    let date = parse_numeric_or_named_date(value, order)?;
+    // chrono's `%Y` accepts 1-4 digits, so a short year must never be stored as 00yy.
+    if date.year() < 1000 {
+        return Err(ImportError::InvalidDate(value.to_owned()));
+    }
+    Ok(date)
+}
+
+fn parse_numeric_or_named_date(value: &str, order: DateOrder) -> Result<NaiveDate, ImportError> {
     if let Some(date) = parse_unambiguous_date(value) {
         return Ok(date);
     }
@@ -68,8 +77,17 @@ pub fn parse_date(value: &str, order: DateOrder) -> Result<NaiveDate, ImportErro
 }
 
 fn parse_unambiguous_date(value: &str) -> Option<NaiveDate> {
-    NaiveDate::parse_from_str(value, "%Y-%m-%d")
-        .ok()
+    // "26-01-05" could be YY-MM-DD or DD-MM-YY, so ISO needs a 4-digit year.
+    let four_digit_iso_year = value.split('-').next().is_some_and(|year| year.len() == 4);
+    let compact = value.len() == 8 && value.bytes().all(|byte| byte.is_ascii_digit());
+    four_digit_iso_year
+        .then(|| NaiveDate::parse_from_str(value, "%Y-%m-%d").ok())
+        .flatten()
+        .or_else(|| {
+            compact
+                .then(|| NaiveDate::parse_from_str(value, "%Y%m%d").ok())
+                .flatten()
+        })
         .or_else(|| NaiveDate::parse_from_str(value, "%b %d, %Y").ok())
         .or_else(|| NaiveDate::parse_from_str(value, "%B %d, %Y").ok())
 }
@@ -83,10 +101,17 @@ fn numeric_date_parts_with_year(value: &str) -> Option<(u32, u32, i32)> {
     let mut parts = value.split('/');
     let first = parts.next()?.parse::<u32>().ok()?;
     let second = parts.next()?.parse::<u32>().ok()?;
-    let year = parts.next()?.parse::<i32>().ok()?;
-    if parts.next().is_some() || !(1..=9999).contains(&year) {
+    let year_text = parts.next()?;
+    let year = year_text.parse::<i32>().ok()?;
+    if parts.next().is_some() || !year_text.bytes().all(|byte| byte.is_ascii_digit()) {
         return None;
     }
+    let year = match year_text.len() {
+        // shortcut: two-digit years are read as 20yy; bank exports do not reach before 2000.
+        2 => 2000 + year,
+        4 => year,
+        _ => return None,
+    };
     Some((first, second, year))
 }
 
@@ -102,6 +127,22 @@ mod tests {
         assert_eq!(parse_date("March 15, 2025", DateOrder::Auto), Ok(expected));
         assert_eq!(parse_date("03/15/2025", DateOrder::Mdy), Ok(expected));
         assert_eq!(parse_date("15/03/2025", DateOrder::Dmy), Ok(expected));
+        assert_eq!(parse_date("20250315", DateOrder::Auto), Ok(expected));
+        assert_eq!(parse_date("03/15/25", DateOrder::Mdy), Ok(expected));
+        assert_eq!(detect_date_order(["15/03/25"]), Ok(DateOrder::Dmy));
+    }
+
+    #[test]
+    fn short_years_are_never_stored_as_the_first_century() {
+        for value in ["25-03-15", "Mar 15, 25", "3/15/025", "03/15/0025"] {
+            assert!(
+                matches!(
+                    parse_date(value, DateOrder::Mdy),
+                    Err(ImportError::InvalidDate(_))
+                ),
+                "{value}"
+            );
+        }
     }
 
     #[test]
