@@ -57,5 +57,7 @@ jobs:
         with:
           workspaces: src-tauri
       - run: npm ci
-      - run: npm run tauri build -- --no-bundle
+      # Debug, so cargo test reuses these dependencies (OpenSSL and SQLCipher
+      # compile from C source) instead of building them again.
+      - run: npm run tauri build -- --debug --no-bundle
       - run: cargo test --manifest-path src-tauri/Cargo.toml
