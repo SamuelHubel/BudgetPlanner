@@ -13,7 +13,7 @@ use crate::{
     domain::{
         categorize::categorize_transactions,
         csv_import::{parse_bank_csv, CsvImportOptions, MAX_TRANSACTION_ROWS},
-        hash::dedupe_hash,
+        hash::{dedupe_hash, normalize_description},
         AmountLocaleHint, DateOrder, KeywordCategory,
     },
     error::AppError,
@@ -334,11 +334,7 @@ fn next_occurrence(
     let key = (
         date.to_owned(),
         amount_cents,
-        description
-            .split_whitespace()
-            .collect::<Vec<_>>()
-            .join(" ")
-            .to_lowercase(),
+        normalize_description(description),
     );
     let occurrence = occurrences.entry(key).or_default();
     let current = *occurrence;
@@ -526,6 +522,19 @@ mod tests {
         };
         assert_eq!(preview("decimalDot")[0].amount_cents, 123_400);
         assert_eq!(preview("decimalComma")[0].amount_cents, 123);
+    }
+
+    #[test]
+    fn compact_and_two_digit_year_dates_preview_in_this_century() {
+        let connection = test_connection();
+        for csv in [
+            "Date,Description,Amount\n20260105,Coffee,-5.00",
+            "Date,Description,Amount\n01/05/26,Coffee,-5.00\n01/13/26,Tea,-3.00",
+        ] {
+            let preview =
+                preview_import_from(&connection, csv, "statement.csv", None, None).unwrap();
+            assert_eq!(preview[0].date, "2026-01-05", "{csv}");
+        }
     }
 
     #[test]

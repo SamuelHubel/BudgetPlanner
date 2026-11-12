@@ -22,7 +22,8 @@ fn hash_field(hasher: &mut Sha256, value: &[u8]) {
     hasher.update(value);
 }
 
-fn normalize_description(description: &str) -> String {
+/// Collapses whitespace and lowercases text so cosmetic differences compare equal.
+pub(crate) fn normalize_description(description: &str) -> String {
     description
         .split_whitespace()
         .collect::<Vec<_>>()

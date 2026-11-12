@@ -38,6 +38,7 @@ pub fn parse_bank_csv(
 
     let mut rows = Vec::<(u64, StringRecord)>::new();
     let mut record = StringRecord::new();
+    let mut cursor = (0, 1);
     loop {
         match reader.read_record(&mut record) {
             Ok(false) => break,
@@ -47,7 +48,7 @@ pub fn parse_bank_csv(
                     .position()
                     .map_or_else(|| reader.position().byte(), |position| position.byte());
                 return Err(ImportError::CsvRow {
-                    line: source_record_line(contents.as_bytes(), byte),
+                    line: source_record_line(contents.as_bytes(), byte, &mut cursor),
                     message: error.to_string(),
                 });
             }
@@ -56,7 +57,7 @@ pub fn parse_bank_csv(
             continue;
         }
         let byte = record.position().map_or(0, |position| position.byte());
-        let line = source_record_line(contents.as_bytes(), byte);
+        let line = source_record_line(contents.as_bytes(), byte, &mut cursor);
         rows.push((line, record.clone()));
     }
 
@@ -257,12 +258,13 @@ fn row_error(line: u64, error: ImportError) -> ImportError {
     }
 }
 
-fn source_line(contents: &[u8], byte: u64) -> u64 {
+/// Counts lines up to `byte`, resuming from `cursor` (a byte and its line) when
+/// it is not past `byte`, so reading records in order scans the file only once.
+fn source_line(contents: &[u8], byte: u64, cursor: &mut (usize, u64)) -> u64 {
     let end = usize::try_from(byte)
         .unwrap_or(contents.len())
         .min(contents.len());
-    let mut line = 1;
-    let mut index = 0;
+    let (mut index, mut line) = if cursor.0 <= end { *cursor } else { (0, 1) };
     while index < end {
         match contents[index] {
             b'\r' => {
@@ -276,14 +278,15 @@ fn source_line(contents: &[u8], byte: u64) -> u64 {
         }
         index += 1;
     }
+    *cursor = (index, line);
     line
 }
 
-fn source_record_line(contents: &[u8], byte: u64) -> u64 {
+fn source_record_line(contents: &[u8], byte: u64, cursor: &mut (usize, u64)) -> u64 {
     let mut index = usize::try_from(byte)
         .unwrap_or(contents.len())
         .min(contents.len());
-    let mut line = source_line(contents, byte);
+    let mut line = source_line(contents, byte, cursor);
     while index < contents.len() {
         let line_end = contents[index..]
             .iter()
@@ -324,7 +327,7 @@ fn detect_delimiter(contents: &str) -> Result<u8, ImportError> {
                 Err(error) => {
                     let byte = error.position().map_or(0, |position| position.byte());
                     first_error.get_or_insert((
-                        source_record_line(contents.as_bytes(), byte),
+                        source_record_line(contents.as_bytes(), byte, &mut (0, 1)),
                         error.to_string(),
                     ));
                     break;
