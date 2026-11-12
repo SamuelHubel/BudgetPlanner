@@ -2,7 +2,10 @@ use std::collections::HashMap;
 
 use regex::RegexSetBuilder;
 
-use super::{Category, ImportError, ImportedTransaction, KeywordCategory, Subcategory};
+use super::{
+    hash::normalize_description, Category, ImportError, ImportedTransaction, KeywordCategory,
+    Subcategory,
+};
 
 /// Compiled size allowance for the keyword set. Each whole-word pattern carries
 /// Unicode character classes, so the seeded library exceeds the default limit.
@@ -25,7 +28,7 @@ pub fn categorize_transactions(
         .collect::<HashMap<_, _>>();
     let categories_by_name = categories
         .iter()
-        .map(|category| (normalize_category_name(&category.name), category))
+        .map(|category| (normalize_description(&category.name), category))
         .collect::<HashMap<_, _>>();
     let subcategories_by_name = unique_subcategories_by_name(subcategories, &categories_by_id);
 
@@ -55,7 +58,7 @@ pub fn categorize_transactions(
             let label = transaction
                 .category_name
                 .as_deref()
-                .map(normalize_category_name);
+                .map(normalize_description);
             // The class in the pattern is lowercase-only, so match on lowercase.
             let matches = keyword_set.matches(&transaction.description.to_lowercase());
             let matched_rules = matches.iter().map(|index| rules[index]);
@@ -103,7 +106,7 @@ fn unique_subcategories_by_name<'a>(
         .filter(|subcategory| categories_by_id.contains_key(&subcategory.category_id))
     {
         by_name
-            .entry(normalize_category_name(&subcategory.name))
+            .entry(normalize_description(&subcategory.name))
             .and_modify(|entry| *entry = None)
             .or_insert(Some(subcategory));
     }
@@ -114,13 +117,6 @@ fn longest_rule<'a>(
     rules: impl Iterator<Item = &'a KeywordCategory>,
 ) -> Option<&'a KeywordCategory> {
     rules.max_by_key(|rule| rule.keyword.chars().count())
-}
-
-fn normalize_category_name(name: &str) -> String {
-    name.split_whitespace()
-        .collect::<Vec<_>>()
-        .join(" ")
-        .to_lowercase()
 }
 
 #[cfg(test)]

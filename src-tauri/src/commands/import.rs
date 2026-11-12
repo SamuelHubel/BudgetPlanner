@@ -13,7 +13,7 @@ use crate::{
     domain::{
         categorize::categorize_transactions,
         csv_import::{parse_bank_csv, CsvImportOptions, MAX_TRANSACTION_ROWS},
-        hash::dedupe_hash,
+        hash::{dedupe_hash, normalize_description},
         AmountLocaleHint, DateOrder, KeywordCategory,
     },
     error::AppError,
@@ -334,11 +334,7 @@ fn next_occurrence(
     let key = (
         date.to_owned(),
         amount_cents,
-        description
-            .split_whitespace()
-            .collect::<Vec<_>>()
-            .join(" ")
-            .to_lowercase(),
+        normalize_description(description),
     );
     let occurrence = occurrences.entry(key).or_default();
     let current = *occurrence;
