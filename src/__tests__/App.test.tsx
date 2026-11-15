@@ -7,7 +7,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { Budget, CategorySettings } from "../types";
+import type { Budget, CategorySettings, UnlockMethod } from "../types";
 import {
   invalidTestPassword,
   mismatchedTestPassword,
@@ -20,6 +20,10 @@ const { api } = vi.hoisted(() => ({
     createPassword: vi.fn(async () => {}),
     unlock: vi.fn(async () => {}),
     lock: vi.fn(async () => {}),
+    unlockMethod: vi.fn(async (): Promise<UnlockMethod> => "password"),
+    createDeviceVault: vi.fn(async () => {}),
+    unlockWithDevice: vi.fn(async () => {}),
+    switchToDeviceUnlock: vi.fn(async () => {}),
     resetVault: vi.fn(async () => {}),
     listCategories: vi.fn(async () => []),
     previewImport: vi.fn(async () => []),
@@ -156,6 +160,72 @@ describe("App", () => {
     await waitFor(async () => {
       expect(api.unlock).toHaveBeenCalledTimes(1);
       expect(api.unlock).toHaveBeenCalledWith(testPassword);
+      expect(screen.getByText(/your budget dashboard/i)).toBeInTheDocument();
+    });
+  });
+
+  it("unlocks with Windows Hello without asking for a password", async () => {
+    const user = userEvent.setup();
+    api.unlockMethod.mockResolvedValueOnce("device");
+    render(<App />);
+
+    await user.click(
+      await screen.findByRole("button", { name: /unlock with windows hello/i }),
+    );
+
+    await waitFor(() => {
+      expect(api.unlockWithDevice).toHaveBeenCalledTimes(1);
+      expect(screen.getByText(/your budget dashboard/i)).toBeInTheDocument();
+    });
+    expect(screen.queryByLabelText(/password/i)).not.toBeInTheDocument();
+    expect(api.unlock).not.toHaveBeenCalled();
+  });
+
+  it("sets up Windows Hello on first run", async () => {
+    const user = userEvent.setup();
+    api.isInitialized.mockResolvedValueOnce(false);
+    api.unlockMethod.mockResolvedValueOnce("device");
+    render(<App />);
+
+    await user.click(
+      await screen.findByRole("button", { name: /set up windows hello/i }),
+    );
+
+    await waitFor(() => {
+      expect(api.createDeviceVault).toHaveBeenCalledTimes(1);
+      expect(screen.getByText(/your budget dashboard/i)).toBeInTheDocument();
+    });
+    expect(api.createPassword).not.toHaveBeenCalled();
+  });
+
+  it("keeps the lock screen when the Windows Hello prompt is cancelled", async () => {
+    const user = userEvent.setup();
+    api.unlockMethod.mockResolvedValueOnce("device");
+    api.unlockWithDevice.mockRejectedValueOnce({
+      code: "other",
+      message: "unlock was cancelled",
+    });
+    render(<App />);
+
+    await user.click(
+      await screen.findByRole("button", { name: /unlock with windows hello/i }),
+    );
+
+    expect(await screen.findByText("unlock was cancelled")).toBeInTheDocument();
+    expect(screen.getByText(/unlock your budget vault/i)).toBeInTheDocument();
+  });
+
+  it("switches a password vault to Windows Hello after unlocking", async () => {
+    const user = userEvent.setup();
+    api.unlockMethod.mockResolvedValueOnce("migrate");
+    render(<App />);
+
+    await user.type(await screen.findByLabelText(/password/i), testPassword);
+    await user.click(screen.getByRole("button", { name: /unlock/i }));
+
+    await waitFor(() => {
+      expect(api.unlock).toHaveBeenCalledWith(testPassword);
+      expect(api.switchToDeviceUnlock).toHaveBeenCalledTimes(1);
       expect(screen.getByText(/your budget dashboard/i)).toBeInTheDocument();
     });
   });

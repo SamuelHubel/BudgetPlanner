@@ -37,6 +37,10 @@ function createApi(
     unlock: async () => {},
     lock: async () => {},
     resetVault: async () => {},
+    unlockMethod: async () => "password",
+    createDeviceVault: async () => {},
+    unlockWithDevice: async () => {},
+    switchToDeviceUnlock: async () => {},
     listCategories: async () => [
       { id: 1, name: "Groceries", type: "expense", color: "#22c55e" },
       { id: 2, name: "Dining Out", type: "expense", color: "#f97316" },
