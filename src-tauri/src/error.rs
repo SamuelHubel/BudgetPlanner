@@ -32,6 +32,8 @@ pub enum AppError {
     ApplicationPath(String),
     /// The user dismissed the device sign-in prompt.
     #[error("unlock was cancelled")]
+    // Only the Windows Hello code builds this variant.
+    #[cfg_attr(not(windows), allow(dead_code))]
     DeviceUnlockCancelled,
     /// The device credential is gone or no longer matches the database.
     #[error("this device's sign-in key no longer opens the budget data; it was probably removed when Windows Hello was reset. The data cannot be recovered")]
