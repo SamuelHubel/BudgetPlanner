@@ -13,6 +13,7 @@ import type {
   ImportPreviewRow,
   ImportRow,
   Subcategory,
+  UnlockMethod,
 } from "../types";
 
 /** Operations available to frontend features through the Tauri backend. */
@@ -25,6 +26,14 @@ export interface BudgetApiClient {
   unlock(password: string): Promise<void>;
   /** Closes the active database connection. */
   lock(): Promise<void>;
+  /** Reports whether the lock screen uses the device sign-in or a password. */
+  unlockMethod(): Promise<UnlockMethod>;
+  /** Creates the encrypted database with a key held by the device sign-in. */
+  createDeviceVault(): Promise<void>;
+  /** Opens the encrypted database after the device sign-in prompt. */
+  unlockWithDevice(): Promise<void>;
+  /** Moves the unlocked password database to device unlock. */
+  switchToDeviceUnlock(): Promise<void>;
   /** Permanently erases all budget data so a new password can be created. */
   resetVault(): Promise<void>;
   /** Lists transaction categories available for imports. */
@@ -75,6 +84,10 @@ export const budgetApi: BudgetApiClient = {
   createPassword: (password) => invoke<void>("create_password", { password }),
   unlock: (password) => invoke<void>("unlock", { password }),
   lock: () => invoke<void>("lock"),
+  unlockMethod: () => invoke<UnlockMethod>("unlock_method"),
+  createDeviceVault: () => invoke<void>("create_device_vault"),
+  unlockWithDevice: () => invoke<void>("unlock_with_device"),
+  switchToDeviceUnlock: () => invoke<void>("switch_to_device_unlock"),
   resetVault: () => invoke<void>("reset_vault"),
   listCategories: () => invoke<Category[]>("list_categories"),
   listSubcategories: () => invoke<Subcategory[]>("list_subcategories"),

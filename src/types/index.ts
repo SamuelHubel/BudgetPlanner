@@ -4,6 +4,12 @@ export const TABS = ["home", "budget", "goals", "ai"] as const;
 /** A dashboard tab identifier. */
 export type TabName = (typeof TABS)[number];
 
+/**
+ * How the lock screen opens the vault: the device sign-in (Windows Hello), a
+ * password, or a password vault that switches to the device once opened.
+ */
+export type UnlockMethod = "device" | "password" | "migrate";
+
 /** A transaction category returned by the budget API. */
 export type Category = {
   id: number;

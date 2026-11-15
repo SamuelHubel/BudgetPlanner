@@ -6,13 +6,17 @@ use std::{
 
 use argon2::{Algorithm, Argon2, Params, Version};
 use rusqlite::{Connection, ErrorCode};
+use serde::Serialize;
 use tauri::{AppHandle, Manager, State};
 use zeroize::Zeroizing;
 
+use super::device_key;
 use crate::{db::run_migrations, error::AppError, state::AppState, APP_DIRECTORY_NAME};
 
 const DATABASE_FILE: &str = "budget.db";
 const SALT_FILE: &str = "kdf.salt";
+/// Empty file marking a database keyed by the device sign-in, not a password.
+const DEVICE_MARKER_FILE: &str = "device.unlock";
 const SALT_LENGTH: usize = 16;
 const KEY_LENGTH: usize = 32;
 const ARGON2_MEMORY_KIB: u32 = 64 * 1024;
@@ -43,18 +47,48 @@ fn is_initialized_in(data_dir: &Path) -> Result<bool, AppError> {
     let (database_path, salt_path) = paths(data_dir);
     let has_database = file_exists(&database_path)?;
     let has_salt = file_exists(&salt_path)?;
+    let has_marker = file_exists(&data_dir.join(DEVICE_MARKER_FILE))?;
 
-    match (has_database, has_salt) {
+    match (has_database, has_salt || has_marker) {
         (_, false) => Ok(false),
         (true, true) => {
-            read_salt(&salt_path)?;
+            if has_salt {
+                read_salt(&salt_path)?;
+            }
             Ok(true)
         }
         (false, true) => Err(AppError::InvalidInput(
-            "encryption salt exists but the encrypted database is missing; the data cannot be recovered"
+            "encryption key files exist but the encrypted database is missing; the data cannot be recovered"
                 .to_owned(),
         )),
     }
+}
+
+/// How the lock screen opens (or creates) the database.
+#[derive(Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum UnlockMethod {
+    /// The device sign-in (Windows Hello) holds the key.
+    Device,
+    /// The key is derived from the app password.
+    Password,
+    /// A password database that switches to device unlock once opened.
+    Migrate,
+}
+
+fn unlock_method_in(data_dir: &Path, device_supported: bool) -> Result<UnlockMethod, AppError> {
+    let (_, salt_path) = paths(data_dir);
+    Ok(if file_exists(&salt_path)? {
+        if device_supported {
+            UnlockMethod::Migrate
+        } else {
+            UnlockMethod::Password
+        }
+    } else if device_supported || file_exists(&data_dir.join(DEVICE_MARKER_FILE))? {
+        UnlockMethod::Device
+    } else {
+        UnlockMethod::Password
+    })
 }
 
 fn read_salt(path: &Path) -> Result<[u8; SALT_LENGTH], AppError> {
@@ -152,23 +186,35 @@ fn create_encrypted_database(data_dir: &Path, password: &str) -> Result<Connecti
         )));
     }
 
-    fs::create_dir_all(data_dir)?;
-    let (database_path, salt_path) = paths(data_dir);
-    if file_exists(&salt_path)? {
-        return Err(AppError::InvalidInput(
-            "a password has already been created for this database".to_owned(),
-        ));
-    }
-
     let mut salt = [0_u8; SALT_LENGTH];
     getrandom::fill(&mut salt).map_err(|error| AppError::Randomness(error.to_string()))?;
     let key = derive_key(password, &salt)?;
+    create_database_with_key(data_dir, &key, SALT_FILE, &salt)
+}
+
+/// Creates a database encrypted with `key`, then writes `marker` (the salt or
+/// the empty device marker) so the lock screen knows how to reopen it.
+fn create_database_with_key(
+    data_dir: &Path,
+    key: &[u8; KEY_LENGTH],
+    marker_file: &str,
+    marker: &[u8],
+) -> Result<Connection, AppError> {
+    fs::create_dir_all(data_dir)?;
+    if is_initialized_in(data_dir)? {
+        return Err(AppError::InvalidInput(
+            "the budget data has already been set up".to_owned(),
+        ));
+    }
+    let (database_path, _) = paths(data_dir);
+    let salt_path = data_dir.join(marker_file);
 
     let temporary_database_path = data_dir.join("budget.db.initializing");
-    let temporary_salt_path = data_dir.join(format!("kdf.salt.{}.initializing", hex::encode(salt)));
+    let temporary_salt_path = data_dir.join(format!("{marker_file}.initializing"));
+    remove_file_if_present(&temporary_salt_path)?;
     remove_sqlite_files(&temporary_database_path)?;
     let mut temporary_connection = Connection::open(&temporary_database_path)?;
-    set_database_key(&temporary_connection, &key)?;
+    set_database_key(&temporary_connection, key)?;
     temporary_connection.pragma_update(None, "foreign_keys", true)?;
     run_migrations(&mut temporary_connection)?;
     drop(temporary_connection);
@@ -178,7 +224,7 @@ fn create_encrypted_database(data_dir: &Path, password: &str) -> Result<Connecti
         .create_new(true)
         .open(&temporary_salt_path)?;
     if let Err(error) = salt_file
-        .write_all(&salt)
+        .write_all(marker)
         .and_then(|()| salt_file.sync_all())
     {
         drop(salt_file);
@@ -202,7 +248,51 @@ fn create_encrypted_database(data_dir: &Path, password: &str) -> Result<Connecti
         return Err(error);
     }
 
-    connect_with_key(&database_path, &key)
+    connect_with_key(&database_path, key)
+}
+
+fn open_device_database(data_dir: &Path, key: &[u8; KEY_LENGTH]) -> Result<Connection, AppError> {
+    let (database_path, salt_path) = paths(data_dir);
+    if !file_exists(&database_path)? {
+        return Err(AppError::InvalidInput(
+            "the encrypted database is missing; it cannot be recreated without the original data"
+                .to_owned(),
+        ));
+    }
+    let connection = connect_with_key(&database_path, key).map_err(|error| match error {
+        AppError::BadPassword => AppError::DeviceKeyMissing,
+        other => other,
+    })?;
+    // A leftover salt means a switch from the password stopped after re-keying.
+    remove_file_if_present(&salt_path)?;
+    Ok(connection)
+}
+
+/// Re-keys an open password database to the device key. The marker goes
+/// first and the salt last, so an interrupted switch leaves both files and
+/// `unlock` can still open the database under whichever key it ended up with.
+fn switch_to_device_in(
+    data_dir: &Path,
+    connection: &Connection,
+    key: &[u8; KEY_LENGTH],
+) -> Result<(), AppError> {
+    let marker_path = data_dir.join(DEVICE_MARKER_FILE);
+    fs::File::create(&marker_path)?.sync_all()?;
+    let encoded_key = Zeroizing::new(hex::encode(key));
+    let statement = Zeroizing::new(format!("PRAGMA rekey = \"x'{}'\";", *encoded_key));
+    if let Err(error) = connection.execute_batch(&statement) {
+        remove_file_if_present(&marker_path)?;
+        return Err(error.into());
+    }
+    remove_file_if_present(&paths(data_dir).1)
+}
+
+fn remove_file_if_present(path: &Path) -> Result<(), AppError> {
+    match fs::remove_file(path) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(error.into()),
+    }
 }
 
 /// Erases the encrypted database and salt. The salt goes last so an
@@ -210,11 +300,8 @@ fn create_encrypted_database(data_dir: &Path, password: &str) -> Result<Connecti
 fn reset_vault_in(data_dir: &Path) -> Result<(), AppError> {
     let (database_path, salt_path) = paths(data_dir);
     remove_sqlite_files(&database_path)?;
-    match fs::remove_file(salt_path) {
-        Ok(()) => Ok(()),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
-        Err(error) => Err(error.into()),
-    }
+    remove_file_if_present(&data_dir.join(DEVICE_MARKER_FILE))?;
+    remove_file_if_present(&salt_path)
 }
 
 fn drop_database_connection(state: &AppState) -> Result<(), AppError> {
@@ -263,9 +350,70 @@ pub fn unlock(
     if database.is_some() {
         return Ok(());
     }
-    let connection = open_encrypted_database(&app_data_directory(&app)?, &password)?;
+    let data_dir = app_data_directory(&app)?;
+    let connection = match open_encrypted_database(&data_dir, &password) {
+        // An interrupted switch may have re-keyed the database already.
+        Err(AppError::BadPassword) if file_exists(&data_dir.join(DEVICE_MARKER_FILE))? => {
+            device_key::load_key()
+                .and_then(|key| open_device_database(&data_dir, &key))
+                .map_err(|_| AppError::BadPassword)?
+        }
+        result => result?,
+    };
     *database = Some(connection);
     Ok(())
+}
+
+#[tauri::command(async)]
+/// Reports whether the lock screen should use the device sign-in or a password.
+pub fn unlock_method(app: AppHandle) -> Result<UnlockMethod, AppError> {
+    unlock_method_in(&app_data_directory(&app)?, device_key::is_supported())
+}
+
+#[tauri::command(async)]
+/// Creates the encrypted database with a key held by the device sign-in.
+pub fn create_device_vault(app: AppHandle, state: State<'_, AppState>) -> Result<(), AppError> {
+    let mut database = super::connection(&state)?;
+    let data_dir = app_data_directory(&app)?;
+    // Creating the credential replaces any old one, so check before prompting.
+    if database.is_some() || is_initialized_in(&data_dir)? {
+        return Err(AppError::InvalidInput(
+            "the budget data has already been set up".to_owned(),
+        ));
+    }
+    let key = device_key::create_key()?;
+    *database = Some(create_database_with_key(
+        &data_dir,
+        &key,
+        DEVICE_MARKER_FILE,
+        &[],
+    )?);
+    Ok(())
+}
+
+#[tauri::command(async)]
+/// Opens the encrypted database after the device sign-in prompt.
+pub fn unlock_with_device(app: AppHandle, state: State<'_, AppState>) -> Result<(), AppError> {
+    let mut database = super::connection(&state)?;
+    if database.is_some() {
+        return Ok(());
+    }
+    let key = device_key::load_key()?;
+    *database = Some(open_device_database(&app_data_directory(&app)?, &key)?);
+    Ok(())
+}
+
+#[tauri::command(async)]
+/// Moves an unlocked password database to device unlock and drops the password.
+pub fn switch_to_device_unlock(app: AppHandle, state: State<'_, AppState>) -> Result<(), AppError> {
+    let database = super::connection(&state)?;
+    let connection = database.as_ref().ok_or(AppError::Locked)?;
+    let data_dir = app_data_directory(&app)?;
+    if !file_exists(&paths(&data_dir).1)? {
+        return Ok(());
+    }
+    let key = device_key::create_key()?;
+    switch_to_device_in(&data_dir, connection, &key)
 }
 
 #[tauri::command(async)]
@@ -278,7 +426,10 @@ pub fn reset_vault(app: AppHandle, state: State<'_, AppState>) -> Result<(), App
             "lock the app before erasing its data".to_owned(),
         ));
     }
-    reset_vault_in(&app_data_directory(&app)?)
+    reset_vault_in(&app_data_directory(&app)?)?;
+    // Best effort: a leftover credential is harmless because setup replaces it.
+    let _ = device_key::delete_key();
+    Ok(())
 }
 
 #[tauri::command(async)]
@@ -298,8 +449,9 @@ mod tests {
     use rusqlite::Connection;
 
     use super::{
-        create_encrypted_database, is_initialized_in, key_error, open_encrypted_database,
-        reset_vault_in,
+        create_database_with_key, create_encrypted_database, is_initialized_in, key_error,
+        open_device_database, open_encrypted_database, reset_vault_in, switch_to_device_in,
+        unlock_method_in, UnlockMethod, DEVICE_MARKER_FILE,
     };
     use crate::{error::AppError, state::AppState};
 
@@ -449,6 +601,94 @@ mod tests {
     fn resetting_an_empty_directory_succeeds() {
         let directory = TestDirectory::new();
         reset_vault_in(&directory.0).unwrap();
+    }
+
+    const DEVICE_KEY: [u8; 32] = [7; 32];
+
+    #[test]
+    fn a_device_keyed_database_opens_only_with_its_key() {
+        let directory = TestDirectory::new();
+        assert_eq!(
+            unlock_method_in(&directory.0, true).unwrap(),
+            UnlockMethod::Device
+        );
+        drop(create_database_with_key(&directory.0, &DEVICE_KEY, DEVICE_MARKER_FILE, &[]).unwrap());
+
+        assert!(is_initialized_in(&directory.0).unwrap());
+        assert!(!directory.0.join("kdf.salt").exists());
+        // Even if device unlock later reports unsupported, a device vault stays one.
+        assert_eq!(
+            unlock_method_in(&directory.0, false).unwrap(),
+            UnlockMethod::Device
+        );
+        open_device_database(&directory.0, &DEVICE_KEY).unwrap();
+        assert!(matches!(
+            open_device_database(&directory.0, &[8; 32]),
+            Err(AppError::DeviceKeyMissing)
+        ));
+        assert!(
+            create_database_with_key(&directory.0, &DEVICE_KEY, DEVICE_MARKER_FILE, &[]).is_err()
+        );
+    }
+
+    #[test]
+    fn switching_re_keys_a_password_database_and_drops_the_password() {
+        let directory = TestDirectory::new();
+        let password = test_password("BUDGET_PLANNER_TEST_PASSWORD");
+        let connection = create_encrypted_database(&directory.0, password).unwrap();
+        connection
+            .execute_batch("CREATE TABLE kept (value TEXT); INSERT INTO kept VALUES ('mine');")
+            .unwrap();
+        assert_eq!(
+            unlock_method_in(&directory.0, true).unwrap(),
+            UnlockMethod::Migrate
+        );
+        assert_eq!(
+            unlock_method_in(&directory.0, false).unwrap(),
+            UnlockMethod::Password
+        );
+
+        switch_to_device_in(&directory.0, &connection, &DEVICE_KEY).unwrap();
+        drop(connection);
+
+        assert!(!directory.0.join("kdf.salt").exists());
+        assert_eq!(
+            unlock_method_in(&directory.0, true).unwrap(),
+            UnlockMethod::Device
+        );
+        let connection = open_device_database(&directory.0, &DEVICE_KEY).unwrap();
+        let value: String = connection
+            .query_row("SELECT value FROM kept", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(value, "mine");
+    }
+
+    #[test]
+    fn device_unlock_finishes_a_switch_interrupted_after_re_keying() {
+        let directory = TestDirectory::new();
+        let password = test_password("BUDGET_PLANNER_TEST_PASSWORD");
+        let connection = create_encrypted_database(&directory.0, password).unwrap();
+        let salt = fs::read(directory.0.join("kdf.salt")).unwrap();
+        switch_to_device_in(&directory.0, &connection, &DEVICE_KEY).unwrap();
+        drop(connection);
+        fs::write(directory.0.join("kdf.salt"), salt).unwrap();
+
+        assert!(matches!(
+            open_encrypted_database(&directory.0, password),
+            Err(AppError::BadPassword)
+        ));
+        open_device_database(&directory.0, &DEVICE_KEY).unwrap();
+        assert!(!directory.0.join("kdf.salt").exists());
+    }
+
+    #[test]
+    fn resetting_erases_a_device_vault() {
+        let directory = TestDirectory::new();
+        drop(create_database_with_key(&directory.0, &DEVICE_KEY, DEVICE_MARKER_FILE, &[]).unwrap());
+
+        reset_vault_in(&directory.0).unwrap();
+
+        assert_eq!(fs::read_dir(&directory.0).unwrap().count(), 0);
     }
 
     #[test]

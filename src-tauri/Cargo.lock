@@ -237,6 +237,7 @@ dependencies = [
  "tauri",
  "tauri-build",
  "thiserror 2.0.19",
+ "windows",
  "zeroize",
 ]
 
