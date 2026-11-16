@@ -45,12 +45,7 @@ export default function HomeTab() {
 
   return (
     <div className="space-y-4">
-      <div className="space-y-1">
-        <h3 className="text-xl font-semibold text-slate-900">Home</h3>
-        <p className="text-sm text-slate-500">
-          Your income and expenses, organized by category and month.
-        </p>
-      </div>
+      <h3 className="text-xl font-semibold text-slate-900">Home</h3>
       {error && <Alert>Unable to load financial data: {error}</Alert>}
       {isLoading && (
         <p className="py-3 text-sm text-slate-500" role="status">

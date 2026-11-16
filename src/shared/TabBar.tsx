@@ -11,7 +11,6 @@ const TAB_LABELS: Record<TabName, string> = {
   import: "Import",
   budget: "Budget",
   goals: "Goals",
-  ai: "AI",
 };
 
 /** Renders the dashboard's available section tabs. */

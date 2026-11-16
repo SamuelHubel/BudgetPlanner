@@ -27,17 +27,12 @@ export default function MonthList({
       className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4"
       aria-labelledby="tracked-months-title"
     >
-      <div>
-        <h4
-          className="mt-1 text-lg font-semibold text-slate-900"
-          id="tracked-months-title"
-        >
-          Tracked months
-        </h4>
-        <p className="mt-1 text-sm text-slate-500">
-          Select a month to view its income and expenses.
-        </p>
-      </div>
+      <h4
+        className="mt-1 text-lg font-semibold text-slate-900"
+        id="tracked-months-title"
+      >
+        Tracked months
+      </h4>
       {months.length > 0 ? (
         <ul className="flex flex-wrap gap-2">
           {[...months].reverse().map(({ month }) => (

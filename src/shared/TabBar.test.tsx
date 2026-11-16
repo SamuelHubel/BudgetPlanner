@@ -34,10 +34,10 @@ describe("TabBar", () => {
     expect(tab).toHaveAttribute("aria-selected", "true");
     expect(tab).toHaveAttribute("aria-controls", panel.id);
     expect(panel).toHaveAttribute("aria-labelledby", tab.id);
-    const aiTab = screen.getByRole("tab", { name: "AI" });
-    expect(aiTab).toHaveAttribute("aria-selected", "false");
+    const goalsTab = screen.getByRole("tab", { name: "Goals" });
+    expect(goalsTab).toHaveAttribute("aria-selected", "false");
     expect(
-      document.getElementById(aiTab.getAttribute("aria-controls") ?? ""),
+      document.getElementById(goalsTab.getAttribute("aria-controls") ?? ""),
     ).toBeInTheDocument();
   });
 
@@ -48,7 +48,6 @@ describe("TabBar", () => {
     const importTab = screen.getByRole("tab", { name: "Import" });
     const budgetTab = screen.getByRole("tab", { name: "Budget" });
     const goalsTab = screen.getByRole("tab", { name: "Goals" });
-    const aiTab = screen.getByRole("tab", { name: "AI" });
 
     homeTab.focus();
     await user.keyboard("{ArrowRight}");
@@ -64,18 +63,14 @@ describe("TabBar", () => {
     expect(goalsTab).toHaveAttribute("aria-selected", "true");
 
     await user.keyboard("{ArrowRight}");
-    expect(aiTab).toHaveFocus();
-    expect(aiTab).toHaveAttribute("aria-selected", "true");
-
-    await user.keyboard("{ArrowRight}");
     expect(homeTab).toHaveFocus();
     expect(homeTab).toHaveAttribute("aria-selected", "true");
 
     await user.keyboard("{ArrowLeft}");
-    expect(aiTab).toHaveFocus();
+    expect(goalsTab).toHaveFocus();
 
     await user.keyboard("{End}");
-    expect(aiTab).toHaveFocus();
+    expect(goalsTab).toHaveFocus();
     await user.keyboard("{Home}");
     expect(homeTab).toHaveFocus();
 

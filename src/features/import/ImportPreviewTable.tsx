@@ -77,7 +77,7 @@ export default function ImportPreviewTable({
                 </td>
                 <td className="border-t border-slate-200 px-3 py-2 text-slate-700">
                   <select
-                    className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-slate-800"
+                    className="select-capped rounded-lg border border-slate-300 bg-white px-2 py-1 text-slate-800"
                     aria-label={`Category for ${transaction.description}`}
                     value={transaction.categoryId ?? ""}
                     onChange={(event) =>
@@ -93,7 +93,7 @@ export default function ImportPreviewTable({
                   </select>
                   {useSubcategories && (
                     <select
-                      className="ml-2 rounded-lg border border-slate-300 bg-white px-2 py-1 text-slate-800 disabled:opacity-50"
+                      className="select-capped ml-2 rounded-lg border border-slate-300 bg-white px-2 py-1 text-slate-800 disabled:opacity-50"
                       aria-label={`Subcategory for ${transaction.description}`}
                       value={transaction.subcategoryId ?? ""}
                       disabled={rowSubcategories.length === 0}

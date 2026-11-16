@@ -6,9 +6,6 @@ import type { BudgetApiClient } from "../api/budgetApi";
 vi.mock("../features/home/HomeTab", () => ({
   default: () => <div>Home content</div>,
 }));
-vi.mock("../features/ai/AITab", () => ({
-  default: () => <div>AI content</div>,
-}));
 vi.mock("../features/import/TransactionImport", () => ({
   default: () => <div>Import content</div>,
 }));
@@ -93,7 +90,7 @@ describe("Dashboard reset action", () => {
     expect(
       screen.getByRole("tablist", { name: "Dashboard sections" }),
     ).toBeInTheDocument();
-    expect(tabs).toHaveLength(5);
+    expect(tabs).toHaveLength(4);
     for (const tab of tabs) {
       const panel = document.getElementById(
         tab.getAttribute("aria-controls") ?? "",

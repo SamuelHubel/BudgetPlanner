@@ -234,25 +234,6 @@ describe("App", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows the AI tab content after clicking the AI tab", async () => {
-    const user = userEvent.setup();
-    render(<App />);
-
-    await user.type(await screen.findByLabelText(/password/i), testPassword);
-    await user.click(screen.getByRole("button", { name: /unlock/i }));
-
-    await waitFor(() => {
-      expect(
-        screen.getByRole("tablist", { name: "Dashboard sections" }),
-      ).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByRole("tab", { name: /ai/i }));
-    expect(
-      screen.getByText(/ai features are coming soon/i),
-    ).toBeInTheDocument();
-  });
-
   it("locks the app and closes the database when locking again", async () => {
     const user = userEvent.setup();
     render(<App />);

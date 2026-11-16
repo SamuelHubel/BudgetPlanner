@@ -1,7 +1,6 @@
 import TabBar from "../shared/TabBar";
 import Alert from "../shared/Alert";
 import HomeTab from "../features/home/HomeTab";
-import AITab from "../features/ai/AITab";
 import BudgetTab from "../features/budget/BudgetTab";
 import GoalsTab from "../features/goals/GoalsTab";
 import TransactionImport from "../features/import/TransactionImport";
@@ -30,8 +29,6 @@ function renderTab(tab: TabName, api: BudgetApiClient) {
       return <BudgetTab api={api} />;
     case "goals":
       return <GoalsTab api={api} />;
-    case "ai":
-      return <AITab />;
   }
 }
 

@@ -25,13 +25,7 @@ export default function GoalsTab({ api }: GoalsTabProps) {
 
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <h3 className="text-xl font-semibold text-slate-900">Goals</h3>
-        <p className="text-sm text-slate-500">
-          Write down what you want to change. Link a goal to a spending category
-          and monthly limit to track it against your imported transactions.
-        </p>
-      </div>
+      <h3 className="text-xl font-semibold text-slate-900">Goals</h3>
 
       <section
         className="rounded-xl border border-slate-200 bg-white p-4"

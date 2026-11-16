@@ -58,13 +58,7 @@ export default function BudgetTab({ api }: BudgetTabProps) {
 
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <h3 className="text-xl font-semibold text-slate-900">Budget</h3>
-        <p className="text-sm text-slate-500">
-          Plan how your expected income gets spent each month, then track it
-          against your imported transactions.
-        </p>
-      </div>
+      <h3 className="text-xl font-semibold text-slate-900">Budget</h3>
 
       <MonthSelector month={month} onChange={changeMonth} />
 
