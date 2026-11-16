@@ -30,7 +30,7 @@ export default function SourceList({
               className="flex items-center justify-between gap-3 py-3 text-sm text-slate-800"
             >
               <span className="flex min-w-0 flex-col items-start text-left">
-                <span className="truncate">{source.description}</span>
+                <span className="max-w-full truncate">{source.description}</span>
                 <small className="mt-1 text-xs text-slate-500">
                   {source.categoryName}
                 </small>
