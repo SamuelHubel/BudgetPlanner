@@ -13,13 +13,13 @@ describe("Button", () => {
     );
 
     expect(screen.getByRole("button", { name: "Save" })).toHaveClass(
-      "bg-cyan-500",
+      "bg-slate-900",
     );
     expect(screen.getByRole("button", { name: "Cancel" })).toHaveClass(
-      "bg-slate-800",
+      "bg-white",
     );
     expect(screen.getByRole("button", { name: "Delete" })).toHaveClass(
-      "bg-rose-950/70",
+      "bg-rose-50",
     );
   });
 });

@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
   font-family:
     Inter,
     ui-sans-serif,
@@ -22,7 +22,7 @@ body,
 
 body {
   margin: 0;
-  background: #020617;
+  background: #f8fafc;
 }
 
 * {

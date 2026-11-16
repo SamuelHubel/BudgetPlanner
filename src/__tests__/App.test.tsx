@@ -105,7 +105,7 @@ describe("App", () => {
     expect(unlockButton).toBeDisabled();
     act(() => finishUnlock());
     expect(
-      await screen.findByText(/your budget dashboard/i),
+      await screen.findByRole("tablist", { name: "Dashboard sections" }),
     ).toBeInTheDocument();
   });
 
@@ -120,7 +120,9 @@ describe("App", () => {
 
     await waitFor(() => {
       expect(api.createPassword).toHaveBeenCalledWith(testPassword);
-      expect(screen.getByText(/your budget dashboard/i)).toBeInTheDocument();
+      expect(
+        screen.getByRole("tablist", { name: "Dashboard sections" }),
+      ).toBeInTheDocument();
     });
     expect(api.unlock).not.toHaveBeenCalled();
     expect(
@@ -156,7 +158,9 @@ describe("App", () => {
     await waitFor(async () => {
       expect(api.unlock).toHaveBeenCalledTimes(1);
       expect(api.unlock).toHaveBeenCalledWith(testPassword);
-      expect(screen.getByText(/your budget dashboard/i)).toBeInTheDocument();
+      expect(
+        screen.getByRole("tablist", { name: "Dashboard sections" }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -238,7 +242,9 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: /unlock/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/your budget dashboard/i)).toBeInTheDocument();
+      expect(
+        screen.getByRole("tablist", { name: "Dashboard sections" }),
+      ).toBeInTheDocument();
     });
 
     await user.click(screen.getByRole("tab", { name: /ai/i }));
@@ -255,7 +261,9 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: /unlock/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/your budget dashboard/i)).toBeInTheDocument();
+      expect(
+        screen.getByRole("tablist", { name: "Dashboard sections" }),
+      ).toBeInTheDocument();
     });
 
     await user.click(screen.getByRole("button", { name: /lock app/i }));
@@ -280,7 +288,9 @@ describe("App", () => {
       fireEvent.submit(form);
       await Promise.resolve();
     });
-    expect(screen.getByText(/your budget dashboard/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("tablist", { name: "Dashboard sections" }),
+    ).toBeInTheDocument();
     await act(async () => {
       await Promise.resolve();
     });
@@ -317,7 +327,9 @@ describe("App", () => {
       );
       await Promise.resolve();
     });
-    expect(screen.getByText(/your budget dashboard/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("tablist", { name: "Dashboard sections" }),
+    ).toBeInTheDocument();
 
     // Sleep moves the clock forward while timers stay paused.
     vi.setSystemTime(Date.now() + 6 * 60 * 1000);

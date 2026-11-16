@@ -8,12 +8,12 @@ import {
 import { formatCurrency } from "../../shared/format";
 
 const FALLBACK_COLORS = [
-  "#22d3ee",
-  "#818cf8",
-  "#34d399",
-  "#fbbf24",
-  "#fb7185",
-  "#c084fc",
+  "#06b6d4",
+  "#6366f1",
+  "#10b981",
+  "#f59e0b",
+  "#f43f5e",
+  "#a855f7",
 ];
 const GEOMETRY = donutGeometry(144, 56);
 
@@ -100,19 +100,19 @@ export default function DonutPanel({
         </DonutSvg>
         {activeItem ? (
           <div
-            className="pointer-events-none absolute inset-[22%] z-10 flex flex-col items-center justify-center rounded-full border border-slate-700 bg-slate-950/95 px-2 text-center shadow-lg"
+            className="pointer-events-none absolute inset-[22%] z-10 flex flex-col items-center justify-center rounded-full border border-slate-300 bg-white px-2 text-center shadow-lg"
             role="status"
             aria-live="polite"
           >
-            <span className="max-w-full truncate text-xs text-slate-300">
+            <span className="max-w-full truncate text-xs text-slate-700">
               {activeItem.name}
             </span>
-            <strong className="mt-1 text-sm font-semibold tabular-nums text-white">
+            <strong className="mt-1 text-sm font-semibold tabular-nums text-slate-900">
               {formatCurrency(activeItem.amountCents, currency)}
             </strong>
           </div>
         ) : (
-          <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold text-white">
+          <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold text-slate-900">
             {formatCurrency(total, currency)}
           </span>
         )}
@@ -121,10 +121,10 @@ export default function DonutPanel({
         {items.map((item, index) => {
           const { id, name, color, amountCents, canOpen } = item;
           return (
-            <li key={id} className="text-sm text-slate-300">
+            <li key={id} className="text-sm text-slate-700">
               <button
                 type="button"
-                className={`flex w-full items-center gap-2 rounded-lg text-left transition hover:bg-slate-800/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400${id === (activeItem?.id ?? null) ? " bg-slate-800/70 text-white" : ""}`}
+                className={`flex w-full items-center gap-2 rounded-lg text-left transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900${id === (activeItem?.id ?? null) ? " bg-slate-100 text-slate-900" : ""}`}
                 aria-label={`${name}: ${formatCurrency(amountCents, currency)}${canOpen ? ", show subcategories" : ""}`}
                 aria-pressed={canOpen ? undefined : selectedId === id}
                 onMouseEnter={() => setHoveredId(id)}
@@ -152,7 +152,7 @@ export default function DonutPanel({
           );
         })}
         {items.length === 0 && (
-          <li className="py-3 text-sm text-slate-400">
+          <li className="py-3 text-sm text-slate-500">
             No categorized activity yet.
           </li>
         )}

@@ -32,7 +32,7 @@ export default function Dialog({
   return (
     <dialog
       ref={dialogRef}
-      className={`rounded-3xl border border-slate-700 bg-slate-900 p-6 text-slate-100 shadow-2xl backdrop:bg-slate-950/80 ${className}`}
+      className={`rounded-xl border border-slate-200 bg-white p-6 text-slate-900 shadow-xl backdrop:bg-slate-900/40 ${className}`}
       role={role}
       aria-labelledby={titleId}
       aria-describedby={descriptionId}

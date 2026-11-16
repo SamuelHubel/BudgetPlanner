@@ -52,7 +52,7 @@ export default function BudgetSummary({
 
   return (
     <div className="space-y-4">
-      <div className="grid items-center gap-6 rounded-3xl border border-slate-800 bg-slate-950/80 p-4 sm:grid-cols-[13rem_minmax(0,1fr)]">
+      <div className="grid items-center gap-6 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-[13rem_minmax(0,1fr)]">
         <BudgetDonut
           rows={donutRows}
           incomeCents={budget.expectedIncomeCents}
@@ -62,14 +62,14 @@ export default function BudgetSummary({
         />
         <dl className="grid gap-3 sm:grid-cols-2">
           <div>
-            <dt className="text-sm text-slate-400">Expected income</dt>
-            <dd className="text-lg font-semibold tabular-nums text-white">
+            <dt className="text-sm text-slate-500">Expected income</dt>
+            <dd className="text-lg font-semibold tabular-nums text-slate-900">
               {formatCurrency(budget.expectedIncomeCents, currency)}
             </dd>
           </div>
           <div>
-            <dt className="text-sm text-slate-400">Allocated</dt>
-            <dd className="text-lg font-semibold tabular-nums text-white">
+            <dt className="text-sm text-slate-500">Allocated</dt>
+            <dd className="text-lg font-semibold tabular-nums text-slate-900">
               {formatCurrency(summary.allocatedCents, currency)}
             </dd>
           </div>
@@ -78,13 +78,13 @@ export default function BudgetSummary({
 
       <OverAllocationWarning summary={summary} currency={currency} />
 
-      <div className="overflow-x-auto rounded-3xl border border-slate-800 bg-slate-950/80 p-4">
+      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white p-4">
         <table
           className="w-full text-sm"
           aria-label={`Budget for ${formatMonth(budget.month)}`}
         >
           <thead>
-            <tr className="text-left text-slate-400">
+            <tr className="text-left text-slate-500">
               <th className="pb-2 font-medium" scope="col">
                 Category
               </th>
@@ -103,9 +103,9 @@ export default function BudgetSummary({
             {tableRows.map(({ id, name, color, budgeted, spent }) => {
               const remaining = budgeted - spent;
               return (
-                <tr key={id} className="border-t border-slate-800">
+                <tr key={id} className="border-t border-slate-200">
                   <th className="py-2 text-left font-normal" scope="row">
-                    <span className="flex items-center gap-2 text-slate-200">
+                    <span className="flex items-center gap-2 text-slate-800">
                       <span
                         className="h-3 w-3 shrink-0 rounded-full"
                         style={{ backgroundColor: color ?? "#94a3b8" }}
@@ -114,14 +114,14 @@ export default function BudgetSummary({
                       {name}
                     </span>
                   </th>
-                  <td className="py-2 text-right tabular-nums text-slate-300">
+                  <td className="py-2 text-right tabular-nums text-slate-700">
                     {formatCurrency(budgeted, currency)}
                   </td>
-                  <td className="py-2 text-right tabular-nums text-slate-300">
+                  <td className="py-2 text-right tabular-nums text-slate-700">
                     {formatCurrency(spent, currency)}
                   </td>
                   <td
-                    className={`py-2 text-right tabular-nums ${remaining < 0 ? "text-rose-300" : "text-slate-300"}`}
+                    className={`py-2 text-right tabular-nums ${remaining < 0 ? "text-rose-700" : "text-slate-700"}`}
                   >
                     {remaining < 0
                       ? `Over by ${formatCurrency(-remaining, currency)}`
@@ -131,23 +131,23 @@ export default function BudgetSummary({
               );
             })}
             {view.uncategorizedSpentCents > 0 && (
-              <tr className="border-t border-slate-800">
+              <tr className="border-t border-slate-200">
                 <th
-                  className="py-2 text-left font-normal text-slate-400"
+                  className="py-2 text-left font-normal text-slate-500"
                   scope="row"
                 >
                   Uncategorized
                 </th>
                 <td className="py-2 text-right text-slate-500">—</td>
-                <td className="py-2 text-right tabular-nums text-slate-300">
+                <td className="py-2 text-right tabular-nums text-slate-700">
                   {formatCurrency(view.uncategorizedSpentCents, currency)}
                 </td>
                 <td className="py-2 text-right text-slate-500">—</td>
               </tr>
             )}
             {tableRows.length === 0 && view.uncategorizedSpentCents === 0 && (
-              <tr className="border-t border-slate-800">
-                <td className="py-3 text-slate-400" colSpan={4}>
+              <tr className="border-t border-slate-200">
+                <td className="py-3 text-slate-500" colSpan={4}>
                   Nothing allocated or spent this month yet.
                 </td>
               </tr>

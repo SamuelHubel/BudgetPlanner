@@ -157,10 +157,10 @@ export default function BudgetBuilderDialog({
         if (!isSaving) onCancel();
       }}
     >
-      <h3 className="text-xl font-semibold text-white" id={titleId}>
+      <h3 className="text-xl font-semibold text-slate-900" id={titleId}>
         Build your {formatMonth(month)} budget
       </h3>
-      <p className="mt-1 text-sm text-slate-400" id={descriptionId}>
+      <p className="mt-1 text-sm text-slate-500" id={descriptionId}>
         Allocate your expected income of {formatCurrency(incomeCents, currency)}{" "}
         across your categories.
       </p>
@@ -178,7 +178,7 @@ export default function BudgetBuilderDialog({
 
         <div className="min-w-0 space-y-3">
           <div
-            className="inline-flex rounded-2xl bg-slate-800 p-1"
+            className="inline-flex rounded-lg bg-slate-100 p-1"
             role="group"
             aria-label="Allocation input"
           >
@@ -186,7 +186,7 @@ export default function BudgetBuilderDialog({
               <button
                 key={value}
                 type="button"
-                className={`rounded-xl px-3 py-1 text-sm font-semibold transition ${mode === value ? "bg-slate-100 text-slate-950" : "text-slate-300 hover:text-white"}`}
+                className={`rounded-xl px-3 py-1 text-sm font-semibold transition ${mode === value ? "bg-white text-slate-900 shadow-sm" : "text-slate-700 hover:text-slate-900"}`}
                 aria-pressed={mode === value}
                 onClick={() => switchMode(value)}
               >

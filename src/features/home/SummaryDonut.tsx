@@ -70,7 +70,7 @@ export default function SummaryDonut({
 
   return (
     <section
-      className="min-w-0 rounded-3xl border border-slate-800 bg-slate-950/80 p-4"
+      className="min-w-0 rounded-xl border border-slate-200 bg-white p-4"
       aria-labelledby={headingId}
     >
       <div className="flex items-start justify-between gap-3">
@@ -87,13 +87,13 @@ export default function SummaryDonut({
             </Button>
           )}
           <h4
-            className="mt-1 truncate text-lg font-semibold text-white"
+            className="mt-1 truncate text-lg font-semibold text-slate-900"
             id={headingId}
           >
             {heading}
           </h4>
         </div>
-        <strong className="text-lg text-white">
+        <strong className="text-lg text-slate-900">
           {formatCurrency(total, currency)}
         </strong>
       </div>

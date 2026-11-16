@@ -8,6 +8,7 @@ type TabBarProps = {
 
 const TAB_LABELS: Record<TabName, string> = {
   home: "Home",
+  import: "Import",
   budget: "Budget",
   goals: "Goals",
   ai: "AI",
@@ -23,9 +24,11 @@ export default function TabBar({ activeTab, onTabChange }: TabBarProps) {
     let nextIndex: number;
 
     switch (event.key) {
+      case "ArrowDown":
       case "ArrowRight":
         nextIndex = (currentIndex + 1) % TABS.length;
         break;
+      case "ArrowUp":
       case "ArrowLeft":
         nextIndex = (currentIndex - 1 + TABS.length) % TABS.length;
         break;
@@ -50,9 +53,10 @@ export default function TabBar({ activeTab, onTabChange }: TabBarProps) {
 
   return (
     <div
-      className="flex border-b border-slate-800 bg-slate-900/90 p-2"
+      className="flex flex-col gap-1"
       role="tablist"
       aria-label="Dashboard sections"
+      aria-orientation="vertical"
     >
       {TABS.map((tab) => (
         <button
@@ -66,7 +70,7 @@ export default function TabBar({ activeTab, onTabChange }: TabBarProps) {
           data-tab={tab}
           onClick={() => onTabChange(tab)}
           onKeyDown={(event) => handleKeyDown(event, tab)}
-          className={`flex-1 rounded-2xl px-4 py-3 text-sm font-semibold transition${activeTab === tab ? " bg-slate-100 text-slate-950 shadow-sm" : " text-slate-400 hover:bg-slate-800 hover:text-slate-100"}`}
+          className={`rounded-lg px-3 py-2 text-left text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2${activeTab === tab ? " bg-slate-900 text-white" : " text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
         >
           {TAB_LABELS[tab]}
         </button>

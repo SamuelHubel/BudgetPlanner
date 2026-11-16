@@ -45,11 +45,16 @@ describe("TabBar", () => {
     const user = userEvent.setup();
     render(<TabBarHarness />);
     const homeTab = screen.getByRole("tab", { name: "Home" });
+    const importTab = screen.getByRole("tab", { name: "Import" });
     const budgetTab = screen.getByRole("tab", { name: "Budget" });
     const goalsTab = screen.getByRole("tab", { name: "Goals" });
     const aiTab = screen.getByRole("tab", { name: "AI" });
 
     homeTab.focus();
+    await user.keyboard("{ArrowRight}");
+    expect(importTab).toHaveFocus();
+    expect(importTab).toHaveAttribute("aria-selected", "true");
+
     await user.keyboard("{ArrowRight}");
     expect(budgetTab).toHaveFocus();
     expect(budgetTab).toHaveAttribute("aria-selected", "true");
@@ -72,6 +77,12 @@ describe("TabBar", () => {
     await user.keyboard("{End}");
     expect(aiTab).toHaveFocus();
     await user.keyboard("{Home}");
+    expect(homeTab).toHaveFocus();
+
+    // The sidebar is vertical, so Up/Down move through it too.
+    await user.keyboard("{ArrowDown}");
+    expect(importTab).toHaveFocus();
+    await user.keyboard("{ArrowUp}");
     expect(homeTab).toHaveFocus();
   });
 });

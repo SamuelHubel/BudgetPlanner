@@ -1,5 +1,5 @@
 /** The frontend tabs available in the dashboard. */
-export const TABS = ["home", "budget", "goals", "ai"] as const;
+export const TABS = ["home", "import", "budget", "goals", "ai"] as const;
 
 /** A dashboard tab identifier. */
 export type TabName = (typeof TABS)[number];

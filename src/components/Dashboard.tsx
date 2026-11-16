@@ -4,6 +4,7 @@ import HomeTab from "../features/home/HomeTab";
 import AITab from "../features/ai/AITab";
 import BudgetTab from "../features/budget/BudgetTab";
 import GoalsTab from "../features/goals/GoalsTab";
+import TransactionImport from "../features/import/TransactionImport";
 import type { BudgetApiClient } from "../api/budgetApi";
 import { FinancialSummaryProvider } from "../features/home/FinancialSummaryContext";
 import ResetDataDialog from "../features/settings/ResetDataDialog";
@@ -22,7 +23,9 @@ type DashboardProps = {
 function renderTab(tab: TabName, api: BudgetApiClient) {
   switch (tab) {
     case "home":
-      return <HomeTab api={api} />;
+      return <HomeTab />;
+    case "import":
+      return <TransactionImport api={api} />;
     case "budget":
       return <BudgetTab api={api} />;
     case "goals":
@@ -32,7 +35,7 @@ function renderTab(tab: TabName, api: BudgetApiClient) {
   }
 }
 
-/** Displays dashboard content, tabs, and lock/reset actions. */
+/** Displays the sidebar navigation, the active section, and lock/reset actions. */
 export default function Dashboard({
   api,
   onLock,
@@ -42,18 +45,13 @@ export default function Dashboard({
 }: DashboardProps) {
   return (
     <FinancialSummaryProvider api={api}>
-      <div className="flex flex-1 flex-col rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-xl shadow-slate-950/40">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-[0.32em] text-slate-400">
-              Welcome back
-            </p>
-            <h2 className="mt-2 text-2xl font-semibold text-white">
-              Your budget dashboard
-            </h2>
-          </div>
-          <div className="flex flex-wrap items-center gap-3 text-sm text-slate-400">
-            <ResetDataDialog api={api} />
+      <div className="flex h-screen">
+        <aside className="flex w-56 shrink-0 flex-col border-r border-slate-200 bg-white p-4">
+          <p className="mb-6 px-3 text-base font-semibold text-slate-900">
+            Budget Planner
+          </p>
+          <TabBar activeTab={activeTab} onTabChange={onTabChange} />
+          <div className="mt-auto flex flex-col gap-2 border-t border-slate-200 pt-4 text-sm">
             <Button
               type="button"
               variant="secondary"
@@ -61,14 +59,12 @@ export default function Dashboard({
             >
               Lock app
             </Button>
+            <ResetDataDialog api={api} />
           </div>
-        </div>
+        </aside>
 
-        {lockError && <Alert className="mt-4">{lockError}</Alert>}
-
-        <div className="mt-8 overflow-hidden rounded-3xl border border-slate-800 bg-slate-950/90">
-          <TabBar activeTab={activeTab} onTabChange={onTabChange} />
-
+        <main className="flex-1 overflow-y-auto p-8 text-slate-700">
+          {lockError && <Alert className="mb-4">{lockError}</Alert>}
           {TABS.map((tab) => (
             <div
               key={tab}
@@ -77,14 +73,14 @@ export default function Dashboard({
               aria-labelledby={`dashboard-tab-${tab}`}
               tabIndex={activeTab === tab ? 0 : -1}
               hidden={activeTab !== tab}
-              className="p-6 text-slate-200"
+              className="focus-visible:outline-none"
             >
               {/* Only the active panel mounts, so each tab reloads its data
                   (e.g. goal progress after an import) when it is opened. */}
               {activeTab === tab && renderTab(tab, api)}
             </div>
           ))}
-        </div>
+        </main>
       </div>
     </FinancialSummaryProvider>
   );

@@ -59,8 +59,8 @@ export default function BudgetTab({ api }: BudgetTabProps) {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <h3 className="text-xl font-semibold text-white">Budget</h3>
-        <p className="text-sm text-slate-400">
+        <h3 className="text-xl font-semibold text-slate-900">Budget</h3>
+        <p className="text-sm text-slate-500">
           Plan how your expected income gets spent each month, then track it
           against your imported transactions.
         </p>
@@ -70,7 +70,7 @@ export default function BudgetTab({ api }: BudgetTabProps) {
 
       {error && <Alert>Unable to load the budget: {error}</Alert>}
       {!monthView && !error && (
-        <p className="py-3 text-sm text-slate-400" role="status">
+        <p className="py-3 text-sm text-slate-500" role="status">
           Loading budget…
         </p>
       )}

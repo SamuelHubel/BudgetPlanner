@@ -48,13 +48,13 @@ export default function UnlockScreen({
   };
 
   return (
-    <div className="mx-auto w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900/90 p-8 shadow-xl shadow-slate-950/30">
-      <h2 className="text-2xl font-semibold text-white">
+    <div className="mx-auto w-full max-w-md rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+      <h2 className="text-2xl font-semibold text-slate-900">
         {isCreatingPassword
           ? "Create your password"
           : "Unlock your budget vault"}
       </h2>
-      <p className="mt-2 text-sm text-slate-400">
+      <p className="mt-2 text-sm text-slate-500">
         {isCreatingPassword
           ? "Create a password to encrypt your budget data."
           : "Enter your password to continue."}
@@ -70,14 +70,14 @@ export default function UnlockScreen({
       ) : (
         <form className="mt-8 space-y-5" onSubmit={submitPassword}>
           <label
-            className="block text-sm font-medium text-slate-300"
+            className="block text-sm font-medium text-slate-700"
             htmlFor="password"
           >
             Password
           </label>
           <input
             id="password"
-            className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-slate-100 outline-none ring-1 ring-slate-800 transition focus:border-slate-400 focus:ring-slate-500"
+            className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none ring-1 ring-slate-300 transition focus:border-slate-900 focus:ring-slate-900"
             type="password"
             value={password}
             onChange={(event) => {
@@ -97,14 +97,14 @@ export default function UnlockScreen({
           {isCreatingPassword && (
             <>
               <label
-                className="block text-sm font-medium text-slate-300"
+                className="block text-sm font-medium text-slate-700"
                 htmlFor="password-confirmation"
               >
                 Confirm password
               </label>
               <input
                 id="password-confirmation"
-                className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3 text-slate-100 outline-none ring-1 ring-slate-800 transition focus:border-slate-400 focus:ring-slate-500"
+                className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none ring-1 ring-slate-300 transition focus:border-slate-900 focus:ring-slate-900"
                 type="password"
                 value={confirmation}
                 onChange={(event) => {
@@ -128,7 +128,7 @@ export default function UnlockScreen({
           </Button>
         </form>
       )}
-      <div className="mt-6 rounded-2xl border border-dashed border-slate-700 bg-slate-950/80 p-4 text-xs text-slate-400">
+      <div className="mt-6 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-xs text-slate-500">
         {isCreatingPassword && (
           <p>
             Any existing unencrypted database from an earlier version will be

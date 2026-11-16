@@ -74,23 +74,23 @@ export default function ConfirmDialog({
       className="w-full max-w-lg"
       onClose={close}
     >
-      <h3 className="text-xl font-semibold text-white" id={titleId}>
+      <h3 className="text-xl font-semibold text-slate-900" id={titleId}>
         {title}
       </h3>
-      <p className="mt-3 text-sm leading-6 text-slate-300" id={descriptionId}>
+      <p className="mt-3 text-sm leading-6 text-slate-700" id={descriptionId}>
         {description}
       </p>
       {confirmationPhrase !== undefined && (
         <div className="mt-4 space-y-1">
           <label
-            className="text-sm font-medium text-slate-300"
+            className="text-sm font-medium text-slate-700"
             htmlFor={`${dialogId}-phrase`}
           >
             Type {confirmationPhrase} to confirm
           </label>
           <input
             id={`${dialogId}-phrase`}
-            className="block w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
+            className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-900 focus:outline-none"
             autoComplete="off"
             value={typedPhrase}
             onChange={(event) => setTypedPhrase(event.target.value)}

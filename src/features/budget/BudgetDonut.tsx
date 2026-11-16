@@ -80,7 +80,7 @@ export default function BudgetDonut({
           })}
           {isOver && (
             <circle
-              className="fill-none stroke-rose-400"
+              className="fill-none stroke-rose-500"
               cx={GEOMETRY.center}
               cy={GEOMETRY.center}
               r={69}
@@ -94,25 +94,25 @@ export default function BudgetDonut({
         >
           {activeRow ? (
             <>
-              <span className="max-w-full truncate text-xs text-slate-300">
+              <span className="max-w-full truncate text-xs text-slate-700">
                 {activeRow.name}
               </span>
-              <strong className="text-sm font-semibold tabular-nums text-white">
+              <strong className="text-sm font-semibold tabular-nums text-slate-900">
                 {formatCurrency(activeRow.cents, currency)}
               </strong>
             </>
           ) : (
             <>
-              <strong className="text-2xl font-semibold tabular-nums text-white">
+              <strong className="text-2xl font-semibold tabular-nums text-slate-900">
                 {summary.allocatedPercent}%
               </strong>
-              <span className="text-xs text-slate-400">allocated</span>
+              <span className="text-xs text-slate-500">allocated</span>
             </>
           )}
         </div>
       </div>
       <p
-        className={`text-sm tabular-nums ${isOver ? "text-rose-300" : "text-slate-300"}`}
+        className={`text-sm tabular-nums ${isOver ? "text-rose-700" : "text-slate-700"}`}
       >
         {isOver
           ? `Over by ${formatCurrency(summary.overCents, currency)}`

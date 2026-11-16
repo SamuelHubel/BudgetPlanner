@@ -10,7 +10,7 @@ type AlertProps = {
 export default function Alert({ className = "", children }: AlertProps) {
   return (
     <p
-      className={`rounded-xl border border-rose-800 bg-rose-950/60 px-3 py-2 text-sm text-rose-200 ${className}`.trimEnd()}
+      className={`rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 ${className}`.trimEnd()}
       role="alert"
     >
       {children}

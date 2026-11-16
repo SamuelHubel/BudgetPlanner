@@ -239,7 +239,7 @@ describe("HomeTab subcategory drill-down", () => {
     };
     render(
       <FinancialSummaryProvider api={drillApi}>
-        <HomeTab api={drillApi} />
+        <HomeTab />
       </FinancialSummaryProvider>,
     );
   }
@@ -357,7 +357,7 @@ describe("HomeTab category charts", () => {
     const user = userEvent.setup();
     render(
       <FinancialSummaryProvider api={api}>
-        <HomeTab api={api} />
+        <HomeTab />
       </FinancialSummaryProvider>,
     );
 
@@ -388,7 +388,7 @@ describe("HomeTab category charts", () => {
     const user = userEvent.setup();
     render(
       <FinancialSummaryProvider api={api}>
-        <HomeTab api={api} />
+        <HomeTab />
       </FinancialSummaryProvider>,
     );
 
@@ -408,7 +408,7 @@ describe("HomeTab category charts", () => {
     const user = userEvent.setup();
     render(
       <FinancialSummaryProvider api={api}>
-        <HomeTab api={api} />
+        <HomeTab />
       </FinancialSummaryProvider>,
     );
 
@@ -429,7 +429,7 @@ describe("HomeTab category charts", () => {
     const user = userEvent.setup();
     render(
       <FinancialSummaryProvider api={api}>
-        <HomeTab api={api} />
+        <HomeTab />
       </FinancialSummaryProvider>,
     );
 
@@ -490,7 +490,7 @@ describe("HomeTab category charts", () => {
     const user = userEvent.setup();
     render(
       <FinancialSummaryProvider api={api}>
-        <HomeTab api={api} />
+        <HomeTab />
       </FinancialSummaryProvider>,
     );
 
@@ -540,7 +540,7 @@ describe("HomeTab category charts", () => {
     };
     render(
       <FinancialSummaryProvider api={apiWithUncategorized}>
-        <HomeTab api={apiWithUncategorized} />
+        <HomeTab />
       </FinancialSummaryProvider>,
     );
 

@@ -39,13 +39,13 @@ export default function AllocationRow({
   const percentText = `${basisPoints / BASIS_POINTS_PER_PERCENT}%`;
   return (
     <li
-      className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 rounded-xl px-2 py-2 hover:bg-slate-800/50"
+      className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 rounded-xl px-2 py-2 hover:bg-slate-50"
       onMouseEnter={() => onActiveChange(true)}
       onMouseLeave={() => onActiveChange(false)}
       onFocus={() => onActiveChange(true)}
       onBlur={() => onActiveChange(false)}
     >
-      <span className="flex min-w-0 items-center gap-2 text-sm text-slate-200">
+      <span className="flex min-w-0 items-center gap-2 text-sm text-slate-800">
         <span
           className="h-3 w-3 shrink-0 rounded-full"
           style={{ backgroundColor: category.color ?? "#94a3b8" }}
@@ -55,11 +55,11 @@ export default function AllocationRow({
       </span>
       {mode === "percent" ? (
         <>
-          <span className="text-sm tabular-nums text-slate-300">
+          <span className="text-sm tabular-nums text-slate-700">
             {percentText} · {formatCurrency(cents, currency)}
           </span>
           <input
-            className="col-span-2 w-full accent-cyan-400"
+            className="col-span-2 w-full accent-slate-900"
             type="range"
             aria-label={`${category.name} percent`}
             aria-valuetext={`${percentText}, ${formatCurrency(cents, currency)}`}
@@ -78,11 +78,11 @@ export default function AllocationRow({
         </>
       ) : (
         <span className="flex items-center gap-3">
-          <span className="text-sm tabular-nums text-slate-400">
+          <span className="text-sm tabular-nums text-slate-500">
             {percent}%
           </span>
           <input
-            className={`w-28 rounded-xl border bg-slate-900 px-2 py-1 text-right text-sm tabular-nums text-slate-100 placeholder:text-slate-600 focus:border-cyan-400 focus:outline-none ${isInvalid ? "border-rose-500" : "border-slate-700"}`}
+            className={`w-28 rounded-xl border bg-white px-2 py-1 text-right text-sm tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-none ${isInvalid ? "border-rose-500" : "border-slate-300"}`}
             type="text"
             inputMode="decimal"
             aria-label={`${category.name} amount`}

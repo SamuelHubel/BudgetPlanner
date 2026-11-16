@@ -34,7 +34,7 @@ export default function ImportPreviewTable({
   }, [subcategories]);
 
   return (
-    <div className="mt-4 max-h-96 overflow-auto rounded-2xl border border-slate-800">
+    <div className="mt-4 max-h-96 overflow-auto rounded-lg border border-slate-200">
       <table className="w-full text-left text-sm">
         <thead>
           <tr>
@@ -43,7 +43,7 @@ export default function ImportPreviewTable({
                 <th
                   key={heading}
                   scope="col"
-                  className="sticky top-0 bg-slate-900 px-3 py-2 font-medium text-slate-400"
+                  className="sticky top-0 bg-white px-3 py-2 font-medium text-slate-500"
                 >
                   {heading}
                 </th>
@@ -62,22 +62,22 @@ export default function ImportPreviewTable({
             return (
               <tr
                 key={`${transaction.date}-${index}`}
-                className={needsCategory ? "bg-amber-950/30" : undefined}
+                className={needsCategory ? "bg-amber-50" : undefined}
               >
-                <td className="border-t border-slate-800 px-3 py-2 text-slate-300">
+                <td className="border-t border-slate-200 px-3 py-2 text-slate-700">
                   {transaction.date}
                 </td>
-                <td className="border-t border-slate-800 px-3 py-2 text-slate-300">
+                <td className="border-t border-slate-200 px-3 py-2 text-slate-700">
                   {transaction.description}
                 </td>
-                <td className="border-t border-slate-800 px-3 py-2 text-slate-300">
+                <td className="border-t border-slate-200 px-3 py-2 text-slate-700">
                   {currency
                     ? formatCurrency(transaction.amountCents, currency)
                     : "Currency unavailable"}
                 </td>
-                <td className="border-t border-slate-800 px-3 py-2 text-slate-300">
+                <td className="border-t border-slate-200 px-3 py-2 text-slate-700">
                   <select
-                    className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-slate-200"
+                    className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-slate-800"
                     aria-label={`Category for ${transaction.description}`}
                     value={transaction.categoryId ?? ""}
                     onChange={(event) =>
@@ -93,7 +93,7 @@ export default function ImportPreviewTable({
                   </select>
                   {useSubcategories && (
                     <select
-                      className="ml-2 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-slate-200 disabled:opacity-50"
+                      className="ml-2 rounded-lg border border-slate-300 bg-white px-2 py-1 text-slate-800 disabled:opacity-50"
                       aria-label={`Subcategory for ${transaction.description}`}
                       value={transaction.subcategoryId ?? ""}
                       disabled={rowSubcategories.length === 0}
@@ -111,13 +111,13 @@ export default function ImportPreviewTable({
                   )}
                   {transaction.statementCategoryName &&
                     !transaction.categoryId && (
-                      <small className="ml-2 text-amber-300">
+                      <small className="ml-2 text-amber-700">
                         Statement category not available:{" "}
                         {transaction.statementCategoryName}
                       </small>
                     )}
                 </td>
-                <td className="border-t border-slate-800 px-3 py-2 text-slate-300">
+                <td className="border-t border-slate-200 px-3 py-2 text-slate-700">
                   {transaction.isDuplicate ? "Already imported" : "New"}
                 </td>
               </tr>

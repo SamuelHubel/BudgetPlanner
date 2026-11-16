@@ -9,6 +9,9 @@ vi.mock("../features/home/HomeTab", () => ({
 vi.mock("../features/ai/AITab", () => ({
   default: () => <div>AI content</div>,
 }));
+vi.mock("../features/import/TransactionImport", () => ({
+  default: () => <div>Import content</div>,
+}));
 vi.mock("../features/goals/GoalsTab", () => ({
   default: () => <div>Goals content</div>,
 }));
@@ -90,7 +93,7 @@ describe("Dashboard reset action", () => {
     expect(
       screen.getByRole("tablist", { name: "Dashboard sections" }),
     ).toBeInTheDocument();
-    expect(tabs).toHaveLength(4);
+    expect(tabs).toHaveLength(5);
     for (const tab of tabs) {
       const panel = document.getElementById(
         tab.getAttribute("aria-controls") ?? "",

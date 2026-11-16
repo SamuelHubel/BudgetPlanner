@@ -21,26 +21,29 @@ export default function MonthlyBarChart({
 
   return (
     <section
-      className="min-w-0 rounded-3xl border border-slate-800 bg-slate-950/80 p-4"
+      className="min-w-0 rounded-xl border border-slate-200 bg-white p-4"
       aria-labelledby="monthly-chart-title"
     >
-      <h4 className="text-lg font-semibold text-white" id="monthly-chart-title">
+      <h4
+        className="text-lg font-semibold text-slate-900"
+        id="monthly-chart-title"
+      >
         Income and expenses by month
       </h4>
       <div
-        className="mt-3 flex flex-wrap gap-4 text-sm text-slate-300"
+        className="mt-3 flex flex-wrap gap-4 text-sm text-slate-700"
         aria-label="Chart legend"
       >
         <span className="flex items-center gap-2">
           <i
-            className="inline-block h-3 w-3 rounded-sm bg-cyan-400"
+            className="inline-block h-3 w-3 rounded-sm bg-cyan-500"
             aria-hidden="true"
           />
           Income
         </span>
         <span className="flex items-center gap-2">
           <i
-            className="inline-block h-3 w-3 rounded-sm bg-violet-400"
+            className="inline-block h-3 w-3 rounded-sm bg-violet-500"
             aria-hidden="true"
           />
           Expenses
@@ -60,23 +63,23 @@ export default function MonthlyBarChart({
                 aria-label={`${label}: income ${formatCurrency(incomeCents, currency)}, expenses ${formatCurrency(expensesCents, currency)}`}
               >
                 <div
-                  className="flex h-48 items-end justify-center gap-1 border-b border-slate-700"
+                  className="flex h-48 items-end justify-center gap-1 border-b border-slate-300"
                   aria-hidden="true"
                 >
                   <span
-                    className="block w-4 rounded-t-sm bg-cyan-400"
+                    className="block w-4 rounded-t-sm bg-cyan-500"
                     style={{
                       height: `${maxAmountCents > 0 ? (Math.max(0, incomeCents) / maxAmountCents) * 100 : 0}%`,
                     }}
                   />
                   <span
-                    className="block w-4 rounded-t-sm bg-violet-400"
+                    className="block w-4 rounded-t-sm bg-violet-500"
                     style={{
                       height: `${maxAmountCents > 0 ? (Math.max(0, expensesCents) / maxAmountCents) * 100 : 0}%`,
                     }}
                   />
                 </div>
-                <span className="mt-2 block truncate text-xs text-slate-400">
+                <span className="mt-2 block truncate text-xs text-slate-500">
                   {label}
                 </span>
               </li>
@@ -84,7 +87,7 @@ export default function MonthlyBarChart({
           })}
         </ol>
       ) : (
-        <p className="py-3 text-sm text-slate-400">
+        <p className="py-3 text-sm text-slate-500">
           Monthly totals will appear as categorized statements are imported.
         </p>
       )}

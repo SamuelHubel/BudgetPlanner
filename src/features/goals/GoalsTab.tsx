@@ -26,15 +26,15 @@ export default function GoalsTab({ api }: GoalsTabProps) {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <h3 className="text-xl font-semibold text-white">Goals</h3>
-        <p className="text-sm text-slate-400">
+        <h3 className="text-xl font-semibold text-slate-900">Goals</h3>
+        <p className="text-sm text-slate-500">
           Write down what you want to change. Link a goal to a spending category
           and monthly limit to track it against your imported transactions.
         </p>
       </div>
 
       <section
-        className="rounded-3xl border border-slate-800 bg-slate-950/80 p-4"
+        className="rounded-xl border border-slate-200 bg-white p-4"
         aria-label="Add a goal"
       >
         <GoalForm
@@ -47,14 +47,14 @@ export default function GoalsTab({ api }: GoalsTabProps) {
 
       {error && <Alert>Unable to load goals: {error}</Alert>}
       {isLoading && (
-        <p className="py-3 text-sm text-slate-400" role="status">
+        <p className="py-3 text-sm text-slate-500" role="status">
           Loading goals…
         </p>
       )}
       {!isLoading &&
         !error &&
         (goals.length === 0 ? (
-          <p className="py-3 text-sm text-slate-400">
+          <p className="py-3 text-sm text-slate-500">
             No goals yet. Add your first one above.
           </p>
         ) : (

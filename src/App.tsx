@@ -111,31 +111,28 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-        <header className="mb-8 flex items-center justify-between">
-          <p className="text-sm uppercase tracking-[0.32em] text-slate-400">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      {isLocked ? (
+        <div className="flex min-h-screen flex-col items-center justify-center px-4 py-8">
+          <p className="mb-6 text-base font-semibold text-slate-900">
             Budget Planner
           </p>
-        </header>
-
-        {isLocked ? (
           <UnlockScreen
             isInitialized={isInitialized}
             onUnlock={handleUnlock}
             onResetVault={handleResetVault}
             error={unlockError}
           />
-        ) : (
-          <Dashboard
-            api={budgetApi}
-            onLock={handleLock}
-            lockError={lockError}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
-        )}
-      </div>
+        </div>
+      ) : (
+        <Dashboard
+          api={budgetApi}
+          onLock={handleLock}
+          lockError={lockError}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
+      )}
     </div>
   );
 }
