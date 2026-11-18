@@ -35,7 +35,7 @@ type DonutSvgProps = {
 export function DonutSvg({
   geometry: { viewBox, center, radius },
   strokeWidth,
-  trackClassName = "stroke-slate-800",
+  trackClassName = "stroke-slate-100",
   trackDasharray,
   children,
 }: DonutSvgProps) {

@@ -17,9 +17,9 @@ type GoalProgressDonutProps = {
 
 /** Picks the meter color for a spent/limit ratio (green, amber, then rose). */
 function meterColor(ratio: number): string {
-  if (ratio > 1) return "#fb7185";
-  if (ratio >= WARNING_RATIO) return "#fbbf24";
-  return "#34d399";
+  if (ratio > 1) return "#f43f5e";
+  if (ratio >= WARNING_RATIO) return "#f59e0b";
+  return "#10b981";
 }
 
 /**
@@ -47,7 +47,7 @@ export default function GoalProgressDonut({
           <DonutSvg
             geometry={GEOMETRY}
             strokeWidth={STROKE_WIDTH}
-            trackClassName="stroke-slate-700"
+            trackClassName="stroke-slate-200"
             trackDasharray="4 4"
           />
           <span
@@ -93,14 +93,14 @@ export default function GoalProgressDonut({
           />
         </DonutSvg>
         <span
-          className="absolute inset-0 flex items-center justify-center text-xs font-semibold tabular-nums text-white"
+          className="absolute inset-0 flex items-center justify-center text-xs font-semibold tabular-nums text-slate-900"
           aria-hidden="true"
         >
           {percent}%
         </span>
       </div>
       <span
-        className={`text-xs tabular-nums ${overCents > 0 ? "text-rose-300" : "text-slate-400"}`}
+        className={`text-xs tabular-nums ${overCents > 0 ? "text-rose-700" : "text-slate-500"}`}
         aria-hidden="true"
       >
         {overCents > 0

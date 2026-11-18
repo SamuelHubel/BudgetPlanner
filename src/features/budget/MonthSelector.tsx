@@ -19,7 +19,9 @@ export default function MonthSelector({ month, onChange }: MonthSelectorProps) {
       >
         <span aria-hidden="true">←</span>
       </Button>
-      <h4 className="text-lg font-semibold text-white">{formatMonth(month)}</h4>
+      <h4 className="text-lg font-semibold text-slate-900">
+        {formatMonth(month)}
+      </h4>
       <Button
         type="button"
         variant="secondary"

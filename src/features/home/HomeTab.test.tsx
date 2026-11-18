@@ -243,7 +243,7 @@ describe("HomeTab subcategory drill-down", () => {
     };
     render(
       <FinancialSummaryProvider api={drillApi}>
-        <HomeTab api={drillApi} />
+        <HomeTab />
       </FinancialSummaryProvider>,
     );
   }
@@ -361,7 +361,7 @@ describe("HomeTab category charts", () => {
     const user = userEvent.setup();
     render(
       <FinancialSummaryProvider api={api}>
-        <HomeTab api={api} />
+        <HomeTab />
       </FinancialSummaryProvider>,
     );
 
@@ -392,7 +392,7 @@ describe("HomeTab category charts", () => {
     const user = userEvent.setup();
     render(
       <FinancialSummaryProvider api={api}>
-        <HomeTab api={api} />
+        <HomeTab />
       </FinancialSummaryProvider>,
     );
 
@@ -412,7 +412,7 @@ describe("HomeTab category charts", () => {
     const user = userEvent.setup();
     render(
       <FinancialSummaryProvider api={api}>
-        <HomeTab api={api} />
+        <HomeTab />
       </FinancialSummaryProvider>,
     );
 
@@ -433,7 +433,7 @@ describe("HomeTab category charts", () => {
     const user = userEvent.setup();
     render(
       <FinancialSummaryProvider api={api}>
-        <HomeTab api={api} />
+        <HomeTab />
       </FinancialSummaryProvider>,
     );
 
@@ -490,11 +490,54 @@ describe("HomeTab category charts", () => {
     ).toBeInTheDocument();
   });
 
+  it("switches the monthly chart between bars and lines", async () => {
+    const user = userEvent.setup();
+    render(
+      <FinancialSummaryProvider api={api}>
+        <HomeTab />
+      </FinancialSummaryProvider>,
+    );
+
+    const monthlyChart = within(
+      await screen.findByRole("region", {
+        name: "Income and expenses by month",
+      }),
+    );
+    const bar = monthlyChart.getByRole("button", { name: "Bar" });
+    const line = monthlyChart.getByRole("button", { name: "Line" });
+    expect(bar).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(line);
+
+    expect(line).toHaveAttribute("aria-pressed", "true");
+    expect(bar).toHaveAttribute("aria-pressed", "false");
+    expect(
+      monthlyChart.getByRole("listitem", {
+        name: "Jan 2026: income $2,500.00, expenses $75.00",
+      }),
+    ).toBeInTheDocument();
+
+    const januaryIncome = monthlyChart.getByRole("button", {
+      name: "Jan 2026 income $2,500.00",
+    });
+    expect(januaryIncome).toHaveAttribute("aria-pressed", "false");
+
+    await user.click(januaryIncome);
+
+    expect(januaryIncome).toHaveAttribute("aria-pressed", "true");
+    expect(
+      screen.getByText("Showing income and expenses for January 2026"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "January 2026" }),
+    ).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("shows all-time totals when All time is selected", async () => {
     const user = userEvent.setup();
     render(
       <FinancialSummaryProvider api={api}>
-        <HomeTab api={api} />
+        <HomeTab />
       </FinancialSummaryProvider>,
     );
 
@@ -544,7 +587,7 @@ describe("HomeTab category charts", () => {
     };
     render(
       <FinancialSummaryProvider api={apiWithUncategorized}>
-        <HomeTab api={apiWithUncategorized} />
+        <HomeTab />
       </FinancialSummaryProvider>,
     );
 

@@ -45,7 +45,7 @@ export default function ResetDataDialog({ api }: ResetDataDialogProps) {
         </Button>
         {resetComplete && (
           <p
-            className="rounded-xl border border-emerald-800 bg-emerald-950/50 px-3 py-2 text-sm text-emerald-200"
+            className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700"
             role="status"
           >
             Financial data has been cleared.

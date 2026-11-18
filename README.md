@@ -14,7 +14,7 @@ A local-first desktop app for personal budgeting. Import your bank statements, s
 
 ### Not built yet
 
-The AI tab is a placeholder, and the **Help me meet this** button on a goal only shows what the feature will disclose. Local AI through Ollama and a rules-based fallback are planned.
+AI features are planned: example budgets, limited and clearly disclosed advice on meeting a goal (through the **Help me meet this** button, which for now only shows what the feature will disclose), and insights from spending and income trends. Local AI through Ollama and a rules-based fallback are planned.
 
 ## Importing statements
 

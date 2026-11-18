@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { BudgetApiClient } from "../../api/budgetApi";
-import type { CategorySettings, ImportPreviewRow } from "../../types";
+import type { ImportPreviewRow } from "../../types";
 import TransactionImport from "./TransactionImport";
 import { FinancialSummaryProvider } from "../home/FinancialSummaryContext";
 
@@ -129,7 +129,32 @@ const reviewRows: ImportPreviewRow[] = [
     statementCategoryName: null,
     isDuplicate: true,
   },
+  {
+    date: "2026-01-04",
+    amountCents: -300,
+    description: "Bread",
+    categoryId: 1,
+    subcategoryId: null,
+    statementCategoryName: null,
+    isDuplicate: false,
+  },
+  {
+    date: "2026-01-05",
+    amountCents: -200,
+    description: "Misc",
+    categoryId: 3,
+    subcategoryId: null,
+    statementCategoryName: null,
+    isDuplicate: false,
+  },
 ];
+
+/** The committed row for a description in the first commit call. */
+function committed(api: BudgetApiClient, description: string) {
+  return vi
+    .mocked(api.commitImport)
+    .mock.calls[0]?.[1].find((row) => row.description === description);
+}
 
 async function renderReview(
   user: ReturnType<typeof userEvent.setup>,
@@ -147,97 +172,91 @@ async function renderReview(
 }
 
 describe("TransactionImport subcategories", () => {
-  it("offers only the selected category's subcategories", async () => {
-    const user = userEvent.setup();
-    await renderReview(user);
-
-    const select = screen.getByRole("combobox", {
-      name: "Subcategory for Latte",
-    });
-
-    expect(select).toHaveValue("20");
-    expect(
-      within(select)
-        .getAllByRole("option")
-        .map((option) => option.textContent),
-    ).toEqual(["General", "Coffee"]);
-  });
-
-  it("clears the subcategory when the main category changes", async () => {
+  it("imports main categories only when the user declines", async () => {
     const user = userEvent.setup();
     const api = await renderReview(user);
 
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Category for Latte" }),
-      "1",
-    );
-    expect(
-      screen.getByRole("combobox", { name: "Subcategory for Latte" }),
-    ).toHaveValue("");
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Subcategory for Latte" }),
-      "10",
-    );
-    await user.click(screen.getByRole("button", { name: /confirm import/i }));
-
-    expect(vi.mocked(api.commitImport).mock.calls[0]?.[1][0]).toMatchObject({
-      categoryId: 1,
-      subcategoryId: 10,
-    });
-  });
-
-  it("disables the subcategory select when a category has none", async () => {
-    const user = userEvent.setup();
-    await renderReview(user);
-
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Category for Latte" }),
-      "3",
-    );
-
-    expect(
-      screen.getByRole("combobox", { name: "Subcategory for Latte" }),
-    ).toBeDisabled();
-  });
-
-  it("sends main categories only when opted out, and remembers the choice", async () => {
-    const user = userEvent.setup();
-    const updateCategorySettings = vi.fn(
-      async (settings: CategorySettings) => settings,
-    );
-    const api = await renderReview(user, { updateCategorySettings });
-
-    await user.click(
-      await screen.findByRole("checkbox", { name: "Use subcategories" }),
-    );
-
-    expect(updateCategorySettings).toHaveBeenCalledWith({
-      useSubcategoriesOnImport: false,
-      showSubcategoryCharts: true,
-    });
     expect(
       screen.queryByRole("combobox", { name: "Subcategory for Latte" }),
     ).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /confirm import/i }));
-    expect(vi.mocked(api.commitImport).mock.calls[0]?.[1][0]).toMatchObject({
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    await user.click(screen.getByRole("button", { name: "No, import" }));
+
+    expect(committed(api, "Latte")).toMatchObject({
       categoryId: 2,
       subcategoryId: null,
     });
   });
 
-  it("restores subcategory picks when opting back in", async () => {
+  it("shows one popup per refinable category and commits the picks", async () => {
     const user = userEvent.setup();
-    await renderReview(user);
-    const toggle = await screen.findByRole("checkbox", {
-      name: "Use subcategories",
-    });
+    const api = await renderReview(user);
 
-    await user.click(toggle);
-    await user.click(toggle);
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    await user.click(screen.getByRole("button", { name: "Yes" }));
+    expect(screen.getByRole("heading", { name: "Groceries" })).toBeVisible();
+    expect(screen.getByText("1 of 2")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("combobox", { name: "Subcategory for Latte" }),
+    ).not.toBeInTheDocument();
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Subcategory for Bread" }),
+      "10",
+    );
+    await user.click(screen.getByRole("button", { name: "Next" }));
 
+    expect(screen.getByRole("heading", { name: "Dining Out" })).toBeVisible();
     expect(
       screen.getByRole("combobox", { name: "Subcategory for Latte" }),
     ).toHaveValue("20");
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    expect(
+      screen.getByRole("combobox", { name: "Subcategory for Bread" }),
+    ).toHaveValue("10");
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    await user.click(screen.getByRole("button", { name: "Import" }));
+
+    expect(committed(api, "Bread")).toMatchObject({ subcategoryId: 10 });
+    expect(committed(api, "Latte")).toMatchObject({ subcategoryId: 20 });
+    expect(committed(api, "Misc")).toMatchObject({ subcategoryId: null });
+  });
+
+  it("keeps picks when the popup is dismissed", async () => {
+    const user = userEvent.setup();
+    const api = await renderReview(user);
+
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    await user.click(screen.getByRole("button", { name: "Yes" }));
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Subcategory for Bread" }),
+      "10",
+    );
+    fireEvent(screen.getByRole("dialog"), new Event("cancel"));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(api.commitImport).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    await user.click(screen.getByRole("button", { name: "Yes" }));
+    expect(
+      screen.getByRole("combobox", { name: "Subcategory for Bread" }),
+    ).toHaveValue("10");
+  });
+
+  it("clears the subcategory when the main category changes", async () => {
+    const user = userEvent.setup();
+    await renderReview(user);
+
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Category for Latte" }),
+      "1",
+    );
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    await user.click(screen.getByRole("button", { name: "Yes" }));
+
+    expect(screen.getByText("1 of 1")).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: "Subcategory for Latte" }),
+    ).toHaveValue("");
   });
 
   it("counts new rows still needing a category, ignoring duplicates", async () => {
@@ -278,7 +297,7 @@ describe("TransactionImport", () => {
       screen.getByRole("combobox", { name: "Category for Coffee" }),
       "1",
     );
-    await user.click(screen.getByRole("button", { name: /confirm import/i }));
+    await user.click(screen.getByRole("button", { name: "Continue" }));
 
     expect(api.commitImport).toHaveBeenCalledWith("statement.csv", [
       {

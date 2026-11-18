@@ -43,7 +43,7 @@ export default function GoalCard({
   };
 
   return (
-    <li className="rounded-3xl border border-slate-800 bg-slate-950/80 p-4">
+    <li className="rounded-xl border border-slate-200 bg-white p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           {isEditing ? (
@@ -59,11 +59,11 @@ export default function GoalCard({
             />
           ) : (
             <>
-              <p className="whitespace-pre-wrap break-words text-sm leading-6 text-slate-100">
+              <p className="whitespace-pre-wrap break-words text-sm leading-6 text-slate-900">
                 {goal.title}
               </p>
               {categoryName && (
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-1 text-xs text-slate-500">
                   Tracking {categoryName} spending each month
                 </p>
               )}
@@ -90,7 +90,7 @@ export default function GoalCard({
               </div>
               {isHelpNoticeVisible && (
                 <p
-                  className="mt-3 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-300"
+                  className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
                   role="status"
                 >
                   AI help isn&apos;t available yet. When it is, you&apos;ll be

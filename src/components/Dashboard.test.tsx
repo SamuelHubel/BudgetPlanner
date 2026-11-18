@@ -6,8 +6,8 @@ import type { BudgetApiClient } from "../api/budgetApi";
 vi.mock("../features/home/HomeTab", () => ({
   default: () => <div>Home content</div>,
 }));
-vi.mock("../features/ai/AITab", () => ({
-  default: () => <div>AI content</div>,
+vi.mock("../features/import/TransactionImport", () => ({
+  default: () => <div>Import content</div>,
 }));
 vi.mock("../features/goals/GoalsTab", () => ({
   default: () => <div>Goals content</div>,

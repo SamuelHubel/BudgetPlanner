@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
   font-family:
     Inter,
     ui-sans-serif,
@@ -22,9 +22,22 @@ body,
 
 body {
   margin: 0;
-  background: #020617;
+  background: #f8fafc;
 }
 
 * {
   box-sizing: border-box;
+}
+
+/* Customizable select (Chromium/WebView2) so long option lists scroll; other webviews keep the native popup. */
+.select-capped,
+.select-capped::picker(select) {
+  appearance: base-select;
+}
+
+.select-capped::picker(select) {
+  max-height: 15rem;
+  overflow-y: auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
 }

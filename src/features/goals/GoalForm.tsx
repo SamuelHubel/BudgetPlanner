@@ -106,14 +106,14 @@ export default function GoalForm({
     >
       <div className="space-y-1">
         <label
-          className="text-sm font-medium text-slate-300"
+          className="text-sm font-medium text-slate-700"
           htmlFor={`${fieldId}-title`}
         >
           Your goal
         </label>
         <textarea
           id={`${fieldId}-title`}
-          className="block min-h-20 w-full resize-y rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none"
+          className="block min-h-20 w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-none"
           placeholder='For example, "Spend less on dining out"'
           maxLength={MAX_GOAL_TITLE_LENGTH}
           value={title}
@@ -124,14 +124,14 @@ export default function GoalForm({
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1">
           <label
-            className="text-sm font-medium text-slate-300"
+            className="text-sm font-medium text-slate-700"
             htmlFor={`${fieldId}-category`}
           >
             Track spending in (optional)
           </label>
           <select
             id={`${fieldId}-category`}
-            className="block w-full rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
+            className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-900 focus:outline-none"
             value={categoryId}
             onChange={(event) => {
               setCategoryId(event.target.value);
@@ -152,14 +152,14 @@ export default function GoalForm({
         {isTracking && (
           <div className="space-y-1">
             <label
-              className="text-sm font-medium text-slate-300"
+              className="text-sm font-medium text-slate-700"
               htmlFor={`${fieldId}-limit`}
             >
               Monthly limit
             </label>
             <input
               id={`${fieldId}-limit`}
-              className="block w-full rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none"
+              className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-none"
               inputMode="decimal"
               placeholder="300.00"
               aria-required="true"

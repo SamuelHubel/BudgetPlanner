@@ -48,27 +48,27 @@ export default function IncomeForm({
 
   return (
     <form
-      className="space-y-3 rounded-3xl border border-slate-800 bg-slate-950/80 p-4"
+      className="space-y-3 rounded-xl border border-slate-200 bg-white p-4"
       onSubmit={handleSubmit}
       noValidate
     >
       <div className="space-y-1">
         <label
-          className="text-sm font-medium text-slate-300"
+          className="text-sm font-medium text-slate-700"
           htmlFor={`${fieldId}-income`}
         >
           Expected monthly income
         </label>
         <input
           id={`${fieldId}-income`}
-          className="block w-full rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none sm:max-w-xs"
+          className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-none sm:max-w-xs"
           inputMode="decimal"
           placeholder="5000.00"
           aria-required="true"
           value={text}
           onChange={(event) => setText(event.target.value)}
         />
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-slate-500">
           {templateMonth
             ? `Starting from ${formatMonth(templateMonth)}. Change anything that's different this month.`
             : `What you expect to earn in ${formatMonth(month)}.`}
