@@ -490,6 +490,34 @@ describe("HomeTab category charts", () => {
     ).toBeInTheDocument();
   });
 
+  it("switches the monthly chart between bars and lines", async () => {
+    const user = userEvent.setup();
+    render(
+      <FinancialSummaryProvider api={api}>
+        <HomeTab />
+      </FinancialSummaryProvider>,
+    );
+
+    const monthlyChart = within(
+      await screen.findByRole("region", {
+        name: "Income and expenses by month",
+      }),
+    );
+    const bar = monthlyChart.getByRole("button", { name: "Bar" });
+    const line = monthlyChart.getByRole("button", { name: "Line" });
+    expect(bar).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(line);
+
+    expect(line).toHaveAttribute("aria-pressed", "true");
+    expect(bar).toHaveAttribute("aria-pressed", "false");
+    expect(
+      monthlyChart.getByRole("listitem", {
+        name: "Jan 2026: income $2,500.00, expenses $75.00",
+      }),
+    ).toBeInTheDocument();
+  });
+
   it("shows all-time totals when All time is selected", async () => {
     const user = userEvent.setup();
     render(

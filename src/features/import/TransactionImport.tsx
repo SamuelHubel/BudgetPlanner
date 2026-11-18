@@ -1,8 +1,12 @@
+import { useState } from "react";
 import type { BudgetApiClient } from "../../api/budgetApi";
 import Alert from "../../shared/Alert";
 import ImportPreviewTable from "./ImportPreviewTable";
 import { isAmountFormat, isDateOrder, useImportFlow } from "./useImportFlow";
 import Button from "../../shared/Button";
+import SubcategoryReviewDialog, {
+  subcategorySteps,
+} from "./SubcategoryReviewDialog";
 
 type TransactionImportProps = {
   api: BudgetApiClient;
@@ -11,6 +15,16 @@ type TransactionImportProps = {
 /** Lets the user preview and commit a CSV statement import. */
 export default function TransactionImport({ api }: TransactionImportProps) {
   const flow = useImportFlow(api);
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const steps = subcategorySteps(
+    flow.transactions,
+    flow.categories,
+    flow.subcategories,
+  );
+  const importRows = (includeSubcategories: boolean) => {
+    setIsReviewOpen(false);
+    void flow.confirmImport(includeSubcategories);
+  };
   return (
     <div className="space-y-4">
       <h3 className="text-xl font-semibold text-slate-900">
@@ -88,18 +102,6 @@ export default function TransactionImport({ api }: TransactionImportProps) {
         {flow.transactions.length > 0 && (
           <>
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
-              <label className="flex items-center gap-2 text-slate-700">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 accent-slate-900"
-                  checked={flow.useSubcategories}
-                  disabled={!flow.canToggleSubcategories}
-                  onChange={(event) =>
-                    void flow.toggleSubcategories(event.currentTarget.checked)
-                  }
-                />
-                Use subcategories
-              </label>
               {flow.needsCategoryCount > 0 && (
                 <p className="text-amber-700">
                   {flow.needsCategoryCount === 1
@@ -111,21 +113,30 @@ export default function TransactionImport({ api }: TransactionImportProps) {
             <ImportPreviewTable
               transactions={flow.transactions}
               categories={flow.categories}
-              subcategories={flow.subcategories}
-              useSubcategories={flow.useSubcategories}
               currency={flow.currency}
               onCategoryChange={flow.updateCategory}
-              onSubcategoryChange={flow.updateSubcategory}
             />
             <Button
               type="button"
               variant="primary"
               className="mt-4 px-4 py-2"
-              onClick={flow.confirmImport}
+              onClick={() =>
+                steps.length > 0 ? setIsReviewOpen(true) : importRows(false)
+              }
               disabled={flow.isLoading || !flow.currency}
             >
-              Confirm import
+              Continue
             </Button>
+            {isReviewOpen && (
+              <SubcategoryReviewDialog
+                steps={steps}
+                transactions={flow.transactions}
+                currency={flow.currency}
+                onSubcategoryChange={flow.updateSubcategory}
+                onImport={importRows}
+                onClose={() => setIsReviewOpen(false)}
+              />
+            )}
           </>
         )}
       </section>

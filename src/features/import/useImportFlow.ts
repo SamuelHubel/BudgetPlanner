@@ -36,9 +36,7 @@ export function useImportFlow(api: BudgetApiClient) {
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { currency, refresh, categorySettings, updateCategorySettings } =
-    useFinancialSummary();
-  const useSubcategories = categorySettings?.useSubcategoriesOnImport ?? true;
+  const { currency, refresh } = useFinancialSummary();
   const needsCategoryCount = transactions.filter(
     ({ categoryId, isDuplicate }) => categoryId === null && !isDuplicate,
   ).length;
@@ -135,16 +133,8 @@ export function useImportFlow(api: BudgetApiClient) {
     );
   };
 
-  const toggleSubcategories = async (useSubcategoriesOnImport: boolean) => {
-    setError("");
-    try {
-      await updateCategorySettings({ useSubcategoriesOnImport });
-    } catch (caughtError) {
-      setError(toErrorMessage(caughtError, "Unable to save this setting."));
-    }
-  };
-
-  const confirmImport = async () => {
+  /** Saves the preview; subcategory picks are kept only when requested. */
+  const confirmImport = async (includeSubcategories: boolean) => {
     setError("");
     setStatus("");
     setIsLoading(true);
@@ -155,7 +145,7 @@ export function useImportFlow(api: BudgetApiClient) {
           amountCents,
           description,
           categoryId,
-          subcategoryId: useSubcategories ? subcategoryId : null,
+          subcategoryId: includeSubcategories ? subcategoryId : null,
         }),
       );
       const result = await api.commitImport(fileName, rows);
@@ -183,9 +173,7 @@ export function useImportFlow(api: BudgetApiClient) {
     transactions,
     categories,
     subcategories,
-    useSubcategories,
     needsCategoryCount,
-    canToggleSubcategories: categorySettings !== null,
     dateOrder,
     needsDateOrder,
     amountFormat,
@@ -199,7 +187,6 @@ export function useImportFlow(api: BudgetApiClient) {
     handleAmountFormat,
     updateCategory,
     updateSubcategory,
-    toggleSubcategories,
     confirmImport,
   };
 }
