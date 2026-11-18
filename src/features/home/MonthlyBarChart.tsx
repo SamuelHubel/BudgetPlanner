@@ -5,14 +5,25 @@ import { formatCurrency, formatMonth } from "../../shared/format";
 type MonthlyBarChartProps = {
   totals: MonthlyTotal[];
   currency: string;
+  /** The month (`YYYY-MM`) shown elsewhere on the page, or null for all time. */
+  selectedMonth: string | null;
+  /** Called when a point on the line graph is clicked. */
+  onSelectMonth: (month: string) => void;
 };
 
 type ChartView = "bar" | "line";
+
+const SERIES = [
+  { key: "incomeCents", name: "income", color: "bg-cyan-500" },
+  { key: "expensesCents", name: "expenses", color: "bg-violet-500" },
+] as const;
 
 /** Charts monthly income and expense totals as bars or lines. */
 export default function MonthlyBarChart({
   totals,
   currency,
+  selectedMonth,
+  onSelectMonth,
 }: MonthlyBarChartProps) {
   const [view, setView] = useState<ChartView>("bar");
   // A line needs two points, so single-month data always shows bars.
@@ -27,12 +38,18 @@ export default function MonthlyBarChart({
   );
   const percentOfMax = (cents: number) =>
     maxAmountCents > 0 ? (Math.max(0, cents) / maxAmountCents) * 100 : 0;
+  /** Position of a point as percentages of the plot's width and height. */
+  const pointPosition = (index: number, cents: number) => ({
+    x: ((index + 0.5) / totals.length) * 100,
+    // 10% headroom: the scroll wrapper clips overflow, which would cut off dots at the max.
+    y: 100 - percentOfMax(cents) * 0.9,
+  });
   const linePoints = (pick: (total: MonthlyTotal) => number) =>
     totals
-      .map(
-        (total, index) =>
-          `${((index + 0.5) / totals.length) * 100},${100 - percentOfMax(pick(total))}`,
-      )
+      .map((total, index) => {
+        const { x, y } = pointPosition(index, pick(total));
+        return `${x},${y}`;
+      })
       .join(" ");
   const itemLabel = ({ month, incomeCents, expensesCents }: MonthlyTotal) =>
     `${formatMonth(month, "short")}: income ${formatCurrency(incomeCents, currency)}, expenses ${formatCurrency(expensesCents, currency)}`;
@@ -99,29 +116,57 @@ export default function MonthlyBarChart({
       ) : isLine ? (
         <div className="mt-4 overflow-x-auto pb-2">
           <div style={{ minWidth: `${totals.length * 3.5}rem` }}>
-            <svg
-              className="block h-48 w-full overflow-visible border-b border-slate-300"
-              viewBox="0 0 100 100"
-              preserveAspectRatio="none"
-              aria-hidden="true"
-            >
-              <polyline
-                className="stroke-cyan-500"
-                points={linePoints(({ incomeCents }) => incomeCents)}
-                fill="none"
-                strokeWidth={2}
-                strokeLinejoin="round"
-                vectorEffect="non-scaling-stroke"
-              />
-              <polyline
-                className="stroke-violet-500"
-                points={linePoints(({ expensesCents }) => expensesCents)}
-                fill="none"
-                strokeWidth={2}
-                strokeLinejoin="round"
-                vectorEffect="non-scaling-stroke"
-              />
-            </svg>
+            <div className="relative">
+              <svg
+                className="block h-48 w-full overflow-visible border-b border-slate-300"
+                viewBox="0 0 100 100"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
+                <polyline
+                  className="stroke-cyan-500"
+                  points={linePoints(({ incomeCents }) => incomeCents)}
+                  fill="none"
+                  strokeWidth={2}
+                  strokeLinejoin="round"
+                  vectorEffect="non-scaling-stroke"
+                />
+                <polyline
+                  className="stroke-violet-500"
+                  points={linePoints(({ expensesCents }) => expensesCents)}
+                  fill="none"
+                  strokeWidth={2}
+                  strokeLinejoin="round"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </svg>
+              {totals.flatMap((total, index) =>
+                SERIES.map(({ key, name, color }) => {
+                  const { x, y } = pointPosition(index, total[key]);
+                  const isSelected = total.month === selectedMonth;
+                  return (
+                    // HTML buttons, not SVG circles, so the stretched viewBox doesn't squash them.
+                    <button
+                      key={`${total.month}-${name}`}
+                      type="button"
+                      className="absolute flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+                      style={{ left: `${x}%`, top: `${y}%` }}
+                      aria-label={`${formatMonth(total.month, "short")} ${name} ${formatCurrency(total[key], currency)}`}
+                      aria-pressed={isSelected}
+                      onClick={() => onSelectMonth(total.month)}
+                    >
+                      <span
+                        className={`block rounded-full border-2 border-white ${color} ${
+                          isSelected
+                            ? "h-4 w-4 ring-2 ring-slate-900"
+                            : "h-3 w-3"
+                        }`}
+                      />
+                    </button>
+                  );
+                }),
+              )}
+            </div>
             <ol
               className="grid"
               style={{

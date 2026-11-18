@@ -126,7 +126,14 @@ export default function HomeTab() {
               currency={currency}
             />
           </div>
-          <MonthlyBarChart totals={summary.monthlyTotals} currency={currency} />
+          <MonthlyBarChart
+            totals={summary.monthlyTotals}
+            currency={currency}
+            selectedMonth={
+              isAllTime ? null : (selectedMonthBreakdown?.month ?? null)
+            }
+            onSelectMonth={setSelectedMonth}
+          />
         </>
       )}
     </div>

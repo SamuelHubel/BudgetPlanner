@@ -516,6 +516,21 @@ describe("HomeTab category charts", () => {
         name: "Jan 2026: income $2,500.00, expenses $75.00",
       }),
     ).toBeInTheDocument();
+
+    const januaryIncome = monthlyChart.getByRole("button", {
+      name: "Jan 2026 income $2,500.00",
+    });
+    expect(januaryIncome).toHaveAttribute("aria-pressed", "false");
+
+    await user.click(januaryIncome);
+
+    expect(januaryIncome).toHaveAttribute("aria-pressed", "true");
+    expect(
+      screen.getByText("Showing income and expenses for January 2026"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "January 2026" }),
+    ).toHaveAttribute("aria-pressed", "true");
   });
 
   it("shows all-time totals when All time is selected", async () => {
