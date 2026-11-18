@@ -4,6 +4,8 @@ pub mod auth;
 pub mod budget;
 /// Transaction category lookup commands.
 pub mod categories;
+/// Database key protected by the device sign-in.
+mod device_key;
 /// Financial goal tracking commands.
 pub mod goals;
 /// Statement preview and transaction import commands.

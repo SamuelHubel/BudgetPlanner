@@ -4,7 +4,7 @@ import UnlockScreen from "./features/lock/UnlockScreen";
 import Dashboard from "./components/Dashboard";
 import { budgetApi } from "./api/budgetApi";
 import { toErrorMessage } from "./shared/errors";
-import type { TabName } from "./types";
+import type { TabName, UnlockMethod } from "./types";
 
 const INACTIVITY_LOCK_MS = 5 * 60 * 1000;
 
@@ -12,15 +12,22 @@ const INACTIVITY_LOCK_MS = 5 * 60 * 1000;
 function App() {
   const [isLocked, setIsLocked] = useState(true);
   const [isInitialized, setIsInitialized] = useState<boolean | null>(null);
+  const [unlockMethod, setUnlockMethod] = useState<UnlockMethod>("password");
   const [activeTab, setActiveTab] = useState<TabName>("home");
   const [unlockError, setUnlockError] = useState("");
   const [lockError, setLockError] = useState("");
 
   useEffect(() => {
     let isMounted = true;
-    void budgetApi.isInitialized().then(
-      (initialized) => {
-        if (isMounted) setIsInitialized(initialized);
+    void Promise.all([
+      budgetApi.isInitialized(),
+      budgetApi.unlockMethod(),
+    ]).then(
+      ([initialized, method]) => {
+        if (isMounted) {
+          setUnlockMethod(method);
+          setIsInitialized(initialized);
+        }
       },
       (error: unknown) => {
         if (isMounted) {
@@ -92,7 +99,14 @@ function App() {
   const handleUnlock = async (password: string) => {
     setUnlockError("");
     try {
-      if (isInitialized) {
+      if (unlockMethod === "device") {
+        if (isInitialized) {
+          await budgetApi.unlockWithDevice();
+        } else {
+          await budgetApi.createDeviceVault();
+          setIsInitialized(true);
+        }
+      } else if (isInitialized) {
         await budgetApi.unlock(password);
       } else {
         await budgetApi.createPassword(password);
@@ -101,6 +115,16 @@ function App() {
       setIsLocked(false);
     } catch (error) {
       setUnlockError(toErrorMessage(error, "Unable to unlock the app."));
+      return;
+    }
+    if (unlockMethod !== "migrate") return;
+    try {
+      await budgetApi.switchToDeviceUnlock();
+      setUnlockMethod("device");
+    } catch (error) {
+      setLockError(
+        toErrorMessage(error, "Unable to switch to Windows Hello unlock."),
+      );
     }
   };
 
@@ -108,6 +132,7 @@ function App() {
     await budgetApi.resetVault();
     setUnlockError("");
     setIsInitialized(false);
+    setUnlockMethod(await budgetApi.unlockMethod());
   };
 
   return (
@@ -119,6 +144,7 @@ function App() {
           </p>
           <UnlockScreen
             isInitialized={isInitialized}
+            unlockMethod={unlockMethod}
             onUnlock={handleUnlock}
             onResetVault={handleResetVault}
             error={unlockError}

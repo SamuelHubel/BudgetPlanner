@@ -19,6 +19,10 @@ describe("budgetApi IPC contract", () => {
     await budgetApi.createPassword(testPassword);
     await budgetApi.unlock(invalidTestPassword);
     await budgetApi.lock();
+    await budgetApi.unlockMethod();
+    await budgetApi.createDeviceVault();
+    await budgetApi.unlockWithDevice();
+    await budgetApi.switchToDeviceUnlock();
     await budgetApi.resetVault();
     await budgetApi.listCategories();
     await budgetApi.listSubcategories();
@@ -66,6 +70,10 @@ describe("budgetApi IPC contract", () => {
       ["create_password", { password: testPassword }],
       ["unlock", { password: invalidTestPassword }],
       ["lock"],
+      ["unlock_method"],
+      ["create_device_vault"],
+      ["unlock_with_device"],
+      ["switch_to_device_unlock"],
       ["reset_vault"],
       ["list_categories"],
       ["list_subcategories"],

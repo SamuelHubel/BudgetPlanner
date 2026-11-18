@@ -30,6 +30,17 @@ pub enum AppError {
     /// The Tauri application path could not be resolved.
     #[error("application path error: {0}")]
     ApplicationPath(String),
+    /// The user dismissed the device sign-in prompt.
+    #[error("unlock was cancelled")]
+    // Only the Windows Hello code builds this variant.
+    #[cfg_attr(not(windows), allow(dead_code))]
+    DeviceUnlockCancelled,
+    /// The device credential is gone or no longer matches the database.
+    #[error("this device's sign-in key no longer opens the budget data; it was probably removed when Windows Hello was reset. The data cannot be recovered")]
+    DeviceKeyMissing,
+    /// The device sign-in failed for another reason.
+    #[error("device unlock failed: {0}")]
+    DeviceUnlock(String),
     /// Secure random number generation failed.
     #[error("secure random number generation failed: {0}")]
     Randomness(String),

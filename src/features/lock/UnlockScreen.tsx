@@ -2,9 +2,12 @@ import { useState, type FormEvent } from "react";
 import Alert from "../../shared/Alert";
 import Button from "../../shared/Button";
 import ConfirmDialog from "../../shared/ConfirmDialog";
+import type { UnlockMethod } from "../../types";
 
 type UnlockScreenProps = {
   isInitialized: boolean | null;
+  unlockMethod: UnlockMethod;
+  /** Receives the typed password, or "" when the device sign-in is used. */
   onUnlock: (password: string) => Promise<void>;
   /** Permanently erases all data. A rejection keeps the dialog open. */
   onResetVault: () => Promise<void>;
@@ -13,9 +16,10 @@ type UnlockScreenProps = {
 
 const MINIMUM_PASSWORD_LENGTH = 12;
 
-/** Collects and submits a password to create or unlock the encrypted budget. */
+/** Creates or unlocks the encrypted budget with Windows Hello or a password. */
 export default function UnlockScreen({
   isInitialized,
+  unlockMethod,
   onUnlock,
   onResetVault,
   error,
@@ -27,6 +31,16 @@ export default function UnlockScreen({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isCreatingPassword = isInitialized === false;
   const isSetupBroken = isInitialized === null && error !== "";
+  const usesDevice = unlockMethod === "device";
+
+  const unlockWithDevice = async () => {
+    setIsSubmitting(true);
+    try {
+      await onUnlock("");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const submitPassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -51,13 +65,19 @@ export default function UnlockScreen({
     <div className="mx-auto w-full max-w-md rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
       <h2 className="text-2xl font-semibold text-slate-900">
         {isCreatingPassword
-          ? "Create your password"
+          ? usesDevice
+            ? "Set up Windows Hello"
+            : "Create your password"
           : "Unlock your budget vault"}
       </h2>
       <p className="mt-2 text-sm text-slate-500">
-        {isCreatingPassword
-          ? "Create a password to encrypt your budget data."
-          : "Enter your password to continue."}
+        {usesDevice
+          ? `Use your fingerprint, face, or PIN to ${isCreatingPassword ? "encrypt" : "open"} your budget data.`
+          : isCreatingPassword
+            ? "Create a password to encrypt your budget data."
+            : unlockMethod === "migrate"
+              ? "Enter your password once more. After that, Windows Hello replaces it."
+              : "Enter your password to continue."}
       </p>
       {error && <Alert className="mt-4">{error}</Alert>}
       {formError && <Alert className="mt-4">{formError}</Alert>}
@@ -67,6 +87,18 @@ export default function UnlockScreen({
             ? "Password setup is unavailable."
             : "Checking password setup..."}
         </p>
+      ) : usesDevice ? (
+        <Button
+          type="button"
+          variant="primary"
+          className="mt-8 w-full px-4 py-3 text-sm"
+          disabled={isSubmitting}
+          onClick={() => void unlockWithDevice()}
+        >
+          {isCreatingPassword
+            ? "Set up Windows Hello"
+            : "Unlock with Windows Hello"}
+        </Button>
       ) : (
         <form className="mt-8 space-y-5" onSubmit={submitPassword}>
           <label
@@ -136,8 +168,9 @@ export default function UnlockScreen({
           </p>
         )}
         <p>
-          If you forget your password, your encrypted budget data cannot be
-          recovered.
+          {usesDevice
+            ? "If Windows Hello is reset or this PC is replaced, your encrypted budget data cannot be recovered."
+            : "If you forget your password, your encrypted budget data cannot be recovered."}
         </p>
         {(isInitialized === true || isSetupBroken) && (
           <Button
@@ -146,14 +179,18 @@ export default function UnlockScreen({
             className="mt-3"
             onClick={() => setIsResetOpen(true)}
           >
-            {isSetupBroken ? "Erase and start over" : "Forgot your password?"}
+            {isSetupBroken
+              ? "Erase and start over"
+              : usesDevice
+                ? "Can't unlock?"
+                : "Forgot your password?"}
           </Button>
         )}
       </div>
       <ConfirmDialog
         isOpen={isResetOpen}
         title="Erase all budget data?"
-        description="This permanently deletes your encrypted budget, including transactions, budgets, and goals, so you can create a new password. It cannot be undone."
+        description="This permanently deletes your encrypted budget, including transactions, budgets, and goals, so you can start over. It cannot be undone."
         confirmLabel="Erase all data"
         pendingLabel="Erasing..."
         errorFallback="Unable to erase the budget data."
